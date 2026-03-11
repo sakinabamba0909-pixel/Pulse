@@ -384,14 +384,14 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
   }, [activeTasks, focusTasks, filter])
 
   // ── Handlers ──
-  const handleCreate = useCallback(async (body: Partial<Task>) => {
+  const handleCreate = useCallback(async (body: Partial<Task>): Promise<Task> => {
     const res = await fetch('/api/tasks', {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(body),
     })
     const t = await res.json()
     setTasks(prev => [t, ...prev])
-    setProjects(p => p.find(pr => pr.id === t.project_id) ? p : p)
+    return t
   }, [])
 
   const handleUpdate = useCallback(async (id: string, updates: Partial<Task>) => {
@@ -537,6 +537,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
         <TaskCreateInput
           projects={projects}
           allTasks={tasks}
+          relationships={initialRelationships}
           onAdd={handleCreate}
           onClose={() => setShowCreate(false)}
         />
