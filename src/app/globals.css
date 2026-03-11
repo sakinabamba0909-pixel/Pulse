@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=Instrument+Serif:ital@0;1&display=swap');
+
+:root {
+  /* Light theme (onboarding, login) */
+  --bg: #FAFAF9;
+  --surface: #FFFFFF;
+  --card: #F5F5F3;
+  --border: #E8E6E3;
+  --text: #1A1A1A;
+  --text-soft: #6B6B6B;
+  --text-muted: #9B9B9B;
+  --accent: #2DB87A;
+  --accent-soft: rgba(45,184,122,0.08);
+  --accent-mid: rgba(45,184,122,0.15);
+  --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03);
+  --shadow-lg: 0 2px 8px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.06);
+}
+
+[data-theme="dark"] {
+  --bg: #0B0E11;
+  --surface: #13171C;
+  --card: #171C22;
+  --border: #232A33;
+  --text: #E8ECF1;
+  --text-soft: #8B95A3;
+  --text-muted: #5A6577;
+  --accent: #6EE7A0;
+  --accent-soft: rgba(110,231,160,0.12);
+  --accent-mid: rgba(110,231,160,0.2);
+  --shadow: 0 1px 3px rgba(0,0,0,0.2);
+  --shadow-lg: 0 4px 16px rgba(0,0,0,0.3);
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  -webkit-font-smoothing: antialiased;
+}
+
+::selection {
+  background: var(--accent-mid);
+  color: var(--accent);
+}
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+
+input:focus, textarea:focus { outline: none; }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideIn {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+
+@keyframes glow {
+  0%, 100% { box-shadow: 0 0 16px rgba(45,184,122,0.25); }
+  50% { box-shadow: 0 0 32px rgba(45,184,122,0.35), 0 0 48px rgba(45,184,122,0.1); }
+}
+
+.animate-fade-in { animation: fadeIn 0.5s ease forwards; }
+.animate-slide-in { animation: slideIn 0.3s ease forwards; }
+.animate-float { animation: float 3s ease infinite; }
+.animate-glow { animation: glow 3s ease infinite; }
