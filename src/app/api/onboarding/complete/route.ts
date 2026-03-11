@@ -47,7 +47,7 @@ export async function POST(request: Request) {
         enabled: body.news_enabled,
         tone: body.news_tone || 'balanced',
         outlets: body.news_outlets || [],
-      });
+      }, { onConflict: 'user_id' });
 
     if (newsError) throw newsError;
 
@@ -57,7 +57,7 @@ export async function POST(request: Request) {
         user_id: user.id,
         person_name: contact.name,
         category: contact.category || 'friend',
-        contact_frequency: contact.frequency || 'weekly',
+        contact_frequency: (contact.frequency || 'weekly').toLowerCase(),
       }));
 
       const { error: relError } = await supabase
