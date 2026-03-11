@@ -347,8 +347,8 @@ export default async function AppPage() {
           <div style={{ display: 'flex', gap: 20 }}>
             {[
               { label: 'Mode',  value: { voice: '🔊 Voice', text: '💬 Text', hybrid: '🔊💬 Hybrid' }[profile.response_mode as string] || '—' },
-              { label: 'Style', value: { warm: 'Warm',  calm: 'Calm', pro: 'Pro', hype: 'Hyped' }[tone]  || '—' },
-              { label: 'Push',  value: { gentle: 'Gentle', balanced: 'Balanced', firm: 'Firm' }[pushiness] || '—' },
+              { label: 'Style', value: ({ warm: 'Warm', calm: 'Calm', pro: 'Pro', hype: 'Hyped' } as Record<string, string>)[tone] || '—' },
+              { label: 'Push',  value: ({ gentle: 'Gentle', balanced: 'Balanced', firm: 'Firm' } as Record<string, string>)[pushiness] || '—' },
             ].map((item, i) => (
               <div key={i} style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
                 <span style={{ fontSize: 10, color: C.muted }}>{item.label}</span>
