@@ -249,7 +249,7 @@ export default function TaskDetailPanel({
               PRIORITY
             </label>
             <div style={{ display: 'flex', gap: 8 }}>
-              {(['urgent', 'high', 'normal', 'low'] as Priority[]).map(p => {
+              {(['urgent', 'normal', 'low'] as Priority[]).map(p => {
                 const cfg = PRIORITY_CONFIG[p]
                 return (
                   <button key={p} onClick={() => { setPriority(p); save({ priority: p }) }} style={{
@@ -271,7 +271,7 @@ export default function TaskDetailPanel({
             <label style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: 0.8, display: 'block', marginBottom: 8 }}>
               ESTIMATED TIME
             </label>
-            <div style={{ display: 'flex', gap: 6 }}>
+            <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
               {DURATION_OPTIONS.map(o => (
                 <button key={o.minutes} onClick={() => { setDurationMinutes(durationMinutes === o.minutes ? null : o.minutes); save({ duration_minutes: durationMinutes === o.minutes ? undefined : o.minutes }) }} style={{
                   padding: '5px 12px', borderRadius: 20, border: '1px solid',
@@ -281,6 +281,22 @@ export default function TaskDetailPanel({
                   fontSize: 12, cursor: 'pointer', ...s,
                 }}>{o.label}</button>
               ))}
+              <input
+                type="text"
+                placeholder="custom"
+                defaultValue={durationMinutes && !DURATION_OPTIONS.find(o => o.minutes === durationMinutes) ? `${durationMinutes}m` : ''}
+                onBlur={e => {
+                  const mins = parseDurationInput(e.target.value)
+                  if (mins) { setDurationMinutes(mins); save({ duration_minutes: mins }) }
+                  else if (!e.target.value.trim()) { setDurationMinutes(null); save({ duration_minutes: undefined }) }
+                }}
+                onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
+                style={{
+                  width: 72, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 20,
+                  padding: '5px 10px', fontSize: 12, ...s, color: '#6B6B6B',
+                  background: '#FAFAF9', outline: 'none', textAlign: 'center',
+                }}
+              />
             </div>
           </div>
 
