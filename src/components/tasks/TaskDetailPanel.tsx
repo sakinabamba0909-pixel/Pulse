@@ -29,6 +29,15 @@ function daysSince(iso: string): number {
   return Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
 }
 
+function parseDurationInput(val: string): number | null {
+  const v = val.trim().toLowerCase()
+  const h = v.match(/^(\d+(?:\.\d+)?)\s*h$/)
+  if (h) return Math.round(parseFloat(h[1]) * 60)
+  const m = v.match(/^(\d+)\s*m?$/)
+  if (m) return parseInt(m[1], 10)
+  return null
+}
+
 function smartSuggestDate(tasks: Task[]): string {
   const now = new Date()
   for (let i = 1; i <= 7; i++) {
