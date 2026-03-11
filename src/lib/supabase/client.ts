@@ -12,5 +12,3 @@ export function createClient() {
   );
 }
 
-// Singleton for client components
-export const supabase = createClient();
