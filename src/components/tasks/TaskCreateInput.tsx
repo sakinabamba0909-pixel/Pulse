@@ -78,14 +78,15 @@ function smartSuggestDate(tasks: Task[]): { label: string; iso: string } | null 
 
 // ─── ParsedTaskCard ───────────────────────────────────────────────────────────
 
-function ParsedTaskCard({ task, projects, relationships, checked, onToggle, onDismiss, onEdit }: {
+function ParsedTaskCard({ task, projects, relationships, checked, onToggle, onDismiss, onEdit, onEditDetails }: {
   task:          ParsedTask
   projects:      Project[]
   relationships: Relationship[]
   checked:       boolean
-  onToggle:  () => void
-  onDismiss: () => void
-  onEdit:    (u: Partial<ParsedTask>) => void
+  onToggle:       () => void
+  onDismiss:      () => void
+  onEdit:         (u: Partial<ParsedTask>) => void
+  onEditDetails?: () => void
 }) {
   const [expanded,  setExpanded]  = useState(false)
   const [editTitle, setEditTitle] = useState(task.title)
@@ -169,6 +170,14 @@ function ParsedTaskCard({ task, projects, relationships, checked, onToggle, onDi
             )}
             {task.is_commitment && (
               <span style={{ fontSize: 10, color: '#F97316', fontWeight: 700, fontFamily: "'DM Sans', sans-serif", letterSpacing: 0.3 }}>COMMITMENT</span>
+            )}
+            {!task.due_at && !task.priority && !project && (
+              <span style={{ fontSize: 11, color: '#C4C9D0', fontFamily: "'DM Sans', sans-serif", fontStyle: 'italic' }}>no details detected</span>
+            )}
+            {onEditDetails && (
+              <button onClick={onEditDetails} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#9CA3AF', fontFamily: "'DM Sans', sans-serif", padding: 0, marginLeft: 'auto' }}>
+                Edit details →
+              </button>
             )}
           </div>
         </div>
@@ -261,24 +270,10 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
         window.speechSynthesis.speak(utt)
       }
 
-      if (data.tasks.length === 1) {
-        // Single task → populate form fields
-        const t = data.tasks[0]
-        setTitle(t.title ?? '')
-        setDueAt(t.due_at ? toLocalDatetimeInput(t.due_at) : '')
-        if (t.priority) setPriority(t.priority)
-        setDurationMinutes(t.duration_minutes ?? null)
-        setNotes(t.notes ?? '')
-        setProjectId(t.project_id ?? '')
-        setParsedTasks(data.tasks)
-        setShowPreview(false)
-        setMode('form')
-      } else {
-        // Multi-task → preview cards
-        setParsedTasks(data.tasks)
-        setCheckedIndices(new Set(data.tasks.map((_: ParsedTask, i: number) => i)))
-        setShowPreview(true)
-      }
+      // Always show preview cards — user sees exactly what AI understood before confirming
+      setParsedTasks(data.tasks)
+      setCheckedIndices(new Set(data.tasks.map((_: ParsedTask, i: number) => i)))
+      setShowPreview(true)
     } catch {
       setParseError('Could not parse — try the full form instead.')
       setMode('form')
@@ -532,11 +527,11 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
               <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: 20, lineHeight: 1, padding: '2px 6px' }}>×</button>
             </div>
 
-            {/* ── Multi-task preview ── */}
+            {/* ── Preview cards (single or multi) ── */}
             {showPreview && (
               <div style={{ animation: 'fadeInUp 0.25s ease' }}>
                 <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12, fontFamily: "'DM Sans', sans-serif" }}>
-                  ✦ {parsedTasks.length} tasks found — uncheck any to skip
+                  {parsedTasks.length === 1 ? '✦ Got it — looks right?' : `✦ ${parsedTasks.length} tasks — uncheck any to skip`}
                 </p>
                 {parsedTasks.map((task, i) => (
                   <ParsedTaskCard
@@ -555,6 +550,18 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
                       setCheckedIndices(prev => new Set([...prev].filter(idx => idx !== i).map(idx => idx > i ? idx - 1 : idx)))
                     }}
                     onEdit={updates => setParsedTasks(prev => prev.map((t, idx) => idx === i ? { ...t, ...updates } : t))}
+                    onEditDetails={() => {
+                      // Pre-fill form with this task's data
+                      const t = parsedTasks[i]
+                      setTitle(t.title ?? '')
+                      setDueAt(t.due_at ? toLocalDatetimeInput(t.due_at) : '')
+                      if (t.priority) setPriority(t.priority)
+                      setDurationMinutes(t.duration_minutes ?? null)
+                      setNotes(t.notes ?? '')
+                      setProjectId(t.project_id ?? '')
+                      setShowPreview(false)
+                      setMode('form')
+                    }}
                   />
                 ))}
                 <button
@@ -568,7 +575,7 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
                     fontFamily: "'DM Sans', sans-serif",
                   }}
                 >
-                  {isSubmitting ? 'Adding...' : `Add ${checkedCount} task${checkedCount !== 1 ? 's' : ''}`}
+                  {isSubmitting ? 'Adding...' : checkedCount === 1 ? 'Add task' : `Add ${checkedCount} tasks`}
                 </button>
               </div>
             )}
