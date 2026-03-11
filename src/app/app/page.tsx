@@ -1,6 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import Orb from '@/components/Orb';
 
 export const dynamic = 'force-dynamic';
 
@@ -120,20 +119,19 @@ export default async function AppPage() {
 
   // ─── Palette ───
   const C = {
-    bg:          '#0B0E11',
-    card:        '#0F1318',
-    cardBorder:  'rgba(255,255,255,0.055)',
-    cardHover:   '#111820',
-    text:        '#E8ECF1',
-    muted:       '#516070',
-    faint:       'rgba(255,255,255,0.035)',
-    divider:     'rgba(255,255,255,0.04)',
-    accent:      '#6EE7A0',
-    accentDim:   'rgba(110,231,160,0.1)',
-    accentBorder:'rgba(110,231,160,0.18)',
-    amber:       '#F5A623',
-    amberDim:    'rgba(245,166,35,0.1)',
-    amberBorder: 'rgba(245,166,35,0.2)',
+    bg:          '#F5F4F2',
+    card:        '#FFFFFF',
+    cardBorder:  'rgba(0,0,0,0.07)',
+    text:        '#1A1A1A',
+    muted:       '#8A949E',
+    faint:       'rgba(0,0,0,0.03)',
+    divider:     'rgba(0,0,0,0.06)',
+    accent:      '#2DB87A',
+    accentDim:   'rgba(45,184,122,0.09)',
+    accentBorder:'rgba(45,184,122,0.22)',
+    amber:       '#D97706',
+    amberDim:    'rgba(217,119,6,0.08)',
+    amberBorder: 'rgba(217,119,6,0.2)',
   };
 
   const cardStyle: React.CSSProperties = {
@@ -152,12 +150,12 @@ export default async function AppPage() {
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: "'DM Sans', sans-serif" }}>
       <style>{`
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(20px); }
+          from { opacity: 0; transform: translateY(16px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes pulseGlow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(110,231,160,0); }
-          50%       { box-shadow: 0 0 20px 4px rgba(110,231,160,0.06); }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(45,184,122,0); }
+          50%       { box-shadow: 0 0 16px 4px rgba(45,184,122,0.1); }
         }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { height: 0; width: 0; }
@@ -166,27 +164,20 @@ export default async function AppPage() {
       <div style={{ maxWidth: 740, margin: '0 auto', padding: '0 24px 100px' }}>
 
         {/* ──────────────────── Hero greeting ──────────────────── */}
-        <div style={{ paddingTop: 80, paddingBottom: 52, animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) both' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 22 }}>
-            <div style={{ animation: 'pulseGlow 4s ease infinite', borderRadius: '50%' }}>
-              <Orb size={56} dark />
-            </div>
-            <div>
-              <p style={{ fontSize: 12, color: C.muted, marginBottom: 6, letterSpacing: 0.2 }}>
-                {dateStr} &nbsp;·&nbsp; {timeStr}
-              </p>
-              <h1 style={{
-                fontFamily: "'Instrument Serif', serif",
-                fontSize: 36, fontWeight: 400, lineHeight: 1.1,
-                letterSpacing: -0.5, color: C.text, margin: 0,
-              }}>
-                {greeting}
-              </h1>
-              <p style={{ fontSize: 15, color: C.muted, marginTop: 6, fontWeight: 400 }}>
-                {subtitle}
-              </p>
-            </div>
-          </div>
+        <div style={{ paddingTop: 64, paddingBottom: 44, animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) both' }}>
+          <p style={{ fontSize: 12, color: C.muted, marginBottom: 8, letterSpacing: 0.2 }}>
+            {dateStr} &nbsp;·&nbsp; {timeStr}
+          </p>
+          <h1 style={{
+            fontFamily: "'Instrument Serif', serif",
+            fontSize: 38, fontWeight: 400, lineHeight: 1.1,
+            letterSpacing: -0.5, color: C.text, margin: '0 0 8px',
+          }}>
+            {greeting}
+          </h1>
+          <p style={{ fontSize: 15, color: C.muted, fontWeight: 400 }}>
+            {subtitle}
+          </p>
         </div>
 
         {/* ──────────────────── Row 1: Your Day + Goals ──────────────────── */}
