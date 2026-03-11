@@ -7,7 +7,7 @@ import { PRIORITY_CONFIG } from '@/lib/tasks/types'
 interface ParsedPreview {
   title?: string
   due_at?: string | null
-  priority?: Priority
+  priority?: Priority | null
   duration_minutes?: number | null
   notes?: string | null
 }
@@ -42,6 +42,11 @@ export default function TaskCreateInput({ projects, onAdd, onClose }: Props) {
   const [newProjectColor, setNewProjectColor] = useState('#2DB87A')
   const [localProjects, setLocalProjects] = useState(projects)
 
+  const [isListening, setIsListening] = useState(false)
+  const [supportsVoice, setSupportsVoice] = useState(false)
+  const recognitionRef = useRef<any>(null)
+  const transcriptRef = useRef('')
+
   const nlRef = useRef<HTMLTextAreaElement>(null)
   const titleRef = useRef<HTMLInputElement>(null)
 
@@ -50,37 +55,72 @@ export default function TaskCreateInput({ projects, onAdd, onClose }: Props) {
     else titleRef.current?.focus()
   }, [mode])
 
-  // Sync preview → form fields
+  useEffect(() => {
+    setSupportsVoice(!!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition))
+  }, [])
+
+  // Sync preview → form fields (only set fields the AI explicitly found)
   useEffect(() => {
     if (preview) {
       setTitle(preview.title ?? '')
       setDueAt(preview.due_at ? toLocalDatetimeInput(preview.due_at) : '')
-      setPriority(preview.priority ?? 'normal')
+      if (preview.priority != null) setPriority(preview.priority)
       setDurationMinutes(preview.duration_minutes ?? null)
       setNotes(preview.notes ?? '')
     }
   }, [preview])
 
-  async function parseNL() {
-    if (!nlText.trim()) return
+  async function parseNL(textInput?: string) {
+    const text = textInput ?? nlText
+    if (!text.trim()) return
     setIsParsing(true)
     setParseError('')
     try {
       const res = await fetch('/api/tasks/parse', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: nlText }),
+        body: JSON.stringify({ text }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       setPreview(data)
-    } catch (e) {
+    } catch {
       setParseError('Could not parse — try the full form instead.')
       setMode('form')
-      setTitle(nlText)
+      setTitle(text)
     } finally {
       setIsParsing(false)
     }
+  }
+
+  function toggleListening() {
+    if (isListening) {
+      recognitionRef.current?.stop()
+      return
+    }
+    const SR = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition
+    if (!SR) return
+
+    const recognition = new SR()
+    recognition.continuous = false
+    recognition.interimResults = true
+    transcriptRef.current = ''
+
+    recognition.onresult = (e: any) => {
+      const t = Array.from(e.results as any[]).map((r: any) => r[0].transcript).join('')
+      transcriptRef.current = t
+      setNlText(t)
+    }
+    recognition.onend = () => {
+      setIsListening(false)
+      if (transcriptRef.current.trim()) parseNL(transcriptRef.current)
+    }
+    recognition.onerror = () => setIsListening(false)
+
+    recognitionRef.current = recognition
+    recognition.start()
+    setIsListening(true)
+    setNlText('')
   }
 
   async function handleSubmit() {
@@ -148,6 +188,10 @@ export default function TaskCreateInput({ projects, onAdd, onClose }: Props) {
             from { opacity: 0; transform: translateY(20px); }
             to   { opacity: 1; transform: translateY(0); }
           }
+          @keyframes micPulse {
+            0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); }
+            50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); }
+          }
         `}</style>
 
         {/* Mode toggle */}
@@ -187,17 +231,40 @@ export default function TaskCreateInput({ projects, onAdd, onClose }: Props) {
             />
             {parseError && <p style={{ fontSize: 12, color: '#EF4444', marginTop: 4 }}>{parseError}</p>}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 12 }}>
-              <p style={{ fontSize: 12, color: '#9CA3AF', fontFamily: "'DM Sans', sans-serif" }}>
-                Press Enter to parse with AI ↵
+              <p style={{ fontSize: 12, color: isListening ? '#EF4444' : '#9CA3AF', fontFamily: "'DM Sans', sans-serif" }}>
+                {isListening ? 'Listening...' : 'Press Enter to parse with AI ↵'}
               </p>
-              <button onClick={parseNL} disabled={isParsing || !nlText.trim()} style={{
-                padding: '8px 18px', borderRadius: 20, border: 'none', cursor: 'pointer',
-                fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
-                background: isParsing ? '#E5E7EB' : '#1A1A1A', color: '#FFFFFF',
-                transition: 'all 0.15s',
-              }}>
-                {isParsing ? 'Parsing...' : 'Parse'}
-              </button>
+              <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+                {supportsVoice && (
+                  <button
+                    onClick={toggleListening}
+                    title={isListening ? 'Stop recording' : 'Speak your task'}
+                    style={{
+                      width: 34, height: 34, borderRadius: '50%', border: 'none', cursor: 'pointer',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      background: isListening ? '#EF4444' : 'rgba(0,0,0,0.06)',
+                      color: isListening ? '#FFFFFF' : '#6B6B6B',
+                      transition: 'background 0.15s',
+                      animation: isListening ? 'micPulse 1.2s ease-in-out infinite' : 'none',
+                    }}
+                  >
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/>
+                      <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                      <line x1="12" y1="19" x2="12" y2="23"/>
+                      <line x1="8" y1="23" x2="16" y2="23"/>
+                    </svg>
+                  </button>
+                )}
+                <button onClick={() => parseNL()} disabled={isParsing || !nlText.trim()} style={{
+                  padding: '8px 18px', borderRadius: 20, border: 'none', cursor: 'pointer',
+                  fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+                  background: isParsing ? '#E5E7EB' : '#1A1A1A', color: '#FFFFFF',
+                  transition: 'all 0.15s',
+                }}>
+                  {isParsing ? 'Parsing...' : 'Parse'}
+                </button>
+              </div>
             </div>
           </div>
         )}

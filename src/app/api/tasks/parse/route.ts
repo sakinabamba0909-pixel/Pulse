@@ -20,10 +20,10 @@ export async function POST(req: Request) {
         content: `Today is ${dayName}, ${todayStr}. Parse this task description into structured JSON.
 
 Return ONLY a valid JSON object with these exact fields:
-- "title": string — clean, concise task name (remove time/priority words)
-- "due_at": string|null — ISO 8601 datetime (e.g. "2024-01-15T14:00:00"). Infer from "tomorrow", "Friday", "next week", "afternoon" (14:00), "morning" (09:00), etc. If no date mentioned, null.
-- "priority": "urgent"|"high"|"normal"|"low" — infer from words like "urgent", "important", "asap", "high priority", etc. Default "normal".
-- "duration_minutes": number|null — estimated duration in minutes. Infer from "quick call" (15), "meeting" (60), etc. null if unclear.
+- "title": string — clean, concise task name (remove time/priority/duration words)
+- "due_at": string|null — ISO 8601 datetime (e.g. "2024-01-15T14:00:00"). Infer from "tomorrow", "Friday", "next week", "afternoon" (14:00), "morning" (09:00), etc. null if no date mentioned.
+- "priority": "urgent"|"high"|"normal"|"low"|null — ONLY set if the user explicitly mentions urgency (e.g. "urgent", "high priority", "ASAP", "not important", "low priority"). null if not mentioned.
+- "duration_minutes": number|null — ONLY set if the user explicitly states a duration (e.g. "30 minute call", "takes about an hour", "quick 15 min"). Do not infer from task type alone. null if not mentioned.
 - "notes": string|null — any extra context or details, null if none.
 
 Task description: "${text.replace(/"/g, "'")}"
