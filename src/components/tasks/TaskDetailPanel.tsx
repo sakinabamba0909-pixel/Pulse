@@ -176,7 +176,7 @@ export default function TaskDetailPanel({
             onBlur={saveAll}
             style={{
               border: 'none', borderBottom: '1.5px solid rgba(0,0,0,0.08)', outline: 'none',
-              fontSize: 20, fontWeight: 600, color: '#1A1A1A', background: 'transparent',
+              fontSize: 20, fontWeight: 600, background: 'transparent',
               padding: '4px 0', ...s,
               textDecoration: task.status === 'done' ? 'line-through' : 'none',
               color: task.status === 'done' ? '#9CA3AF' : '#1A1A1A',

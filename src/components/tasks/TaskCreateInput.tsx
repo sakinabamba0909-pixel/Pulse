@@ -177,7 +177,7 @@ export default function TaskCreateInput({ projects, onAdd, onClose }: Props) {
               value={nlText}
               onChange={e => setNlText(e.target.value)}
               onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); parseNL() } }}
-              placeholder="e.g. "Call dentist tomorrow afternoon, high priority""
+              placeholder={`e.g. "Call dentist tomorrow afternoon, high priority"`}
               rows={2}
               style={{
                 width: '100%', resize: 'none', border: 'none', outline: 'none',
