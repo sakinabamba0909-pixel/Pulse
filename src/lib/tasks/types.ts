@@ -83,6 +83,7 @@ export const DURATION_OPTIONS = [
 export const RECURRENCE_OPTIONS = [
   { value: 'daily',    label: 'Daily'              },
   { value: 'weekdays', label: 'Weekdays'            },
+  { value: 'custom',   label: '3× per week'        },
   { value: 'weekly',   label: 'Weekly'              },
   { value: 'biweekly', label: 'Every 2 weeks'       },
   { value: 'monthly',  label: 'Monthly'             },

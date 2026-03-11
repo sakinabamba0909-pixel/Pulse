@@ -118,7 +118,15 @@ function TaskCard({ task, allTasks, isFocused, onSelect, onComplete, onPin }: Ca
 
           {/* Badges */}
           {isBlocked && <span title="Blocked" style={{ fontSize: 12 }}>🔒</span>}
-          {task.is_delegated && <span style={{ fontSize: 11, color: '#F97316', fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>Waiting</span>}
+          {task.is_delegated && (() => {
+            const daysPending = task.delegated_at ? Math.floor((Date.now() - new Date(task.delegated_at).getTime()) / 86400000) : 0
+            const needsNudge = daysPending >= 5
+            return (
+              <span title={needsNudge ? `Waiting ${daysPending} days — consider following up` : undefined} style={{ fontSize: 11, color: needsNudge ? '#D97706' : '#F97316', fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>
+                {needsNudge ? `↩ ${daysPending}d` : 'Waiting'}
+              </span>
+            )
+          })()}
           {task.is_recurring && task.streak_count > 0 && (
             <span style={{ fontSize: 11, color: '#2DB87A', fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>🔥{task.streak_count}</span>
           )}
@@ -148,11 +156,22 @@ function TaskCard({ task, allTasks, isFocused, onSelect, onComplete, onPin }: Ca
               {done.length}/{sub.length} subtasks
             </span>
           )}
-          {task.duration_minutes && (
+          {task.duration_minutes && !task.scheduled_start && (
             <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: "'DM Sans', sans-serif" }}>
               {task.duration_minutes < 60 ? `${task.duration_minutes}m` : `${task.duration_minutes / 60}h`}
             </span>
           )}
+          {task.scheduled_start && (() => {
+            const s = new Date(task.scheduled_start)
+            const e = task.scheduled_end ? new Date(task.scheduled_end) : null
+            const fmt = (d: Date) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).replace(':00', '').replace(' ', '')
+            const day = s.toLocaleDateString('en-US', { weekday: 'short' })
+            return (
+              <span style={{ fontSize: 11, color: '#6B6B6B', fontFamily: "'DM Sans', sans-serif", background: 'rgba(0,0,0,0.04)', padding: '1px 6px', borderRadius: 6 }}>
+                🗓 {day} {fmt(s)}{e ? `–${fmt(e)}` : ''}
+              </span>
+            )
+          })()}
         </div>
 
         {/* Subtask progress bar */}
@@ -328,6 +347,16 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
       if (!b.due_at) return -1
       return new Date(a.due_at).getTime() - new Date(b.due_at).getTime()
     })
+
+    // Blocked tasks sink to the bottom — don't nag about things you can't do yet
+    const isBlocked = (t: Task) => !!t.blocked_by_task_id && topLevelTasks.find(u => u.id === t.blocked_by_task_id)?.status === 'pending'
+    list = [...list].sort((a, b) => {
+      const ab = isBlocked(a), bb = isBlocked(b)
+      if (ab && !bb) return 1
+      if (!ab && bb) return -1
+      return 0
+    })
+
     return list
   }, [topLevelTasks, filter, sort])
 
@@ -507,6 +536,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
       {showCreate && (
         <TaskCreateInput
           projects={projects}
+          allTasks={tasks}
           onAdd={handleCreate}
           onClose={() => setShowCreate(false)}
         />

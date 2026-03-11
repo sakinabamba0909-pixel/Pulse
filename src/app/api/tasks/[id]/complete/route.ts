@@ -3,7 +3,11 @@ import { NextResponse } from 'next/server'
 import type { RecurrenceRule } from '@/lib/tasks/types'
 
 function nextOccurrence(due_at: string, rule: RecurrenceRule): string {
-  const d = new Date(due_at)
+  // Never schedule next occurrence in the past
+  const now = new Date()
+  const base = new Date(due_at)
+  const d = base > now ? new Date(base) : new Date(now)
+
   switch (rule.type) {
     case 'daily':    d.setDate(d.getDate() + 1); break
     case 'weekdays': {
@@ -14,7 +18,13 @@ function nextOccurrence(due_at: string, rule: RecurrenceRule): string {
     case 'weekly':   d.setDate(d.getDate() + 7); break
     case 'biweekly': d.setDate(d.getDate() + 14); break
     case 'monthly':  d.setMonth(d.getMonth() + 1); break
-    default:         d.setDate(d.getDate() + (rule.interval ?? 7)); break
+    case 'custom': {
+      // 3x/week: roughly every 2 weekdays
+      d.setDate(d.getDate() + 2)
+      while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1)
+      break
+    }
+    default: d.setDate(d.getDate() + (rule.interval ?? 7)); break
   }
   return d.toISOString()
 }

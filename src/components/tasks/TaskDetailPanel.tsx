@@ -63,6 +63,8 @@ export default function TaskDetailPanel({
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceRule['type']>(
     (task.recurrence_rule as RecurrenceRule)?.type ?? 'weekly'
   )
+  const [scheduledStart, setScheduledStart] = useState(toLocalDatetimeInput(task.scheduled_start))
+  const [scheduledEnd, setScheduledEnd]     = useState(toLocalDatetimeInput(task.scheduled_end))
   const [blockedByTaskId, setBlockedByTaskId] = useState(task.blocked_by_task_id ?? '')
   const [reminders, setReminders] = useState<number[]>(
     task.reminders?.map(r => r.offset_minutes) ?? []
@@ -107,6 +109,8 @@ export default function TaskDetailPanel({
       recurrence_rule: isRecurring ? ({ type: recurrenceType } as RecurrenceRule) : undefined,
       blocked_by_task_id: blockedByTaskId || undefined,
       reminders: reminderObjs.length ? reminderObjs : undefined,
+      scheduled_start: scheduledStart ? new Date(scheduledStart).toISOString() : undefined,
+      scheduled_end: scheduledEnd ? new Date(scheduledEnd).toISOString() : undefined,
     })
   }
 
@@ -280,6 +284,69 @@ export default function TaskDetailPanel({
             </div>
           </div>
 
+          {/* Schedule it */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: 0.8 }}>
+                SCHEDULE IT
+              </label>
+              {durationMinutes && dueAt && !scheduledStart && (
+                <button
+                  onClick={() => {
+                    const base = new Date(dueAt)
+                    base.setHours(9, 0, 0, 0)
+                    const end = new Date(base.getTime() + durationMinutes * 60000)
+                    const start = toLocalDatetimeInput(base.toISOString())
+                    const endStr = toLocalDatetimeInput(end.toISOString())
+                    setScheduledStart(start)
+                    setScheduledEnd(endStr)
+                    save({ scheduled_start: base.toISOString(), scheduled_end: end.toISOString() })
+                  }}
+                  style={{
+                    fontSize: 11, color: '#2DB87A', background: 'none', border: 'none',
+                    cursor: 'pointer', fontWeight: 600, ...s,
+                  }}
+                >
+                  Suggest a slot
+                </button>
+              )}
+            </div>
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <input
+                type="datetime-local"
+                value={scheduledStart}
+                onChange={e => setScheduledStart(e.target.value)}
+                onBlur={saveAll}
+                placeholder="Start"
+                style={{
+                  flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px',
+                  fontSize: 12, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none',
+                }}
+              />
+              <span style={{ color: '#C4C9D0', fontSize: 12 }}>→</span>
+              <input
+                type="datetime-local"
+                value={scheduledEnd}
+                onChange={e => setScheduledEnd(e.target.value)}
+                onBlur={saveAll}
+                placeholder="End"
+                style={{
+                  flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px',
+                  fontSize: 12, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none',
+                }}
+              />
+              {scheduledStart && (
+                <button
+                  onClick={() => {
+                    setScheduledStart(''); setScheduledEnd('')
+                    save({ scheduled_start: undefined, scheduled_end: undefined })
+                  }}
+                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4C9D0', fontSize: 16 }}
+                >×</button>
+              )}
+            </div>
+          </div>
+
           {/* Project */}
           <div>
             <label style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: 0.8, display: 'block', marginBottom: 6 }}>
@@ -376,8 +443,10 @@ export default function TaskDetailPanel({
               <div>
                 <p style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A', ...s }}>Waiting on someone?</p>
                 {isDelegated && task.delegated_at && (
-                  <p style={{ fontSize: 11, color: '#9CA3AF', ...s, marginTop: 2 }}>
-                    Assigned {daysSince(task.delegated_at)}d ago
+                  <p style={{ fontSize: 11, color: daysSince(task.delegated_at) >= 5 ? '#D97706' : '#9CA3AF', ...s, marginTop: 2 }}>
+                    {daysSince(task.delegated_at) >= 5
+                      ? `${daysSince(task.delegated_at)} days — consider following up`
+                      : `Assigned ${daysSince(task.delegated_at)}d ago`}
                   </p>
                 )}
               </div>
@@ -393,17 +462,34 @@ export default function TaskDetailPanel({
               </button>
             </div>
             {isDelegated && (
-              <input
-                value={delegatedTo}
-                onChange={e => setDelegatedTo(e.target.value)}
-                onBlur={saveAll}
-                placeholder="Who are you waiting on?"
-                style={{
-                  marginTop: 10, width: '100%', border: '1px solid rgba(249,115,22,0.3)',
-                  borderRadius: 8, padding: '6px 10px', fontSize: 13, ...s,
-                  color: '#1A1A1A', outline: 'none', background: '#FAFAF9',
-                }}
-              />
+              <>
+                <input
+                  value={delegatedTo}
+                  onChange={e => setDelegatedTo(e.target.value)}
+                  onBlur={saveAll}
+                  placeholder="Who are you waiting on?"
+                  style={{
+                    marginTop: 10, width: '100%', border: '1px solid rgba(249,115,22,0.3)',
+                    borderRadius: 8, padding: '6px 10px', fontSize: 13, ...s,
+                    color: '#1A1A1A', outline: 'none', background: '#FAFAF9',
+                  }}
+                />
+                {task.delegated_at && daysSince(task.delegated_at) >= 5 && (
+                  <button
+                    onClick={() => {
+                      const name = delegatedTo || 'them'
+                      navigator.clipboard.writeText(`Hey ${name}, just checking in on "${task.title}" — any update?`)
+                    }}
+                    style={{
+                      marginTop: 8, padding: '5px 12px', borderRadius: 8, fontSize: 12, ...s,
+                      background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.25)',
+                      color: '#D97706', cursor: 'pointer', fontWeight: 500,
+                    }}
+                  >
+                    Copy follow-up message
+                  </button>
+                )}
+              </>
             )}
           </div>
 

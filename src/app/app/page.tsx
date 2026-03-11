@@ -97,14 +97,35 @@ export default async function AppPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const [{ data: profile }, { data: goals }, { data: relationships }, { data: news }] = await Promise.all([
+  const [{ data: profile }, { data: goals }, { data: relationships }, { data: news }, { data: rawTasks }] = await Promise.all([
     supabase.from('user_profiles').select('*').eq('id', user.id).single(),
     supabase.from('goals').select('id,title,category,status').eq('user_id', user.id).eq('status', 'active'),
     supabase.from('relationships').select('id,person_name,category,contact_frequency,last_contact_at').eq('user_id', user.id).order('person_name'),
     supabase.from('news_preferences').select('*').eq('user_id', user.id).single(),
+    supabase.from('tasks')
+      .select('id,title,priority,due_at,is_pinned,is_delegated,duration_minutes,blocked_by_task_id,project:projects(name,color)')
+      .eq('user_id', user.id)
+      .eq('status', 'pending')
+      .is('parent_task_id', null)
+      .order('is_pinned', { ascending: false })
+      .order('due_at', { ascending: true, nullsFirst: false })
+      .limit(12),
   ]);
 
   if (!profile?.onboarding_completed) redirect('/app/onboarding');
+
+  // Compute today's focus tasks (pinned first, then today by priority, max 3)
+  const priorityRank = (p: string) => ({ urgent: 0, high: 1, normal: 2, low: 3 }[p] ?? 2)
+  const todayStr = new Date().toISOString().split('T')[0]
+  const focusTasks = (() => {
+    const tasks = (rawTasks ?? []).filter(t => !t.blocked_by_task_id)
+    const pinned = tasks.filter((t: any) => t.is_pinned)
+    if (pinned.length >= 3) return pinned.slice(0, 3)
+    const todayTasks = tasks
+      .filter((t: any) => !t.is_pinned && t.due_at?.startsWith(todayStr))
+      .sort((a: any, b: any) => priorityRank(a.priority) - priorityRank(b.priority))
+    return [...pinned, ...todayTasks].slice(0, 3)
+  })()
 
   const now = new Date();
   const tz = profile.timezone || 'America/New_York';
@@ -248,6 +269,38 @@ export default async function AppPage() {
             )}
           </div>
         </div>
+
+        {/* ──────────────────── Today's Focus ──────────────────── */}
+        {focusTasks.length > 0 && (
+          <a href="/app/tasks" style={{ textDecoration: 'none' }}>
+            <div style={{ ...cardStyle, marginBottom: 14, animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) 0.12s both', cursor: 'pointer' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
+                <p style={{ ...labelStyle, marginBottom: 0 }}>Today&apos;s Focus</p>
+                <span style={{ fontSize: 11, color: C.accent, fontWeight: 600 }}>View all →</span>
+              </div>
+              {focusTasks.map((t: any, i: number) => {
+                const dotColor = ({ urgent: '#EF4444', high: '#F97316', normal: '#3B82F6', low: '#9CA3AF' } as Record<string, string>)[t.priority] ?? '#9CA3AF'
+                const proj = Array.isArray(t.project) ? t.project[0] : t.project
+                return (
+                  <div key={t.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0',
+                    borderBottom: i < focusTasks.length - 1 ? `1px solid ${C.divider}` : 'none',
+                  }}>
+                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0, display: 'inline-block' }} />
+                    <span style={{ fontSize: 13, color: C.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                      {t.title}
+                    </span>
+                    {proj && (
+                      <span style={{ fontSize: 11, padding: '1px 8px', borderRadius: 20, background: `${proj.color}18`, color: proj.color, fontWeight: 600, flexShrink: 0 }}>
+                        {proj.name}
+                      </span>
+                    )}
+                  </div>
+                )
+              })}
+            </div>
+          </a>
+        )}
 
         {/* ──────────────────── People ──────────────────── */}
         {relationships && relationships.length > 0 && (

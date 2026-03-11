@@ -14,13 +14,30 @@ interface ParsedPreview {
 
 interface Props {
   projects: Project[]
+  allTasks: Task[]
   onAdd: (task: Partial<Task>) => Promise<void>
   onClose: () => void
 }
 
 const PROJECT_COLORS = ['#2DB87A', '#3B82F6', '#F97316', '#8B5CF6', '#EC4899', '#14B8A6', '#F59E0B', '#6B7280']
 
-export default function TaskCreateInput({ projects, onAdd, onClose }: Props) {
+function smartSuggestDate(tasks: Task[]): { label: string; iso: string } | null {
+  const now = new Date()
+  for (let i = 1; i <= 7; i++) {
+    const d = new Date(now)
+    d.setDate(d.getDate() + i)
+    if (d.getDay() === 0 || d.getDay() === 6) continue
+    const dayStr = d.toISOString().split('T')[0]
+    const count = tasks.filter(t => t.due_at?.startsWith(dayStr) && t.status !== 'done').length
+    if (count < 3) {
+      d.setHours(10, 0, 0, 0)
+      return { label: d.toLocaleDateString('en-US', { weekday: 'long' }), iso: d.toISOString() }
+    }
+  }
+  return null
+}
+
+export default function TaskCreateInput({ projects, allTasks, onAdd, onClose }: Props) {
   const [mode, setMode] = useState<'natural' | 'form'>('natural')
   const [nlText, setNlText] = useState('')
   const [isParsing, setIsParsing] = useState(false)
@@ -312,6 +329,25 @@ export default function TaskCreateInput({ projects, onAdd, onClose }: Props) {
                     background: '#FAFAF9', outline: 'none',
                   }}
                 />
+                {!dueAt && (() => {
+                  const suggestion = smartSuggestDate(allTasks)
+                  if (!suggestion) return null
+                  return (
+                    <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>
+                      💡 You look free {suggestion.label} —{' '}
+                      <button
+                        onClick={() => {
+                          const d = new Date(suggestion.iso)
+                          const pad = (n: number) => String(n).padStart(2, '0')
+                          setDueAt(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`)
+                        }}
+                        style={{ background: 'none', border: 'none', color: '#2DB87A', fontWeight: 600, fontSize: 11, cursor: 'pointer', padding: 0, fontFamily: "'DM Sans', sans-serif" }}
+                      >
+                        Set it
+                      </button>
+                    </p>
+                  )
+                })()}
               </div>
               <div>
                 <label style={{ fontSize: 11, fontWeight: 600, color: '#9CA3AF', letterSpacing: 0.5, display: 'block', marginBottom: 4 }}>
