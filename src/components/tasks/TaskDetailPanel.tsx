@@ -158,7 +158,18 @@ function ScheduleSection({
         <input
           type="datetime-local"
           value={scheduledStart}
-          onChange={e => onChange(e.target.value, scheduledEnd)}
+          onChange={e => {
+            const newStart = e.target.value
+            if (newStart && durationMinutes && !scheduledEnd) {
+              const endDate = new Date(newStart)
+              endDate.setMinutes(endDate.getMinutes() + durationMinutes)
+              const pad = (n: number) => String(n).padStart(2, '0')
+              const endStr = `${endDate.getFullYear()}-${pad(endDate.getMonth()+1)}-${pad(endDate.getDate())}T${pad(endDate.getHours())}:${pad(endDate.getMinutes())}`
+              onChange(newStart, endStr)
+            } else {
+              onChange(newStart, scheduledEnd)
+            }
+          }}
           onBlur={onBlur}
           placeholder="Start"
           style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px', fontSize: 12, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none' }}
