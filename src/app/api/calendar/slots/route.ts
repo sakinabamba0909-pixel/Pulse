@@ -48,10 +48,26 @@ async function getCalendarEvents(accessToken: string, timeMin: string, timeMax: 
   return (data.items ?? []) as CalendarEvent[]
 }
 
-function isSameDay(a: Date, b: Date): boolean {
-  return a.getFullYear() === b.getFullYear() &&
-    a.getMonth() === b.getMonth() &&
-    a.getDate() === b.getDate()
+// Convert a local hour (e.g. 8 = 8am) to a UTC Date on the given day
+function localHourToUTC(day: Date, localHour: number, utcOffsetMinutes: number): Date {
+  const result = new Date(day)
+  const totalUtcMinutes = localHour * 60 - utcOffsetMinutes
+  result.setUTCHours(Math.floor(totalUtcMinutes / 60), totalUtcMinutes % 60, 0, 0)
+  return result
+}
+
+// Check if two dates fall on the same LOCAL calendar day given a UTC offset
+function isSameDayLocal(a: Date, b: Date, utcOffsetMinutes: number): boolean {
+  const toLocalMidnight = (d: Date) => {
+    const local = new Date(d.getTime() + utcOffsetMinutes * 60000)
+    return `${local.getUTCFullYear()}-${local.getUTCMonth()}-${local.getUTCDate()}`
+  }
+  return toLocalMidnight(a) === toLocalMidnight(b)
+}
+
+// Get local day-of-week (0=Sun) for a UTC date given offset
+function localDayOfWeek(d: Date, utcOffsetMinutes: number): number {
+  return new Date(d.getTime() + utcOffsetMinutes * 60000).getUTCDay()
 }
 
 function findFreeSlots(
@@ -59,10 +75,11 @@ function findFreeSlots(
   durationMinutes: number,
   from: Date,
   dueAt: Date | null,
+  utcOffsetMinutes: number,
 ): FreeSlot[] {
   const slots: FreeSlot[] = []
-  const WORK_START = 8   // 8am
-  const WORK_END   = 19  // 7pm
+  const WORK_START = 8   // 8am local
+  const WORK_END   = 19  // 7pm local
 
   // Search up to due date (or 7 days if no due date)
   const deadline = dueAt ?? new Date(from.getTime() + 7 * 86400000)
@@ -71,8 +88,8 @@ function findFreeSlots(
   // Build day offsets: if due date is set, put that specific day first
   const candidateDays: number[] = []
   if (dueAt) {
-    const dueDay  = new Date(dueAt); dueDay.setHours(0, 0, 0, 0)
-    const fromDay = new Date(from);  fromDay.setHours(0, 0, 0, 0)
+    const dueDay  = new Date(dueAt.getTime() + utcOffsetMinutes * 60000); dueDay.setUTCHours(0,0,0,0)
+    const fromDay = new Date(from.getTime() + utcOffsetMinutes * 60000);  fromDay.setUTCHours(0,0,0,0)
     const dueDayOffset = Math.floor((dueDay.getTime() - fromDay.getTime()) / 86400000)
     if (dueDayOffset >= 0 && dueDayOffset < maxDays) candidateDays.push(dueDayOffset)
     for (let i = 0; i < maxDays; i++) {
@@ -86,25 +103,29 @@ function findFreeSlots(
     if (slots.length >= 5) break
 
     const day = new Date(from)
-    day.setDate(day.getDate() + d)
-    if (day.getDay() === 0 || day.getDay() === 6) continue // skip weekends
+    day.setUTCDate(day.getUTCDate() + d)
 
-    // Don't go past deadline day
-    const dayDate     = new Date(day);     dayDate.setHours(0, 0, 0, 0)
-    const deadlineDay = new Date(deadline); deadlineDay.setHours(0, 0, 0, 0)
-    if (dayDate.getTime() > deadlineDay.getTime()) continue
+    const dow = localDayOfWeek(day, utcOffsetMinutes)
+    if (dow === 0 || dow === 6) continue // skip weekends in local time
 
-    const dayStart = new Date(day)
-    dayStart.setHours(WORK_START, 0, 0, 0)
+    // Don't go past deadline day (in local time)
+    if (!isSameDayLocal(day, deadline, utcOffsetMinutes)) {
+      const localDay      = new Date(day.getTime()      + utcOffsetMinutes * 60000); localDay.setUTCHours(0,0,0,0)
+      const localDeadline = new Date(deadline.getTime() + utcOffsetMinutes * 60000); localDeadline.setUTCHours(0,0,0,0)
+      if (localDay.getTime() > localDeadline.getTime()) continue
+    }
+
+    // Work window in UTC (calculated from user's local timezone)
+    const dayStart = localHourToUTC(day, WORK_START, utcOffsetMinutes)
 
     // On the due day, cap at due time (or WORK_END, whichever is earlier)
-    let workEndHour = WORK_END
-    if (dueAt && isSameDay(day, dueAt)) {
-      const dueHour = dueAt.getHours() + dueAt.getMinutes() / 60
-      if (dueHour < workEndHour) workEndHour = dueHour
+    let workEndLocal = WORK_END
+    if (dueAt && isSameDayLocal(day, dueAt, utcOffsetMinutes)) {
+      const dueLocal = new Date(dueAt.getTime() + utcOffsetMinutes * 60000)
+      const dueLocalHour = dueLocal.getUTCHours() + dueLocal.getUTCMinutes() / 60
+      if (dueLocalHour < workEndLocal) workEndLocal = dueLocalHour
     }
-    const dayEnd = new Date(day)
-    dayEnd.setHours(Math.floor(workEndHour), Math.round((workEndHour % 1) * 60), 0, 0)
+    const dayEnd = localHourToUTC(day, workEndLocal, utcOffsetMinutes)
 
     if (dayEnd.getTime() - dayStart.getTime() < durationMinutes * 60000) continue
 
@@ -128,22 +149,35 @@ function findFreeSlots(
     // Round up current time to next 15-min block if today
     if (d === 0 && from.getTime() > cursor) cursor = Math.ceil(from.getTime() / (15 * 60000)) * (15 * 60000)
 
-    const isToday    = d === 0
-    const isTomorrow = d === 1
+    const isToday    = isSameDayLocal(day, from, utcOffsetMinutes)
+    const tomorrowUtc = new Date(from.getTime() + 86400000)
+    const isTomorrow = isSameDayLocal(day, tomorrowUtc, utcOffsetMinutes)
+
+    // Format time labels in user's local timezone
+    function fmtTime(utcMs: number): string {
+      const local = new Date(utcMs + utcOffsetMinutes * 60000)
+      const h = local.getUTCHours()
+      const m = local.getUTCMinutes()
+      const ampm = h >= 12 ? 'PM' : 'AM'
+      const h12  = h % 12 || 12
+      return `${h12}:${String(m).padStart(2, '0')} ${ampm}`
+    }
+
+    function fmtDayLabel(utcMs: number): string {
+      const local = new Date(utcMs + utcOffsetMinutes * 60000)
+      const weekday = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'][local.getUTCDay()]
+      const month   = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][local.getUTCMonth()]
+      return `${weekday}, ${month} ${local.getUTCDate()}`
+    }
 
     for (const block of [...busyBlocks, { start: dayEnd.getTime(), end: dayEnd.getTime() }]) {
       const gapMs = block.start - cursor
       if (gapMs >= durationMinutes * 60000) {
-        const slotStart = new Date(cursor)
-        const slotEnd   = new Date(cursor + durationMinutes * 60000)
-        const dayLabel  = isToday
-          ? 'Today'
-          : isTomorrow
-            ? 'Tomorrow'
-            : slotStart.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
-        const timeLabel = slotStart.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-        const endLabel  = slotEnd.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
-        slots.push({ start: slotStart.toISOString(), end: slotEnd.toISOString(), label: `${dayLabel} · ${timeLabel} – ${endLabel}` })
+        const slotStart = cursor
+        const slotEnd   = cursor + durationMinutes * 60000
+        const dayLabel  = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : fmtDayLabel(slotStart)
+        const label     = `${dayLabel} · ${fmtTime(slotStart)} – ${fmtTime(slotEnd)}`
+        slots.push({ start: new Date(slotStart).toISOString(), end: new Date(slotEnd).toISOString(), label })
         if (slots.length >= 5) break
       }
       if (block.end > cursor) cursor = block.end
@@ -157,9 +191,10 @@ export async function GET(req: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const durationMinutes = parseInt(req.nextUrl.searchParams.get('duration') ?? '60', 10)
-  const dueAtParam      = req.nextUrl.searchParams.get('due_at')
-  const dueAt           = dueAtParam ? new Date(dueAtParam) : null
+  const durationMinutes  = parseInt(req.nextUrl.searchParams.get('duration')   ?? '60', 10)
+  const utcOffsetMinutes = parseInt(req.nextUrl.searchParams.get('utc_offset') ?? '0',  10)
+  const dueAtParam       = req.nextUrl.searchParams.get('due_at')
+  const dueAt            = dueAtParam ? new Date(dueAtParam) : null
 
   // Check calendar connection
   const { data: conn } = await supabase
@@ -197,7 +232,7 @@ export async function GET(req: NextRequest) {
     : new Date(now.getTime() + 8 * 86400000)
 
   const events = await getCalendarEvents(accessToken, now.toISOString(), maxDay.toISOString())
-  const slots  = findFreeSlots(events, durationMinutes, now, dueAt)
+  const slots  = findFreeSlots(events, durationMinutes, now, dueAt, utcOffsetMinutes)
 
   return NextResponse.json({ connected: true, slots })
 }

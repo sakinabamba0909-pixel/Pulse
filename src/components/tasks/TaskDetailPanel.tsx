@@ -85,7 +85,10 @@ function ScheduleSection({
     setShowSlots(true)
     setShowCustom(false)
     try {
-      const params = new URLSearchParams({ duration: String(durationMinutes) })
+      const params = new URLSearchParams({
+        duration:   String(durationMinutes),
+        utc_offset: String(-new Date().getTimezoneOffset()),
+      })
       if (dueAt) params.set('due_at', new Date(dueAt).toISOString())
       const res  = await fetch(`/api/calendar/slots?${params}`)
       const data = await res.json()
