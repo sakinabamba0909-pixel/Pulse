@@ -73,17 +73,21 @@ function ScheduleSection({
   onChange: (start: string, end: string) => void
   onBlur: () => void
 }) {
-  const [slots,          setSlots]          = useState<FreeSlot[]>([])
-  const [loadingSlots,   setLoadingSlots]   = useState(false)
-  const [calConnected,   setCalConnected]   = useState<boolean | null>(null)
-  const [showSlots,      setShowSlots]      = useState(false)
+  const [slots,        setSlots]        = useState<FreeSlot[]>([])
+  const [loadingSlots, setLoadingSlots] = useState(false)
+  const [calConnected, setCalConnected] = useState<boolean | null>(null)
+  const [showSlots,    setShowSlots]    = useState(false)
+  const [showCustom,   setShowCustom]   = useState(false)
 
   async function findSlots() {
     if (!durationMinutes) return
     setLoadingSlots(true)
     setShowSlots(true)
+    setShowCustom(false)
     try {
-      const res  = await fetch(`/api/calendar/slots?duration=${durationMinutes}`)
+      const params = new URLSearchParams({ duration: String(durationMinutes) })
+      if (dueAt) params.set('due_at', new Date(dueAt).toISOString())
+      const res  = await fetch(`/api/calendar/slots?${params}`)
       const data = await res.json()
       setCalConnected(data.connected)
       setSlots(data.slots ?? [])
@@ -94,24 +98,46 @@ function ScheduleSection({
     }
   }
 
+  function handleStartChange(newStart: string) {
+    if (newStart && durationMinutes) {
+      const endDate = new Date(newStart)
+      endDate.setMinutes(endDate.getMinutes() + durationMinutes)
+      const pad = (n: number) => String(n).padStart(2, '0')
+      const endStr = `${endDate.getFullYear()}-${pad(endDate.getMonth()+1)}-${pad(endDate.getDate())}T${pad(endDate.getHours())}:${pad(endDate.getMinutes())}`
+      onChange(newStart, endStr)
+    } else {
+      onChange(newStart, scheduledEnd)
+    }
+  }
+
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
         <label style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: 0.8 }}>
           SCHEDULE IT
         </label>
-        {durationMinutes && !scheduledStart && (
-          <button
-            onClick={findSlots}
-            disabled={loadingSlots}
-            style={{ fontSize: 11, color: '#2DB87A', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, ...s }}
-          >
-            {loadingSlots ? 'Checking...' : '✦ Find free slot'}
-          </button>
-        )}
+        <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          {durationMinutes && !scheduledStart && (
+            <button
+              onClick={findSlots}
+              disabled={loadingSlots}
+              style={{ fontSize: 11, color: '#2DB87A', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, ...s }}
+            >
+              {loadingSlots ? 'Checking...' : '✦ Find free slot'}
+            </button>
+          )}
+          {!scheduledStart && (
+            <button
+              onClick={() => { setShowCustom(v => !v); setShowSlots(false) }}
+              style={{ fontSize: 11, color: showCustom ? '#2DB87A' : '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, ...s }}
+            >
+              {showCustom ? '✕ Cancel' : '+ Custom time'}
+            </button>
+          )}
+        </div>
       </div>
 
-      {/* Free slot picker */}
+      {/* Free slot suggestions */}
       {showSlots && !scheduledStart && (
         <div style={{ marginBottom: 10 }}>
           {calConnected === false && (
@@ -132,7 +158,7 @@ function ScheduleSection({
             <p style={{ fontSize: 12, color: '#9CA3AF', ...s }}>Looking at your calendar...</p>
           )}
           {!loadingSlots && slots.length > 0 && (
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
               {slots.map((slot, i) => (
                 <button
                   key={i}
@@ -146,47 +172,45 @@ function ScheduleSection({
                   {slot.label}
                 </button>
               ))}
+              <button
+                onClick={() => { setShowCustom(v => !v) }}
+                style={{ fontSize: 11, color: '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '2px 0', ...s }}
+              >
+                {showCustom ? '▲ Hide custom time' : '+ Pick a custom time instead'}
+              </button>
             </div>
           )}
           {!loadingSlots && calConnected && slots.length === 0 && (
-            <p style={{ fontSize: 12, color: '#9CA3AF', ...s }}>No free slots found in the next 7 days.</p>
+            <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 6, ...s }}>No free slots found before the due date.</p>
           )}
         </div>
       )}
 
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-        <input
-          type="datetime-local"
-          value={scheduledStart}
-          onChange={e => {
-            const newStart = e.target.value
-            if (newStart && durationMinutes && !scheduledEnd) {
-              const endDate = new Date(newStart)
-              endDate.setMinutes(endDate.getMinutes() + durationMinutes)
-              const pad = (n: number) => String(n).padStart(2, '0')
-              const endStr = `${endDate.getFullYear()}-${pad(endDate.getMonth()+1)}-${pad(endDate.getDate())}T${pad(endDate.getHours())}:${pad(endDate.getMinutes())}`
-              onChange(newStart, endStr)
-            } else {
-              onChange(newStart, scheduledEnd)
-            }
-          }}
-          onBlur={onBlur}
-          placeholder="Start"
-          style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px', fontSize: 12, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none' }}
-        />
-        <span style={{ color: '#C4C9D0', fontSize: 12 }}>→</span>
-        <input
-          type="datetime-local"
-          value={scheduledEnd}
-          onChange={e => onChange(scheduledStart, e.target.value)}
-          onBlur={onBlur}
-          placeholder="End"
-          style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px', fontSize: 12, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none' }}
-        />
-        {scheduledStart && (
-          <button onClick={onClear} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4C9D0', fontSize: 16 }}>×</button>
-        )}
-      </div>
+      {/* Custom time picker — shown when toggled or when no scheduled time yet */}
+      {(showCustom || scheduledStart) && (
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <input
+            type="datetime-local"
+            value={scheduledStart}
+            onChange={e => handleStartChange(e.target.value)}
+            onBlur={onBlur}
+            placeholder="Start"
+            style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px', fontSize: 12, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none' }}
+          />
+          <span style={{ color: '#C4C9D0', fontSize: 12 }}>→</span>
+          <input
+            type="datetime-local"
+            value={scheduledEnd}
+            onChange={e => onChange(scheduledStart, e.target.value)}
+            onBlur={onBlur}
+            placeholder="End"
+            style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px', fontSize: 12, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none' }}
+          />
+          {scheduledStart && (
+            <button onClick={onClear} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4C9D0', fontSize: 16 }}>×</button>
+          )}
+        </div>
+      )}
     </div>
   )
 }

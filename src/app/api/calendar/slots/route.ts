@@ -48,22 +48,66 @@ async function getCalendarEvents(accessToken: string, timeMin: string, timeMax: 
   return (data.items ?? []) as CalendarEvent[]
 }
 
-function findFreeSlots(events: CalendarEvent[], durationMinutes: number, from: Date, days = 7): FreeSlot[] {
+function isSameDay(a: Date, b: Date): boolean {
+  return a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+}
+
+function findFreeSlots(
+  events: CalendarEvent[],
+  durationMinutes: number,
+  from: Date,
+  dueAt: Date | null,
+): FreeSlot[] {
   const slots: FreeSlot[] = []
   const WORK_START = 8   // 8am
   const WORK_END   = 19  // 7pm
 
-  for (let d = 0; d < days && slots.length < 5; d++) {
+  // Search up to due date (or 7 days if no due date)
+  const deadline = dueAt ?? new Date(from.getTime() + 7 * 86400000)
+  const maxDays  = Math.max(1, Math.ceil((deadline.getTime() - from.getTime()) / 86400000) + 1)
+
+  // Build day offsets: if due date is set, put that specific day first
+  const candidateDays: number[] = []
+  if (dueAt) {
+    const dueDay  = new Date(dueAt); dueDay.setHours(0, 0, 0, 0)
+    const fromDay = new Date(from);  fromDay.setHours(0, 0, 0, 0)
+    const dueDayOffset = Math.floor((dueDay.getTime() - fromDay.getTime()) / 86400000)
+    if (dueDayOffset >= 0 && dueDayOffset < maxDays) candidateDays.push(dueDayOffset)
+    for (let i = 0; i < maxDays; i++) {
+      if (i !== dueDayOffset) candidateDays.push(i)
+    }
+  } else {
+    for (let i = 0; i < maxDays; i++) candidateDays.push(i)
+  }
+
+  for (const d of candidateDays) {
+    if (slots.length >= 5) break
+
     const day = new Date(from)
     day.setDate(day.getDate() + d)
     if (day.getDay() === 0 || day.getDay() === 6) continue // skip weekends
 
+    // Don't go past deadline day
+    const dayDate     = new Date(day);     dayDate.setHours(0, 0, 0, 0)
+    const deadlineDay = new Date(deadline); deadlineDay.setHours(0, 0, 0, 0)
+    if (dayDate.getTime() > deadlineDay.getTime()) continue
+
     const dayStart = new Date(day)
     dayStart.setHours(WORK_START, 0, 0, 0)
-    const dayEnd = new Date(day)
-    dayEnd.setHours(WORK_END, 0, 0, 0)
 
-    // Get events for this day, sorted by start
+    // On the due day, cap at due time (or WORK_END, whichever is earlier)
+    let workEndHour = WORK_END
+    if (dueAt && isSameDay(day, dueAt)) {
+      const dueHour = dueAt.getHours() + dueAt.getMinutes() / 60
+      if (dueHour < workEndHour) workEndHour = dueHour
+    }
+    const dayEnd = new Date(day)
+    dayEnd.setHours(Math.floor(workEndHour), Math.round((workEndHour % 1) * 60), 0, 0)
+
+    if (dayEnd.getTime() - dayStart.getTime() < durationMinutes * 60000) continue
+
     const dayEvents = events
       .filter(e => {
         const start = new Date(e.start.dateTime ?? e.start.date ?? '')
@@ -75,24 +119,28 @@ function findFreeSlots(events: CalendarEvent[], durationMinutes: number, from: D
         return aStart - bStart
       })
 
-    // Scan for gaps
     let cursor = dayStart.getTime()
     const busyBlocks = dayEvents.map(e => ({
       start: new Date(e.start.dateTime ?? e.start.date ?? '').getTime(),
       end:   new Date(e.end.dateTime   ?? e.end.date   ?? '').getTime(),
     }))
 
-    // Also block current time if today
+    // Round up current time to next 15-min block if today
     if (d === 0 && from.getTime() > cursor) cursor = Math.ceil(from.getTime() / (15 * 60000)) * (15 * 60000)
+
+    const isToday    = d === 0
+    const isTomorrow = d === 1
 
     for (const block of [...busyBlocks, { start: dayEnd.getTime(), end: dayEnd.getTime() }]) {
       const gapMs = block.start - cursor
       if (gapMs >= durationMinutes * 60000) {
         const slotStart = new Date(cursor)
         const slotEnd   = new Date(cursor + durationMinutes * 60000)
-        const isToday   = d === 0
-        const isTomorrow = d === 1
-        const dayLabel  = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : slotStart.toLocaleDateString('en-US', { weekday: 'long' })
+        const dayLabel  = isToday
+          ? 'Today'
+          : isTomorrow
+            ? 'Tomorrow'
+            : slotStart.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })
         const timeLabel = slotStart.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
         const endLabel  = slotEnd.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })
         slots.push({ start: slotStart.toISOString(), end: slotEnd.toISOString(), label: `${dayLabel} · ${timeLabel} – ${endLabel}` })
@@ -110,6 +158,8 @@ export async function GET(req: NextRequest) {
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
   const durationMinutes = parseInt(req.nextUrl.searchParams.get('duration') ?? '60', 10)
+  const dueAtParam      = req.nextUrl.searchParams.get('due_at')
+  const dueAt           = dueAtParam ? new Date(dueAtParam) : null
 
   // Check calendar connection
   const { data: conn } = await supabase
@@ -142,11 +192,12 @@ export async function GET(req: NextRequest) {
   }
 
   const now    = new Date()
-  const maxDay = new Date(now)
-  maxDay.setDate(maxDay.getDate() + 8)
+  const maxDay = dueAt
+    ? new Date(Math.max(dueAt.getTime(), now.getTime()) + 86400000)
+    : new Date(now.getTime() + 8 * 86400000)
 
   const events = await getCalendarEvents(accessToken, now.toISOString(), maxDay.toISOString())
-  const slots  = findFreeSlots(events, durationMinutes, now)
+  const slots  = findFreeSlots(events, durationMinutes, now, dueAt)
 
   return NextResponse.json({ connected: true, slots })
 }
