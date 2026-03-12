@@ -140,20 +140,15 @@ function findFreeSlots(
         return aStart - bStart
       })
 
-    let cursor = dayStart.getTime()
     const busyBlocks = dayEvents.map(e => ({
       start: new Date(e.start.dateTime ?? e.start.date ?? '').getTime(),
       end:   new Date(e.end.dateTime   ?? e.end.date   ?? '').getTime(),
-    }))
+    })).sort((a, b) => a.start - b.start)
 
-    // Round up current time to next 15-min block if today
-    if (d === 0 && from.getTime() > cursor) cursor = Math.ceil(from.getTime() / (15 * 60000)) * (15 * 60000)
-
-    const isToday    = isSameDayLocal(day, from, utcOffsetMinutes)
+    const isToday     = isSameDayLocal(day, from, utcOffsetMinutes)
     const tomorrowUtc = new Date(from.getTime() + 86400000)
-    const isTomorrow = isSameDayLocal(day, tomorrowUtc, utcOffsetMinutes)
+    const isTomorrow  = isSameDayLocal(day, tomorrowUtc, utcOffsetMinutes)
 
-    // Format time labels in user's local timezone
     function fmtTime(utcMs: number): string {
       const local = new Date(utcMs + utcOffsetMinutes * 60000)
       const h = local.getUTCHours()
@@ -170,17 +165,35 @@ function findFreeSlots(
       return `${weekday}, ${month} ${local.getUTCDate()}`
     }
 
-    for (const block of [...busyBlocks, { start: dayEnd.getTime(), end: dayEnd.getTime() }]) {
-      const gapMs = block.start - cursor
-      if (gapMs >= durationMinutes * 60000) {
-        const slotStart = cursor
-        const slotEnd   = cursor + durationMinutes * 60000
-        const dayLabel  = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : fmtDayLabel(slotStart)
-        const label     = `${dayLabel} · ${fmtTime(slotStart)} – ${fmtTime(slotEnd)}`
-        slots.push({ start: new Date(slotStart).toISOString(), end: new Date(slotEnd).toISOString(), label })
-        if (slots.length >= 5) break
+    // Try two windows per day: morning (start–noon) and afternoon (1pm–end)
+    const noonUtc      = localHourToUTC(day, 12, utcOffsetMinutes).getTime()
+    const afternoonUtc = localHourToUTC(day, 13, utcOffsetMinutes).getTime()
+    const windows = [
+      { from: dayStart.getTime(), to: noonUtc },
+      { from: afternoonUtc,       to: dayEnd.getTime() },
+    ]
+
+    for (const win of windows) {
+      if (slots.length >= 5) break
+      let cursor = win.from
+      // If today, round up to next 15-min block
+      if (isToday && from.getTime() > cursor) cursor = Math.ceil(from.getTime() / (15 * 60000)) * (15 * 60000)
+      if (cursor >= win.to) continue
+
+      const sentinel = { start: win.to, end: win.to }
+      for (const block of [...busyBlocks.filter(b => b.end > cursor), sentinel]) {
+        const gapEnd = Math.min(block.start, win.to)
+        if (gapEnd - cursor >= durationMinutes * 60000) {
+          const slotStart = cursor
+          const slotEnd   = cursor + durationMinutes * 60000
+          const dayLabel  = isToday ? 'Today' : isTomorrow ? 'Tomorrow' : fmtDayLabel(slotStart)
+          const label     = `${dayLabel} · ${fmtTime(slotStart)} – ${fmtTime(slotEnd)}`
+          slots.push({ start: new Date(slotStart).toISOString(), end: new Date(slotEnd).toISOString(), label })
+          break  // one slot per window
+        }
+        if (block.end > cursor) cursor = block.end
+        if (cursor >= win.to) break
       }
-      if (block.end > cursor) cursor = block.end
     }
   }
   return slots

@@ -31,6 +31,8 @@ function daysSince(iso: string): number {
 
 function parseDurationInput(val: string): number | null {
   const v = val.trim().toLowerCase()
+  const t = v.match(/^(\d+):(\d{2})$/)
+  if (t) return parseInt(t[1], 10) * 60 + parseInt(t[2], 10)
   const h = v.match(/^(\d+(?:\.\d+)?)\s*h$/)
   if (h) return Math.round(parseFloat(h[1]) * 60)
   const m = v.match(/^(\d+)\s*m?$/)
@@ -61,7 +63,7 @@ interface FreeSlot { start: string; end: string; label: string }
 
 function ScheduleSection({
   durationMinutes, dueAt, scheduledStart, scheduledEnd, s,
-  onSchedule, onClear, onChange, onBlur,
+  onSchedule, onClear, onChange,
 }: {
   durationMinutes: number | null
   dueAt: string
@@ -71,13 +73,14 @@ function ScheduleSection({
   onSchedule: (start: string, end: string) => void
   onClear: () => void
   onChange: (start: string, end: string) => void
-  onBlur: () => void
 }) {
-  const [slots,        setSlots]        = useState<FreeSlot[]>([])
-  const [loadingSlots, setLoadingSlots] = useState(false)
-  const [calConnected, setCalConnected] = useState<boolean | null>(null)
-  const [showSlots,    setShowSlots]    = useState(false)
-  const [showCustom,   setShowCustom]   = useState(false)
+  const [slots,            setSlots]            = useState<FreeSlot[]>([])
+  const [loadingSlots,     setLoadingSlots]     = useState(false)
+  const [calConnected,     setCalConnected]     = useState<boolean | null>(null)
+  const [showSlots,        setShowSlots]        = useState(false)
+  const [showCustom,       setShowCustom]       = useState(false)
+  const [conflictMsg,      setConflictMsg]      = useState<string | null>(null)
+  const [checkingConflict, setCheckingConflict] = useState(false)
 
   async function findSlots() {
     setLoadingSlots(true)
@@ -100,7 +103,34 @@ function ScheduleSection({
     }
   }
 
+  async function handleSchedule() {
+    if (!scheduledStart || !scheduledEnd) return
+    setCheckingConflict(true)
+    setConflictMsg(null)
+    try {
+      const startIso = new Date(scheduledStart).toISOString()
+      const endIso   = new Date(scheduledEnd).toISOString()
+      const res  = await fetch(`/api/calendar/check?start=${encodeURIComponent(startIso)}&end=${encodeURIComponent(endIso)}`)
+      const data = await res.json()
+      if (data.conflict) {
+        setConflictMsg(`Conflicts with "${data.conflict.name}"`)
+      } else {
+        onSchedule(startIso, endIso)
+        setConflictMsg(null)
+        setShowCustom(false)
+      }
+    } catch {
+      // If check fails (e.g. no calendar), save anyway
+      onSchedule(new Date(scheduledStart).toISOString(), new Date(scheduledEnd).toISOString())
+      setConflictMsg(null)
+      setShowCustom(false)
+    } finally {
+      setCheckingConflict(false)
+    }
+  }
+
   function handleStartChange(newStart: string) {
+    setConflictMsg(null)
     if (newStart && durationMinutes) {
       const endDate = new Date(newStart)
       endDate.setMinutes(endDate.getMinutes() + durationMinutes)
@@ -119,18 +149,16 @@ function ScheduleSection({
           SCHEDULE IT
         </label>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
+          <button
+            onClick={findSlots}
+            disabled={loadingSlots}
+            style={{ fontSize: 11, color: '#2DB87A', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, ...s }}
+          >
+            {loadingSlots ? 'Checking...' : '✦ Find free slot'}
+          </button>
           {!scheduledStart && (
             <button
-              onClick={findSlots}
-              disabled={loadingSlots}
-              style={{ fontSize: 11, color: '#2DB87A', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, ...s }}
-            >
-              {loadingSlots ? 'Checking...' : '✦ Find free slot'}
-            </button>
-          )}
-          {!scheduledStart && (
-            <button
-              onClick={() => { setShowCustom(v => !v); setShowSlots(false) }}
+              onClick={() => { setShowCustom(v => !v); setShowSlots(false); setConflictMsg(null) }}
               style={{ fontSize: 11, color: showCustom ? '#2DB87A' : '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, ...s }}
             >
               {showCustom ? '✕ Cancel' : '+ Custom time'}
@@ -140,7 +168,7 @@ function ScheduleSection({
       </div>
 
       {/* Free slot suggestions */}
-      {showSlots && !scheduledStart && (
+      {showSlots && (
         <div style={{ marginBottom: 10 }}>
           {calConnected === false && (
             <div style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)', marginBottom: 8 }}>
@@ -174,12 +202,14 @@ function ScheduleSection({
                   {slot.label}
                 </button>
               ))}
-              <button
-                onClick={() => { setShowCustom(v => !v) }}
-                style={{ fontSize: 11, color: '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '2px 0', ...s }}
-              >
-                {showCustom ? '▲ Hide custom time' : '+ Pick a custom time instead'}
-              </button>
+              {!scheduledStart && (
+                <button
+                  onClick={() => { setShowCustom(v => !v); setShowSlots(false) }}
+                  style={{ fontSize: 11, color: '#9CA3AF', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '2px 0', ...s }}
+                >
+                  {showCustom ? '▲ Hide custom time' : '+ Pick a custom time instead'}
+                </button>
+              )}
             </div>
           )}
           {!loadingSlots && calConnected && slots.length === 0 && (
@@ -188,28 +218,47 @@ function ScheduleSection({
         </div>
       )}
 
-      {/* Custom time picker — shown when toggled or when no scheduled time yet */}
+      {/* Custom time picker */}
       {(showCustom || scheduledStart) && (
-        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-          <input
-            type="datetime-local"
-            value={scheduledStart}
-            onChange={e => handleStartChange(e.target.value)}
-            onBlur={onBlur}
-            placeholder="Start"
-            style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px', fontSize: 12, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none' }}
-          />
-          <span style={{ color: '#C4C9D0', fontSize: 12 }}>→</span>
-          <input
-            type="datetime-local"
-            value={scheduledEnd}
-            onChange={e => onChange(scheduledStart, e.target.value)}
-            onBlur={onBlur}
-            placeholder="End"
-            style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px', fontSize: 12, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none' }}
-          />
-          {scheduledStart && (
-            <button onClick={onClear} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4C9D0', fontSize: 16 }}>×</button>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <input
+              type="datetime-local"
+              value={scheduledStart}
+              onChange={e => handleStartChange(e.target.value)}
+              placeholder="Start"
+              style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px', fontSize: 12, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none' }}
+            />
+            <span style={{ color: '#C4C9D0', fontSize: 12 }}>→</span>
+            <input
+              type="datetime-local"
+              value={scheduledEnd}
+              onChange={e => { setConflictMsg(null); onChange(scheduledStart, e.target.value) }}
+              placeholder="End"
+              style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px', fontSize: 12, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none' }}
+            />
+            {scheduledStart && (
+              <button onClick={onClear} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4C9D0', fontSize: 16 }}>×</button>
+            )}
+          </div>
+          {scheduledStart && scheduledEnd && (
+            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+              <button
+                onClick={handleSchedule}
+                disabled={checkingConflict}
+                style={{
+                  padding: '6px 14px', borderRadius: 20,
+                  background: 'rgba(45,184,122,0.09)', border: '1px solid rgba(45,184,122,0.22)',
+                  color: '#2DB87A', fontSize: 12, fontWeight: 600,
+                  cursor: checkingConflict ? 'default' : 'pointer', ...s,
+                }}
+              >
+                {checkingConflict ? 'Checking...' : 'Schedule ✓'}
+              </button>
+              {conflictMsg && (
+                <span style={{ fontSize: 11, color: '#EF4444', ...s }}>⚠ {conflictMsg}</span>
+              )}
+            </div>
           )}
         </div>
       )}
@@ -444,7 +493,23 @@ export default function TaskDetailPanel({
             </label>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
               {DURATION_OPTIONS.map(o => (
-                <button key={o.minutes} onClick={() => { setDurationMinutes(durationMinutes === o.minutes ? null : o.minutes); save({ duration_minutes: durationMinutes === o.minutes ? undefined : o.minutes }) }} style={{
+                <button key={o.minutes} onClick={() => {
+                  const newMins = durationMinutes === o.minutes ? null : o.minutes
+                  setDurationMinutes(newMins)
+                  const updates: Partial<Task> = { duration_minutes: newMins ?? undefined }
+                  if (newMins && !scheduledStart) {
+                    const now = new Date()
+                    const rounded = new Date(Math.ceil(now.getTime() / (15 * 60000)) * (15 * 60000))
+                    const endDate = new Date(rounded.getTime() + newMins * 60000)
+                    const start = toLocalDatetimeInput(rounded.toISOString())
+                    const end   = toLocalDatetimeInput(endDate.toISOString())
+                    setScheduledStart(start)
+                    setScheduledEnd(end)
+                    updates.scheduled_start = rounded.toISOString()
+                    updates.scheduled_end   = endDate.toISOString()
+                  }
+                  save(updates)
+                }} style={{
                   padding: '5px 12px', borderRadius: 20, border: '1px solid',
                   borderColor: durationMinutes === o.minutes ? '#2DB87A' : 'rgba(0,0,0,0.1)',
                   background: durationMinutes === o.minutes ? 'rgba(45,184,122,0.09)' : 'transparent',
@@ -488,7 +553,6 @@ export default function TaskDetailPanel({
               save({ scheduled_start: undefined, scheduled_end: undefined })
             }}
             onChange={(start, end) => { setScheduledStart(start); setScheduledEnd(end) }}
-            onBlur={saveAll}
           />
 
           {/* Project */}
