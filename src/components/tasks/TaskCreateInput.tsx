@@ -312,9 +312,10 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
     if (!title.trim()) return
     setIsSubmitting(true)
     try {
+      const dueAtIso = dueAt ? new Date(dueAt).toISOString() : undefined
       const created = await onAdd({
         title:            title.trim(),
-        due_at:           dueAt ? new Date(dueAt).toISOString() : undefined,
+        due_at:           dueAtIso,
         priority,
         project_id:       projectId || undefined,
         duration_minutes: durationMinutes ?? undefined,
@@ -326,19 +327,35 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
         streak_count:     0,
       })
 
-      const singleParsed = parsedTasks[0]
-      if (singleParsed?.suggestions?.length && created?.id) {
-        setActiveSuggestions(singleParsed.suggestions.map(s => ({
-          taskId:          created.id,
-          type:            s.type,
-          text:            s.text,
-          relationship_id: singleParsed.relationship_id ?? undefined,
-          due_at:          singleParsed.due_at ?? undefined,
-          duration_minutes: singleParsed.duration_minutes ?? undefined,
-        })))
-        setShowPreview(false)
-        setMode('natural')
-        setTitle(''); setNlText(''); setDueAt(''); setParsedTasks([])
+      if (created?.id) {
+        // Always offer a reminder when there's a due date
+        const suggestions: ActiveSuggestion[] = []
+        if (dueAtIso) {
+          suggestions.push({ taskId: created.id, type: 'reminder', text: 'Set a morning reminder?', due_at: dueAtIso, duration_minutes: durationMinutes ?? undefined })
+        }
+        // Also carry over any AI suggestions from smart mode (but skip reminder if already added)
+        const singleParsed = parsedTasks[0]
+        if (singleParsed?.suggestions?.length) {
+          for (const s of singleParsed.suggestions) {
+            if (s.type === 'reminder' && dueAtIso) continue // already added above
+            suggestions.push({
+              taskId:           created.id,
+              type:             s.type,
+              text:             s.text,
+              relationship_id:  singleParsed.relationship_id ?? undefined,
+              due_at:           singleParsed.due_at ?? undefined,
+              duration_minutes: singleParsed.duration_minutes ?? undefined,
+            })
+          }
+        }
+        if (suggestions.length > 0) {
+          setActiveSuggestions(suggestions)
+          setShowPreview(false)
+          setMode('natural')
+          setTitle(''); setNlText(''); setDueAt(''); setParsedTasks([])
+        } else {
+          onClose()
+        }
       } else {
         onClose()
       }
@@ -368,11 +385,16 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
           is_pinned:        false,
           streak_count:     0,
         })
-        if (task?.id && t.suggestions?.length) created.push({ taskId: task.id, parsed: t })
+        if (task?.id) created.push({ taskId: task.id, parsed: t })
       }
 
-      const allSuggestions: ActiveSuggestion[] = created.flatMap(({ taskId, parsed }) =>
-        parsed.suggestions.map(s => ({
+      const allSuggestions: ActiveSuggestion[] = created.flatMap(({ taskId, parsed }) => {
+        const hasDue = !!parsed.due_at
+        const aiHasReminder = parsed.suggestions?.some(s => s.type === 'reminder')
+        const extra: ActiveSuggestion[] = (!aiHasReminder && hasDue)
+          ? [{ taskId, type: 'reminder', text: 'Set a morning reminder?', due_at: parsed.due_at ?? undefined, duration_minutes: parsed.duration_minutes ?? undefined }]
+          : []
+        const aiSugs: ActiveSuggestion[] = (parsed.suggestions ?? []).map(s => ({
           taskId,
           type:            s.type,
           text:            s.text,
@@ -380,7 +402,8 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
           due_at:          parsed.due_at ?? undefined,
           duration_minutes: parsed.duration_minutes ?? undefined,
         }))
-      ).slice(0, 3)
+        return [...extra, ...aiSugs]
+      }).slice(0, 3)
 
       if (allSuggestions.length > 0) {
         setActiveSuggestions(allSuggestions)
