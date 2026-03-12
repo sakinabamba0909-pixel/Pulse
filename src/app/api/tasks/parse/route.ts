@@ -50,7 +50,7 @@ Rules:
     "by [day]" or "on [day]" = end of that day (23:59)
     "before [day]" = the day BEFORE that day at 23:59 (e.g. "before Friday" → Thursday 23:59, "before the weekend" → Friday 23:59)
     "end of the week" = Friday 23:59
-- priority: "urgent" or "normal" or "low" ONLY — set only if explicitly signalled ("urgent", "ASAP", "not important", "low priority"). Otherwise null.
+- priority: "urgent" or "normal" or "low" ONLY — three levels only. Set only if explicitly signalled ("urgent", "ASAP", "not important", "low priority"). Otherwise null.
 - duration_minutes: set ONLY when explicitly stated ("30-min call", "takes about an hour"). Otherwise null.
 - project_id: match to the CLOSEST existing project by context. Only match if confident. Use exact id from the list.
 - relationship_id: if a person is mentioned (by name OR relation like "mom", "boss"), match to the closest contact. Use exact id.
@@ -73,7 +73,6 @@ Return ONLY valid JSON. No markdown, no explanation.`
       "due_at": "ISO 8601 datetime or null",
       "priority": "urgent|normal|low|null",
       "duration_minutes": "number or null",
-      "notes": "string or null",
       "project_id": "string (exact id) or null",
       "relationship_id": "string (exact id) or null",
       "is_commitment": "boolean",

@@ -11,7 +11,6 @@ interface ParsedTask {
   due_at: string | null
   priority: Priority | null
   duration_minutes: number | null
-  notes: string | null
   project_id: string | null
   relationship_id: string | null
   is_commitment: boolean
@@ -94,7 +93,7 @@ function ParsedTaskCard({ task, projects, relationships, checked, onToggle, onDi
   const project  = projects.find(p => p.id === task.project_id)
   const person   = relationships.find(r => r.id === task.relationship_id)
   const dotColor = task.priority
-    ? ({ urgent: '#EF4444', high: '#F97316', normal: '#3B82F6', low: '#9CA3AF' } as Record<string,string>)[task.priority]
+    ? ({ urgent: '#EF4444', normal: '#3B82F6', low: '#9CA3AF' } as Record<string,string>)[task.priority]
     : '#9CA3AF'
 
   return (
@@ -363,7 +362,6 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
           project_id:       t.project_id ?? undefined,
           relationship_id:  t.relationship_id ?? undefined,
           duration_minutes: t.duration_minutes ?? undefined,
-          description:      t.notes ?? undefined,
           status:           'pending',
           is_recurring:     false,
           is_delegated:     false,
@@ -399,22 +397,42 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
 
   // ── Accept suggestion ──
   async function acceptSuggestion(s: ActiveSuggestion) {
-    const updates: Record<string, any> = {}
+    const taskUpdates: Record<string, any> = {}
+
     if (s.type === 'reminder') {
-      updates.reminders = [{ offset_minutes: -480, label: 'Morning of' }]
+      // Compute remind_at: morning (09:00) of due date, or tomorrow morning if no due_at
+      const base = s.due_at ? new Date(s.due_at) : (() => { const d = new Date(); d.setDate(d.getDate() + 1); return d })()
+      base.setHours(9, 0, 0, 0)
+      const remindAt = base.toISOString()
+
+      // Persist to reminders table so it shows in the Reminders tab
+      await fetch('/api/reminders', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          task_id:   s.taskId,
+          remind_at: remindAt,
+          channel:   'push',
+          message:   s.text,
+          status:    'pending',
+        }),
+      })
+
+      // Also mark on the task itself
+      taskUpdates.reminders = [{ offset_minutes: -480, label: 'Morning of' }]
     } else if (s.type === 'link_contact' && s.relationship_id) {
-      updates.relationship_id = s.relationship_id
+      taskUpdates.relationship_id = s.relationship_id
     } else if (s.type === 'block_time' && s.due_at && s.duration_minutes) {
       const start = new Date(s.due_at)
       start.setHours(9, 0, 0, 0)
       const end = new Date(start.getTime() + s.duration_minutes * 60000)
-      updates.scheduled_start = start.toISOString()
-      updates.scheduled_end   = end.toISOString()
+      taskUpdates.scheduled_start = start.toISOString()
+      taskUpdates.scheduled_end   = end.toISOString()
     }
-    if (Object.keys(updates).length > 0) {
+
+    if (Object.keys(taskUpdates).length > 0) {
       await fetch(`/api/tasks/${s.taskId}`, {
         method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
+        body: JSON.stringify(taskUpdates),
       })
     }
     const remaining = activeSuggestions.filter(x => x !== s)
@@ -557,7 +575,6 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
                       setDueAt(t.due_at ? toLocalDatetimeInput(t.due_at) : '')
                       if (t.priority) setPriority(t.priority)
                       setDurationMinutes(t.duration_minutes ?? null)
-                      setNotes(t.notes ?? '')
                       setProjectId(t.project_id ?? '')
                       setShowPreview(false)
                       setMode('form')
@@ -727,7 +744,7 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
                   <div>
                     <label style={{ fontSize: 11, fontWeight: 600, color: '#9CA3AF', letterSpacing: 0.5, display: 'block', marginBottom: 4, fontFamily: "'DM Sans', sans-serif" }}>PRIORITY</label>
                     <div style={{ display: 'flex', gap: 6 }}>
-                      {(['urgent', 'high', 'normal', 'low'] as Priority[]).map(p => {
+                      {(['urgent', 'normal', 'low'] as Priority[]).map(p => {
                         const cfg = PRIORITY_CONFIG[p]
                         return (
                           <button key={p} onClick={() => setPriority(p)} style={{

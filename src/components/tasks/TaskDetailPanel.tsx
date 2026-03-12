@@ -55,6 +55,131 @@ function smartSuggestDate(tasks: Task[]): string {
   return 'next week'
 }
 
+// ─── ScheduleSection ──────────────────────────────────────────────────────────
+
+interface FreeSlot { start: string; end: string; label: string }
+
+function ScheduleSection({
+  durationMinutes, dueAt, scheduledStart, scheduledEnd, s,
+  onSchedule, onClear, onChange, onBlur,
+}: {
+  durationMinutes: number | null
+  dueAt: string
+  scheduledStart: string
+  scheduledEnd: string
+  s: React.CSSProperties
+  onSchedule: (start: string, end: string) => void
+  onClear: () => void
+  onChange: (start: string, end: string) => void
+  onBlur: () => void
+}) {
+  const [slots,          setSlots]          = useState<FreeSlot[]>([])
+  const [loadingSlots,   setLoadingSlots]   = useState(false)
+  const [calConnected,   setCalConnected]   = useState<boolean | null>(null)
+  const [showSlots,      setShowSlots]      = useState(false)
+
+  async function findSlots() {
+    if (!durationMinutes) return
+    setLoadingSlots(true)
+    setShowSlots(true)
+    try {
+      const res  = await fetch(`/api/calendar/slots?duration=${durationMinutes}`)
+      const data = await res.json()
+      setCalConnected(data.connected)
+      setSlots(data.slots ?? [])
+    } catch {
+      setCalConnected(false)
+    } finally {
+      setLoadingSlots(false)
+    }
+  }
+
+  return (
+    <div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
+        <label style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: 0.8 }}>
+          SCHEDULE IT
+        </label>
+        {durationMinutes && !scheduledStart && (
+          <button
+            onClick={findSlots}
+            disabled={loadingSlots}
+            style={{ fontSize: 11, color: '#2DB87A', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, ...s }}
+          >
+            {loadingSlots ? 'Checking...' : '✦ Find free slot'}
+          </button>
+        )}
+      </div>
+
+      {/* Free slot picker */}
+      {showSlots && !scheduledStart && (
+        <div style={{ marginBottom: 10 }}>
+          {calConnected === false && (
+            <div style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.08)', marginBottom: 8 }}>
+              <p style={{ fontSize: 12, color: '#6B6B6B', margin: '0 0 8px', ...s }}>
+                Connect Google Calendar to see your real free slots.
+              </p>
+              <a href="/api/calendar/connect" style={{
+                display: 'inline-flex', alignItems: 'center', gap: 6,
+                padding: '5px 12px', borderRadius: 8, background: '#1A1A1A',
+                color: '#FFF', fontSize: 12, fontWeight: 600, textDecoration: 'none', ...s,
+              }}>
+                Connect Google Calendar →
+              </a>
+            </div>
+          )}
+          {loadingSlots && (
+            <p style={{ fontSize: 12, color: '#9CA3AF', ...s }}>Looking at your calendar...</p>
+          )}
+          {!loadingSlots && slots.length > 0 && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+              {slots.map((slot, i) => (
+                <button
+                  key={i}
+                  onClick={() => { onSchedule(slot.start, slot.end); setShowSlots(false) }}
+                  style={{
+                    padding: '8px 12px', borderRadius: 10, border: '1px solid rgba(45,184,122,0.2)',
+                    background: 'rgba(45,184,122,0.04)', cursor: 'pointer', textAlign: 'left',
+                    fontSize: 12, color: '#1A1A1A', ...s, transition: 'background 0.1s',
+                  }}
+                >
+                  {slot.label}
+                </button>
+              ))}
+            </div>
+          )}
+          {!loadingSlots && calConnected && slots.length === 0 && (
+            <p style={{ fontSize: 12, color: '#9CA3AF', ...s }}>No free slots found in the next 7 days.</p>
+          )}
+        </div>
+      )}
+
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+        <input
+          type="datetime-local"
+          value={scheduledStart}
+          onChange={e => onChange(e.target.value, scheduledEnd)}
+          onBlur={onBlur}
+          placeholder="Start"
+          style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px', fontSize: 12, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none' }}
+        />
+        <span style={{ color: '#C4C9D0', fontSize: 12 }}>→</span>
+        <input
+          type="datetime-local"
+          value={scheduledEnd}
+          onChange={e => onChange(scheduledStart, e.target.value)}
+          onBlur={onBlur}
+          placeholder="End"
+          style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px', fontSize: 12, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none' }}
+        />
+        {scheduledStart && (
+          <button onClick={onClear} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4C9D0', fontSize: 16 }}>×</button>
+        )}
+      </div>
+    </div>
+  )
+}
+
 export default function TaskDetailPanel({
   task, allTasks, projects, relationships,
   onUpdate, onDelete, onComplete, onAddSubtask, onClose
@@ -310,67 +435,24 @@ export default function TaskDetailPanel({
           </div>
 
           {/* Schedule it */}
-          <div>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: 0.8 }}>
-                SCHEDULE IT
-              </label>
-              {durationMinutes && dueAt && !scheduledStart && (
-                <button
-                  onClick={() => {
-                    const base = new Date(dueAt)
-                    base.setHours(9, 0, 0, 0)
-                    const end = new Date(base.getTime() + durationMinutes * 60000)
-                    const start = toLocalDatetimeInput(base.toISOString())
-                    const endStr = toLocalDatetimeInput(end.toISOString())
-                    setScheduledStart(start)
-                    setScheduledEnd(endStr)
-                    save({ scheduled_start: base.toISOString(), scheduled_end: end.toISOString() })
-                  }}
-                  style={{
-                    fontSize: 11, color: '#2DB87A', background: 'none', border: 'none',
-                    cursor: 'pointer', fontWeight: 600, ...s,
-                  }}
-                >
-                  Suggest a slot
-                </button>
-              )}
-            </div>
-            <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
-              <input
-                type="datetime-local"
-                value={scheduledStart}
-                onChange={e => setScheduledStart(e.target.value)}
-                onBlur={saveAll}
-                placeholder="Start"
-                style={{
-                  flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px',
-                  fontSize: 12, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none',
-                }}
-              />
-              <span style={{ color: '#C4C9D0', fontSize: 12 }}>→</span>
-              <input
-                type="datetime-local"
-                value={scheduledEnd}
-                onChange={e => setScheduledEnd(e.target.value)}
-                onBlur={saveAll}
-                placeholder="End"
-                style={{
-                  flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px',
-                  fontSize: 12, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none',
-                }}
-              />
-              {scheduledStart && (
-                <button
-                  onClick={() => {
-                    setScheduledStart(''); setScheduledEnd('')
-                    save({ scheduled_start: undefined, scheduled_end: undefined })
-                  }}
-                  style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4C9D0', fontSize: 16 }}
-                >×</button>
-              )}
-            </div>
-          </div>
+          <ScheduleSection
+            durationMinutes={durationMinutes}
+            dueAt={dueAt}
+            scheduledStart={scheduledStart}
+            scheduledEnd={scheduledEnd}
+            s={s}
+            onSchedule={(start, end) => {
+              setScheduledStart(toLocalDatetimeInput(start))
+              setScheduledEnd(toLocalDatetimeInput(end))
+              save({ scheduled_start: start, scheduled_end: end })
+            }}
+            onClear={() => {
+              setScheduledStart(''); setScheduledEnd('')
+              save({ scheduled_start: undefined, scheduled_end: undefined })
+            }}
+            onChange={(start, end) => { setScheduledStart(start); setScheduledEnd(end) }}
+            onBlur={saveAll}
+          />
 
           {/* Project */}
           <div>

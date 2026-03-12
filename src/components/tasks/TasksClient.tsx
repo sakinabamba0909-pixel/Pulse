@@ -41,7 +41,7 @@ function isOverdue(due_at?: string): boolean {
   return new Date(due_at) < startOfDay(new Date())
 }
 
-function priorityRank(p: Priority) { return { urgent: 0, high: 1, normal: 2, low: 3 }[p] }
+function priorityRank(p: Priority) { return { urgent: 0, normal: 1, low: 2 }[p] }
 
 type Filter = 'all' | 'today' | 'week' | 'waiting' | 'priority'
 type Sort   = 'due_date' | 'priority' | 'created_at'
@@ -225,7 +225,7 @@ function FilterBar({ filter, sort, onFilter, onSort, onAdd, projects }: {
     { key: 'today',    label: 'Today'        },
     { key: 'week',     label: 'This week'    },
     { key: 'waiting',  label: 'Waiting'      },
-    { key: 'priority', label: 'Urgent + high'},
+    { key: 'priority', label: 'Urgent'},
   ]
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -335,7 +335,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
     if (filter === 'today')    list = list.filter(t => dueBucket(t.due_at) === 'today')
     if (filter === 'week')     list = list.filter(t => ['today','tomorrow','week'].includes(dueBucket(t.due_at)))
     if (filter === 'waiting')  list = list.filter(t => t.is_delegated)
-    if (filter === 'priority') list = list.filter(t => t.priority === 'urgent' || t.priority === 'high')
+    if (filter === 'priority') list = list.filter(t => t.priority === 'urgent')
 
     // Apply sort
     list = [...list].sort((a, b) => {
@@ -512,7 +512,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
                 {filter === 'today'    && 'Nothing due today — nice work!'}
                 {filter === 'week'     && 'Your week is clear.'}
                 {filter === 'waiting'  && 'No tasks waiting on others.'}
-                {filter === 'priority' && 'No urgent or high priority tasks.'}
+                {filter === 'priority' && 'No urgent tasks.'}
               </p>
             </div>
           ) : (

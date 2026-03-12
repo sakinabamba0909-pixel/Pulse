@@ -1,4 +1,4 @@
-export type Priority = 'urgent' | 'high' | 'normal' | 'low'
+export type Priority = 'urgent' | 'normal' | 'low'
 export type TaskStatus = 'pending' | 'done'
 
 export interface RecurrenceRule {
@@ -67,7 +67,6 @@ export interface Relationship {
 
 export const PRIORITY_CONFIG: Record<Priority, { label: string; color: string; bg: string; border: string }> = {
   urgent: { label: 'Urgent', color: '#EF4444', bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.2)'  },
-  high:   { label: 'High',   color: '#F97316', bg: 'rgba(249,115,22,0.08)', border: 'rgba(249,115,22,0.2)' },
   normal: { label: 'Normal', color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)' },
   low:    { label: 'Low',    color: '#9CA3AF', bg: 'rgba(156,163,175,0.08)',border: 'rgba(156,163,175,0.2)'},
 }
