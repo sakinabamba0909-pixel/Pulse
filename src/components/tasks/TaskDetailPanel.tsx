@@ -80,13 +80,12 @@ function ScheduleSection({
   const [showCustom,   setShowCustom]   = useState(false)
 
   async function findSlots() {
-    if (!durationMinutes) return
     setLoadingSlots(true)
     setShowSlots(true)
     setShowCustom(false)
     try {
       const params = new URLSearchParams({
-        duration:   String(durationMinutes),
+        duration:   String(durationMinutes ?? 60),
         utc_offset: String(-new Date().getTimezoneOffset()),
       })
       if (dueAt) params.set('due_at', new Date(dueAt).toISOString())
@@ -120,7 +119,7 @@ function ScheduleSection({
           SCHEDULE IT
         </label>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          {durationMinutes && !scheduledStart && (
+          {!scheduledStart && (
             <button
               onClick={findSlots}
               disabled={loadingSlots}
