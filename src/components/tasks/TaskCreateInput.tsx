@@ -3,6 +3,7 @@
 import { useState, useRef, useEffect } from 'react'
 import type { Task, Project, Relationship, Priority } from '@/lib/tasks/types'
 import { PRIORITY_CONFIG } from '@/lib/tasks/types'
+import ScheduleSection from './ScheduleSection'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -222,6 +223,8 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
   const [projectId,       setProjectId]       = useState('')
   const [durationMinutes, setDurationMinutes] = useState<number | null>(null)
   const [notes,           setNotes]           = useState('')
+  const [scheduledStart,  setScheduledStart]  = useState('')
+  const [scheduledEnd,    setScheduledEnd]    = useState('')
 
   // Inline project creation
   const [showNewProject,  setShowNewProject]  = useState(false)
@@ -320,6 +323,8 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
         project_id:       projectId || undefined,
         duration_minutes: durationMinutes ?? undefined,
         description:      notes || undefined,
+        scheduled_start:  scheduledStart ? new Date(scheduledStart).toISOString() : undefined,
+        scheduled_end:    scheduledEnd   ? new Date(scheduledEnd).toISOString()   : undefined,
         status:           'pending',
         is_recurring:     false,
         is_delegated:     false,
@@ -799,6 +804,21 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
                     ))}
                   </div>
                 </div>
+
+                {/* Schedule */}
+                <ScheduleSection
+                  durationMinutes={durationMinutes}
+                  dueAt={dueAt}
+                  scheduledStart={scheduledStart}
+                  scheduledEnd={scheduledEnd}
+                  onSchedule={(start, end) => {
+                    const pad = (n: number) => String(n).padStart(2, '0')
+                    const toLocal = (iso: string) => { const d = new Date(iso); return `${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}` }
+                    setScheduledStart(toLocal(start)); setScheduledEnd(toLocal(end))
+                  }}
+                  onClear={() => { setScheduledStart(''); setScheduledEnd('') }}
+                  onChange={(start, end) => { setScheduledStart(start); setScheduledEnd(end) }}
+                />
 
                 {/* Project */}
                 <div>

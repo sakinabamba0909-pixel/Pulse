@@ -93,16 +93,16 @@ function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSe
         transition: 'all 0.15s', marginBottom: 6,
       }}
     >
-      {/* Selection circle */}
+      {/* Selection circle — always visible but subtle when unselected */}
       <div
         onClick={e => { e.stopPropagation(); onToggleSelect(task.id) }}
         style={{
           width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginTop: 1,
-          border: `1.5px solid ${isSelected ? '#2DB87A' : 'rgba(0,0,0,0.18)'}`,
+          border: `1.5px solid ${isSelected ? '#2DB87A' : hovered ? 'rgba(0,0,0,0.35)' : 'rgba(0,0,0,0.15)'}`,
           background: isSelected ? '#2DB87A' : 'transparent',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          opacity: showSelectionCircle ? 1 : 0,
-          transition: 'opacity 0.15s, background 0.15s',
+          opacity: isSelected || hovered ? 1 : 0.4,
+          transition: 'opacity 0.15s, border-color 0.15s, background 0.15s',
           cursor: 'pointer', flexBasis: 18,
         }}
       >
@@ -467,6 +467,16 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
     if (selectedTask && ids.includes(selectedTask.id)) setSelectedTask(null)
   }, [selectedIds, selectedTask])
 
+  const handleSelectAll = useCallback(() => {
+    const allVisibleIds = activeTasks.map(t => t.id)
+    const allSelected = allVisibleIds.every(id => selectedIds.has(id))
+    if (allSelected) {
+      setSelectedIds(new Set())
+    } else {
+      setSelectedIds(new Set(allVisibleIds))
+    }
+  }, [activeTasks, selectedIds])
+
   const sharedCardProps = { isSelectionMode, selectedIds, onSelect: setSelectedTask, onComplete: handleComplete, onPin: handlePin, onToggleSelect: handleToggleSelect }
 
   return (
@@ -554,45 +564,53 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
       )}
 
       {/* Bulk action bar */}
-      {isSelectionMode && (
-        <div style={{
-          position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
-          display: 'flex', alignItems: 'center', gap: 8,
-          background: '#1A1A1A', borderRadius: 28, padding: '10px 10px 10px 18px',
-          boxShadow: '0 8px 32px rgba(0,0,0,0.22)',
-          fontFamily: "'DM Sans', sans-serif",
-          animation: 'slideUp 0.2s ease',
-          whiteSpace: 'nowrap',
-        }}>
-          <span style={{ fontSize: 13, color: '#9CA3AF', marginRight: 4 }}>
-            {selectedIds.size} selected
-          </span>
-          <button onClick={handleBulkComplete} style={{
-            padding: '7px 16px', borderRadius: 20,
-            background: 'rgba(45,184,122,0.18)', border: '1px solid rgba(45,184,122,0.3)',
-            color: '#2DB87A', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+      {isSelectionMode && (() => {
+        const allSelected = activeTasks.length > 0 && activeTasks.every(t => selectedIds.has(t.id))
+        return (
+          <div style={{
+            position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+            display: 'flex', alignItems: 'center', gap: 6,
+            background: '#1A1A1A', borderRadius: 28, padding: '8px 8px 8px 16px',
+            boxShadow: '0 8px 32px rgba(0,0,0,0.22)',
             fontFamily: "'DM Sans', sans-serif",
+            animation: 'slideUp 0.2s ease',
+            whiteSpace: 'nowrap',
           }}>
-            ✓ Complete
-          </button>
-          <button onClick={handleBulkDelete} style={{
-            padding: '7px 16px', borderRadius: 20,
-            background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.22)',
-            color: '#EF4444', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            fontFamily: "'DM Sans', sans-serif",
-          }}>
-            Delete
-          </button>
-          <button onClick={() => setSelectedIds(new Set())} style={{
-            padding: '7px 12px', borderRadius: 20,
-            background: 'rgba(255,255,255,0.08)', border: 'none',
-            color: '#9CA3AF', fontSize: 13, cursor: 'pointer',
-            fontFamily: "'DM Sans', sans-serif",
-          }}>
-            Cancel
-          </button>
-        </div>
-      )}
+            <span style={{ fontSize: 13, color: '#9CA3AF', marginRight: 2 }}>
+              {selectedIds.size} selected
+            </span>
+            <button onClick={handleSelectAll} style={{
+              padding: '6px 14px', borderRadius: 20,
+              background: 'rgba(255,255,255,0.1)', border: 'none',
+              color: '#FFFFFF', fontSize: 12, fontWeight: 500, cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif",
+            }}>
+              {allSelected ? 'Deselect all' : 'Select all'}
+            </button>
+            <button onClick={handleBulkComplete} style={{
+              padding: '6px 14px', borderRadius: 20,
+              background: 'rgba(45,184,122,0.18)', border: '1px solid rgba(45,184,122,0.3)',
+              color: '#2DB87A', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif",
+            }}>
+              ✓ Complete
+            </button>
+            <button onClick={handleBulkDelete} style={{
+              padding: '6px 14px', borderRadius: 20,
+              background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.22)',
+              color: '#EF4444', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              fontFamily: "'DM Sans', sans-serif",
+            }}>
+              Delete
+            </button>
+            <button onClick={() => setSelectedIds(new Set())} style={{
+              padding: '6px 10px', borderRadius: 20,
+              background: 'rgba(255,255,255,0.08)', border: 'none',
+              color: '#9CA3AF', fontSize: 18, lineHeight: 1, cursor: 'pointer',
+            }}>×</button>
+          </div>
+        )
+      })()}
 
       {/* Create input overlay */}
       {showCreate && (
