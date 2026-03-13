@@ -52,18 +52,22 @@ interface CardProps {
   task: Task
   allTasks: Task[]
   isFocused?: boolean
+  isSelectionMode: boolean
+  isSelected: boolean
   onSelect: (t: Task) => void
   onComplete: (id: string) => void
   onPin: (id: string, pinned: boolean) => void
+  onToggleSelect: (id: string) => void
 }
 
-function TaskCard({ task, allTasks, isFocused, onSelect, onComplete, onPin }: CardProps) {
+function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSelect, onComplete, onPin, onToggleSelect }: CardProps) {
   const [checking, setChecking] = useState(false)
-  const cfg   = PRIORITY_CONFIG[task.priority]
-  const sub   = allTasks.filter(t => t.parent_task_id === task.id)
-  const done  = sub.filter(t => t.status === 'done')
+  const [hovered,  setHovered]  = useState(false)
+  const cfg       = PRIORITY_CONFIG[task.priority]
+  const sub       = allTasks.filter(t => t.parent_task_id === task.id)
+  const done      = sub.filter(t => t.status === 'done')
   const isBlocked = !!task.blocked_by_task_id && allTasks.find(t => t.id === task.blocked_by_task_id)?.status === 'pending'
-  const isDone = task.status === 'done'
+  const isDone    = task.status === 'done'
 
   async function handleCheck(e: React.MouseEvent) {
     e.stopPropagation()
@@ -73,19 +77,39 @@ function TaskCard({ task, allTasks, isFocused, onSelect, onComplete, onPin }: Ca
     setChecking(false)
   }
 
+  const showSelectionCircle = isSelectionMode || hovered
+
   return (
     <div
-      onClick={() => onSelect(task)}
+      onClick={() => isSelectionMode ? onToggleSelect(task.id) : onSelect(task)}
+      onMouseEnter={() => setHovered(true)}
+      onMouseLeave={() => setHovered(false)}
       style={{
-        display: 'flex', alignItems: 'flex-start', gap: 12,
+        display: 'flex', alignItems: 'flex-start', gap: 10,
         padding: '12px 14px', borderRadius: 16,
-        background: isFocused ? 'rgba(45,184,122,0.04)' : '#FFFFFF',
-        border: `1px solid ${isFocused ? 'rgba(45,184,122,0.18)' : 'rgba(0,0,0,0.07)'}`,
+        background: isSelected ? 'rgba(45,184,122,0.06)' : isFocused ? 'rgba(45,184,122,0.04)' : '#FFFFFF',
+        border: `1px solid ${isSelected ? 'rgba(45,184,122,0.3)' : isFocused ? 'rgba(45,184,122,0.18)' : 'rgba(0,0,0,0.07)'}`,
         cursor: 'pointer', opacity: isBlocked ? 0.55 : 1,
         transition: 'all 0.15s', marginBottom: 6,
       }}
     >
-      {/* Checkbox */}
+      {/* Selection circle */}
+      <div
+        onClick={e => { e.stopPropagation(); onToggleSelect(task.id) }}
+        style={{
+          width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginTop: 1,
+          border: `1.5px solid ${isSelected ? '#2DB87A' : 'rgba(0,0,0,0.18)'}`,
+          background: isSelected ? '#2DB87A' : 'transparent',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+          opacity: showSelectionCircle ? 1 : 0,
+          transition: 'opacity 0.15s, background 0.15s',
+          cursor: 'pointer', flexBasis: 18,
+        }}
+      >
+        {isSelected && <span style={{ color: '#FFF', fontSize: 10, fontWeight: 800 }}>✓</span>}
+      </div>
+
+      {/* Completion checkbox */}
       <button
         onClick={handleCheck}
         style={{
@@ -103,10 +127,7 @@ function TaskCard({ task, allTasks, isFocused, onSelect, onComplete, onPin }: Ca
       {/* Content */}
       <div style={{ flex: 1, minWidth: 0 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-          {/* Priority dot */}
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: cfg.color, flexShrink: 0, display: 'inline-block' }} />
-
-          {/* Title */}
           <span style={{
             fontSize: 14, fontWeight: 500, color: isDone ? '#9CA3AF' : '#1A1A1A',
             fontFamily: "'DM Sans', sans-serif",
@@ -115,8 +136,6 @@ function TaskCard({ task, allTasks, isFocused, onSelect, onComplete, onPin }: Ca
           }}>
             {task.title}
           </span>
-
-          {/* Badges */}
           {isBlocked && <span title="Blocked" style={{ fontSize: 12 }}>🔒</span>}
           {task.is_delegated && (() => {
             const daysPending = task.delegated_at ? Math.floor((Date.now() - new Date(task.delegated_at).getTime()) / 86400000) : 0
@@ -132,29 +151,19 @@ function TaskCard({ task, allTasks, isFocused, onSelect, onComplete, onPin }: Ca
           )}
         </div>
 
-        {/* Meta row */}
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
           {task.due_at && (
-            <span style={{
-              fontSize: 11, fontWeight: 500,
-              color: isOverdue(task.due_at) ? '#EF4444' : '#9CA3AF',
-              fontFamily: "'DM Sans', sans-serif",
-            }}>
+            <span style={{ fontSize: 11, fontWeight: 500, color: isOverdue(task.due_at) ? '#EF4444' : '#9CA3AF', fontFamily: "'DM Sans', sans-serif" }}>
               {isOverdue(task.due_at) ? '⚠ ' : ''}{formatDue(task.due_at)}
             </span>
           )}
           {task.project && (
-            <span style={{
-              padding: '2px 8px', borderRadius: 20, fontSize: 11,
-              background: `${task.project.color}18`,
-              color: task.project.color, fontWeight: 600,
-              fontFamily: "'DM Sans', sans-serif",
-            }}>{task.project.name}</span>
+            <span style={{ padding: '2px 8px', borderRadius: 20, fontSize: 11, background: `${task.project.color}18`, color: task.project.color, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>
+              {task.project.name}
+            </span>
           )}
           {sub.length > 0 && (
-            <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: "'DM Sans', sans-serif" }}>
-              {done.length}/{sub.length} subtasks
-            </span>
+            <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: "'DM Sans', sans-serif" }}>{done.length}/{sub.length} subtasks</span>
           )}
           {task.duration_minutes && !task.scheduled_start && (
             <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: "'DM Sans', sans-serif" }}>
@@ -174,7 +183,6 @@ function TaskCard({ task, allTasks, isFocused, onSelect, onComplete, onPin }: Ca
           })()}
         </div>
 
-        {/* Subtask progress bar */}
         {sub.length > 0 && (
           <div style={{ height: 2, background: 'rgba(0,0,0,0.06)', borderRadius: 2, marginTop: 6 }}>
             <div style={{ height: '100%', background: '#2DB87A', borderRadius: 2, width: `${(done.length / sub.length) * 100}%`, transition: 'width 0.4s' }} />
@@ -182,24 +190,25 @@ function TaskCard({ task, allTasks, isFocused, onSelect, onComplete, onPin }: Ca
         )}
       </div>
 
-      {/* Pin */}
-      <button
-        onClick={e => { e.stopPropagation(); onPin(task.id, !task.is_pinned) }}
-        style={{
-          background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px',
-          color: task.is_pinned ? '#2DB87A' : '#D1D5DB', fontSize: 14, flexShrink: 0,
-        }}
-        title={task.is_pinned ? 'Unpin from Focus' : 'Pin to Focus'}
-      >◉</button>
+      {/* Pin — hide in selection mode */}
+      {!isSelectionMode && (
+        <button
+          onClick={e => { e.stopPropagation(); onPin(task.id, !task.is_pinned) }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: task.is_pinned ? '#2DB87A' : '#D1D5DB', fontSize: 14, flexShrink: 0 }}
+          title={task.is_pinned ? 'Unpin from Focus' : 'Pin to Focus'}
+        >◉</button>
+      )}
     </div>
   )
 }
 
 // ─── Focus Section ─────────────────────────────────────────────────────────────
 
-function FocusSection({ tasks, allTasks, onSelect, onComplete, onPin }: {
-  tasks: Task[]; allTasks: Task[];
-  onSelect: (t: Task) => void; onComplete: (id: string) => void; onPin: (id: string, p: boolean) => void
+function FocusSection({ tasks, allTasks, isSelectionMode, selectedIds, onSelect, onComplete, onPin, onToggleSelect }: {
+  tasks: Task[]; allTasks: Task[]
+  isSelectionMode: boolean; selectedIds: Set<string>
+  onSelect: (t: Task) => void; onComplete: (id: string) => void
+  onPin: (id: string, p: boolean) => void; onToggleSelect: (id: string) => void
 }) {
   if (tasks.length === 0) return null
   return (
@@ -208,24 +217,28 @@ function FocusSection({ tasks, allTasks, onSelect, onComplete, onPin }: {
         <span style={{ fontSize: 12, fontWeight: 700, color: '#9CA3AF', letterSpacing: 1, fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase' }}>Focus</span>
         <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: "'DM Sans', sans-serif" }}>— your top {tasks.length} for today</span>
       </div>
-      {tasks.map(t => <TaskCard key={t.id} task={t} allTasks={allTasks} isFocused onSelect={onSelect} onComplete={onComplete} onPin={onPin} />)}
+      {tasks.map(t => (
+        <TaskCard key={t.id} task={t} allTasks={allTasks} isFocused
+          isSelectionMode={isSelectionMode} isSelected={selectedIds.has(t.id)}
+          onSelect={onSelect} onComplete={onComplete} onPin={onPin} onToggleSelect={onToggleSelect} />
+      ))}
     </div>
   )
 }
 
 // ─── Filter Bar ────────────────────────────────────────────────────────────────
 
-function FilterBar({ filter, sort, onFilter, onSort, onAdd, projects }: {
-  filter: Filter; sort: Sort; projects: Project[];
-  onFilter: (f: Filter) => void; onSort: (s: Sort) => void; onAdd: () => void
+function FilterBar({ filter, sort, onFilter, onSort }: {
+  filter: Filter; sort: Sort
+  onFilter: (f: Filter) => void; onSort: (s: Sort) => void
 }) {
   const s = { fontFamily: "'DM Sans', sans-serif" }
   const filters: { key: Filter; label: string }[] = [
-    { key: 'all',      label: 'All'          },
-    { key: 'today',    label: 'Today'        },
-    { key: 'week',     label: 'This week'    },
-    { key: 'waiting',  label: 'Waiting'      },
-    { key: 'priority', label: 'Urgent'},
+    { key: 'all',      label: 'All'       },
+    { key: 'today',    label: 'Today'     },
+    { key: 'week',     label: 'This week' },
+    { key: 'waiting',  label: 'Waiting'   },
+    { key: 'priority', label: 'Urgent'    },
   ]
   return (
     <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
@@ -242,28 +255,23 @@ function FilterBar({ filter, sort, onFilter, onSort, onAdd, projects }: {
       <select
         value={sort}
         onChange={e => onSort(e.target.value as Sort)}
-        style={{
-          border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '6px 10px',
-          fontSize: 12, ...s, color: '#6B6B6B', background: 'transparent', outline: 'none', cursor: 'pointer',
-        }}
+        style={{ border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '6px 10px', fontSize: 12, ...s, color: '#6B6B6B', background: 'transparent', outline: 'none', cursor: 'pointer' }}
       >
         <option value="due_date">Sort: Due date</option>
         <option value="priority">Sort: Priority</option>
         <option value="created_at">Sort: Recently added</option>
       </select>
-      <button onClick={onAdd} style={{
-        padding: '7px 18px', borderRadius: 20, background: '#1A1A1A', color: '#FFFFFF',
-        border: 'none', cursor: 'pointer', fontSize: 13, fontWeight: 600, ...s,
-      }}>+ Add task</button>
     </div>
   )
 }
 
 // ─── Task Group ────────────────────────────────────────────────────────────────
 
-function TaskGroup({ label, tasks, allTasks, emptyMsg, onSelect, onComplete, onPin }: {
+function TaskGroup({ label, tasks, allTasks, emptyMsg, isSelectionMode, selectedIds, onSelect, onComplete, onPin, onToggleSelect }: {
   label: string; tasks: Task[]; allTasks: Task[]; emptyMsg?: string
-  onSelect: (t: Task) => void; onComplete: (id: string) => void; onPin: (id: string, p: boolean) => void
+  isSelectionMode: boolean; selectedIds: Set<string>
+  onSelect: (t: Task) => void; onComplete: (id: string) => void
+  onPin: (id: string, p: boolean) => void; onToggleSelect: (id: string) => void
 }) {
   if (tasks.length === 0 && !emptyMsg) return null
   return (
@@ -275,7 +283,11 @@ function TaskGroup({ label, tasks, allTasks, emptyMsg, onSelect, onComplete, onP
       {tasks.length === 0 && emptyMsg ? (
         <p style={{ fontSize: 13, color: '#C4C9D0', fontFamily: "'DM Sans', sans-serif", paddingLeft: 4 }}>{emptyMsg}</p>
       ) : (
-        tasks.map(t => <TaskCard key={t.id} task={t} allTasks={allTasks} onSelect={onSelect} onComplete={onComplete} onPin={onPin} />)
+        tasks.map(t => (
+          <TaskCard key={t.id} task={t} allTasks={allTasks}
+            isSelectionMode={isSelectionMode} isSelected={selectedIds.has(t.id)}
+            onSelect={onSelect} onComplete={onComplete} onPin={onPin} onToggleSelect={onToggleSelect} />
+        ))
       )}
     </div>
   )
@@ -283,26 +295,31 @@ function TaskGroup({ label, tasks, allTasks, emptyMsg, onSelect, onComplete, onP
 
 // ─── Completed Collapse ────────────────────────────────────────────────────────
 
-function CompletedCollapse({ tasks, allTasks, onSelect, onComplete, onPin }: {
-  tasks: Task[]; allTasks: Task[];
-  onSelect: (t: Task) => void; onComplete: (id: string) => void; onPin: (id: string, p: boolean) => void
+function CompletedCollapse({ tasks, allTasks, isSelectionMode, selectedIds, onSelect, onComplete, onPin, onToggleSelect }: {
+  tasks: Task[]; allTasks: Task[]
+  isSelectionMode: boolean; selectedIds: Set<string>
+  onSelect: (t: Task) => void; onComplete: (id: string) => void
+  onPin: (id: string, p: boolean) => void; onToggleSelect: (id: string) => void
 }) {
   const [open, setOpen] = useState(false)
   if (tasks.length === 0) return null
   return (
     <div style={{ marginTop: 16 }}>
       <button onClick={() => setOpen(!open)} style={{
-        display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none',
-        cursor: 'pointer', padding: '6px 0',
+        display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0',
       }}>
         <span style={{ fontSize: 12, fontWeight: 700, color: '#C4C9D0', letterSpacing: 0.8, fontFamily: "'DM Sans', sans-serif", textTransform: 'uppercase' }}>
-          Completed ({tasks.length})
+          Completed this week ({tasks.length})
         </span>
         <span style={{ color: '#C4C9D0', fontSize: 12, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
       </button>
       {open && (
         <div style={{ marginTop: 8 }}>
-          {tasks.slice(0, 20).map(t => <TaskCard key={t.id} task={t} allTasks={allTasks} onSelect={onSelect} onComplete={onComplete} onPin={onPin} />)}
+          {tasks.map(t => (
+            <TaskCard key={t.id} task={t} allTasks={allTasks}
+              isSelectionMode={isSelectionMode} isSelected={selectedIds.has(t.id)}
+              onSelect={onSelect} onComplete={onComplete} onPin={onPin} onToggleSelect={onToggleSelect} />
+          ))}
         </div>
       )}
     </div>
@@ -318,49 +335,48 @@ interface Props {
 }
 
 export default function TasksClient({ initialTasks, initialProjects, initialRelationships }: Props) {
-  const [tasks,         setTasks]         = useState<Task[]>(initialTasks)
-  const [projects,      setProjects]       = useState<Project[]>(initialProjects)
-  const [selectedTask,  setSelectedTask]   = useState<Task | null>(null)
-  const [filter,        setFilter]         = useState<Filter>('all')
-  const [sort,          setSort]           = useState<Sort>('due_date')
-  const [showCreate,    setShowCreate]     = useState(false)
+  const [tasks,        setTasks]       = useState<Task[]>(initialTasks)
+  const [projects,     setProjects]    = useState<Project[]>(initialProjects)
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null)
+  const [filter,       setFilter]      = useState<Filter>('all')
+  const [sort,         setSort]        = useState<Sort>('due_date')
+  const [showCreate,   setShowCreate]  = useState(false)
+  const [selectedIds,  setSelectedIds] = useState<Set<string>>(new Set())
+
+  const isSelectionMode = selectedIds.size > 0
 
   // ── Derived ──
   const topLevelTasks = useMemo(() => tasks.filter(t => !t.parent_task_id), [tasks])
 
   const activeTasks = useMemo(() => {
     let list = topLevelTasks.filter(t => t.status !== 'done')
-
-    // Apply filter
     if (filter === 'today')    list = list.filter(t => dueBucket(t.due_at) === 'today')
     if (filter === 'week')     list = list.filter(t => ['today','tomorrow','week'].includes(dueBucket(t.due_at)))
     if (filter === 'waiting')  list = list.filter(t => t.is_delegated)
     if (filter === 'priority') list = list.filter(t => t.priority === 'urgent')
 
-    // Apply sort
     list = [...list].sort((a, b) => {
       if (sort === 'priority') return priorityRank(a.priority) - priorityRank(b.priority)
       if (sort === 'created_at') return new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-      // due_date: no date goes last
       if (!a.due_at && !b.due_at) return 0
       if (!a.due_at) return 1
       if (!b.due_at) return -1
       return new Date(a.due_at).getTime() - new Date(b.due_at).getTime()
     })
 
-    // Blocked tasks sink to the bottom — don't nag about things you can't do yet
     const isBlocked = (t: Task) => !!t.blocked_by_task_id && topLevelTasks.find(u => u.id === t.blocked_by_task_id)?.status === 'pending'
     list = [...list].sort((a, b) => {
       const ab = isBlocked(a), bb = isBlocked(b)
-      if (ab && !bb) return 1
-      if (!ab && bb) return -1
-      return 0
+      if (ab && !bb) return 1; if (!ab && bb) return -1; return 0
     })
-
     return list
   }, [topLevelTasks, filter, sort])
 
-  const completedTasks = useMemo(() => topLevelTasks.filter(t => t.status === 'done').slice(0, 30), [topLevelTasks])
+  const completedTasks = useMemo(() =>
+    topLevelTasks
+      .filter(t => t.status === 'done' && t.completed_at && Date.now() - new Date(t.completed_at).getTime() < 7 * 86400000)
+      .sort((a, b) => new Date(b.completed_at!).getTime() - new Date(a.completed_at!).getTime()),
+    [topLevelTasks])
 
   const focusTasks = useMemo(() => {
     const pinned = activeTasks.filter(t => t.is_pinned)
@@ -371,34 +387,27 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
   }, [activeTasks])
 
   const groups = useMemo(() => {
-    // When filtered, don't group — show flat
     if (filter !== 'all') return []
     const nonFocused = activeTasks.filter(t => !focusTasks.includes(t))
     return [
-      { label: 'Today',     tasks: nonFocused.filter(t => dueBucket(t.due_at) === 'today'),    emptyMsg: "Nothing due today — nice work!" },
-      { label: 'Tomorrow',  tasks: nonFocused.filter(t => dueBucket(t.due_at) === 'tomorrow'),  emptyMsg: '' },
-      { label: 'This Week', tasks: nonFocused.filter(t => dueBucket(t.due_at) === 'week'),      emptyMsg: '' },
-      { label: 'Later',     tasks: nonFocused.filter(t => dueBucket(t.due_at) === 'later'),     emptyMsg: '' },
-      { label: 'Someday',   tasks: nonFocused.filter(t => dueBucket(t.due_at) === 'someday'),   emptyMsg: 'Drop ideas here, no pressure.' },
+      { label: 'Today',     tasks: nonFocused.filter(t => dueBucket(t.due_at) === 'today'),   emptyMsg: "Nothing due today — nice work!" },
+      { label: 'Tomorrow',  tasks: nonFocused.filter(t => dueBucket(t.due_at) === 'tomorrow'), emptyMsg: '' },
+      { label: 'This Week', tasks: nonFocused.filter(t => dueBucket(t.due_at) === 'week'),     emptyMsg: '' },
+      { label: 'Later',     tasks: nonFocused.filter(t => dueBucket(t.due_at) === 'later'),    emptyMsg: '' },
+      { label: 'Someday',   tasks: nonFocused.filter(t => dueBucket(t.due_at) === 'someday'),  emptyMsg: 'Drop ideas here, no pressure.' },
     ]
   }, [activeTasks, focusTasks, filter])
 
   // ── Handlers ──
   const handleCreate = useCallback(async (body: Partial<Task>): Promise<Task> => {
-    const res = await fetch('/api/tasks', {
-      method: 'POST', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body),
-    })
+    const res = await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
     const t = await res.json()
     setTasks(prev => [t, ...prev])
     return t
   }, [])
 
   const handleUpdate = useCallback(async (id: string, updates: Partial<Task>) => {
-    const res = await fetch(`/api/tasks/${id}`, {
-      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(updates),
-    })
+    const res = await fetch(`/api/tasks/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(updates) })
     const updated = await res.json()
     setTasks(prev => prev.map(t => t.id === id ? { ...t, ...updated } : t))
     setSelectedTask(prev => prev?.id === id ? { ...prev, ...updated } : prev)
@@ -434,19 +443,38 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
     setTasks(prev => [t, ...prev])
   }, [])
 
+  const handleToggleSelect = useCallback((id: string) => {
+    setSelectedIds(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }, [])
+
+  const handleBulkComplete = useCallback(async () => {
+    const ids = [...selectedIds]
+    setSelectedIds(new Set())
+    await Promise.all(ids.map(id => fetch(`/api/tasks/${id}/complete`, { method: 'POST' })))
+    setTasks(prev => prev.map(t => ids.includes(t.id) ? { ...t, status: 'done' as const, completed_at: new Date().toISOString() } : t))
+    if (selectedTask && ids.includes(selectedTask.id)) setSelectedTask(null)
+  }, [selectedIds, selectedTask])
+
+  const handleBulkDelete = useCallback(async () => {
+    const ids = [...selectedIds]
+    setSelectedIds(new Set())
+    await Promise.all(ids.map(id => fetch(`/api/tasks/${id}`, { method: 'DELETE' })))
+    setTasks(prev => prev.filter(t => !ids.includes(t.id) && !ids.includes(t.parent_task_id ?? '')))
+    if (selectedTask && ids.includes(selectedTask.id)) setSelectedTask(null)
+  }, [selectedIds, selectedTask])
+
+  const sharedCardProps = { isSelectionMode, selectedIds, onSelect: setSelectedTask, onComplete: handleComplete, onPin: handlePin, onToggleSelect: handleToggleSelect }
+
   return (
-    <div style={{ padding: '48px 40px 80px', fontFamily: "'DM Sans', sans-serif", maxWidth: 700 }}>
+    <div style={{ padding: '48px 40px 120px', fontFamily: "'DM Sans', sans-serif", maxWidth: 700 }}>
       <style>{`
-        @keyframes checkBounce {
-          0%   { transform: scale(1);   }
-          40%  { transform: scale(1.3); }
-          70%  { transform: scale(0.9); }
-          100% { transform: scale(1);   }
-        }
-        @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(10px); }
-          to   { opacity: 1; transform: translateY(0); }
-        }
+        @keyframes checkBounce { 0% { transform: scale(1); } 40% { transform: scale(1.3); } 70% { transform: scale(0.9); } 100% { transform: scale(1); } }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes slideUp { from { opacity: 0; transform: translateX(-50%) translateY(16px); } to { opacity: 1; transform: translateX(-50%) translateY(0); } }
       `}</style>
 
       {/* Header */}
@@ -456,45 +484,21 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
           What needs doing.
         </h1>
         <p style={{ fontSize: 14, color: '#9CA3AF' }}>
-          {activeTasks.length === 0
-            ? 'All clear — inbox zero 🎉'
-            : `${activeTasks.length} task${activeTasks.length !== 1 ? 's' : ''} remaining`}
+          {activeTasks.length === 0 ? 'All clear — inbox zero 🎉' : `${activeTasks.length} task${activeTasks.length !== 1 ? 's' : ''} remaining`}
         </p>
       </div>
 
       {/* Focus section */}
-      <FocusSection
-        tasks={focusTasks}
-        allTasks={tasks}
-        onSelect={setSelectedTask}
-        onComplete={handleComplete}
-        onPin={handlePin}
-      />
+      <FocusSection tasks={focusTasks} allTasks={tasks} {...sharedCardProps} />
 
       {/* Filter bar */}
-      <FilterBar
-        filter={filter}
-        sort={sort}
-        projects={projects}
-        onFilter={setFilter}
-        onSort={setSort}
-        onAdd={() => setShowCreate(true)}
-      />
+      <FilterBar filter={filter} sort={sort} onFilter={setFilter} onSort={setSort} />
 
       {/* Task list */}
       {filter === 'all' ? (
         <>
           {groups.map(g => (
-            <TaskGroup
-              key={g.label}
-              label={g.label}
-              tasks={g.tasks}
-              allTasks={tasks}
-              emptyMsg={g.emptyMsg}
-              onSelect={setSelectedTask}
-              onComplete={handleComplete}
-              onPin={handlePin}
-            />
+            <TaskGroup key={g.label} label={g.label} tasks={g.tasks} allTasks={tasks} emptyMsg={g.emptyMsg} {...sharedCardProps} />
           ))}
           {activeTasks.length === 0 && (
             <div style={{ textAlign: 'center', padding: '48px 0' }}>
@@ -509,28 +513,86 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
           {activeTasks.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0' }}>
               <p style={{ fontSize: 14, color: '#9CA3AF' }}>
-                {filter === 'today'    && 'Nothing due today — nice work!'}
-                {filter === 'week'     && 'Your week is clear.'}
-                {filter === 'waiting'  && 'No tasks waiting on others.'}
+                {filter === 'today' && 'Nothing due today — nice work!'}
+                {filter === 'week' && 'Your week is clear.'}
+                {filter === 'waiting' && 'No tasks waiting on others.'}
                 {filter === 'priority' && 'No urgent tasks.'}
               </p>
             </div>
           ) : (
             activeTasks.map(t => (
-              <TaskCard key={t.id} task={t} allTasks={tasks} onSelect={setSelectedTask} onComplete={handleComplete} onPin={handlePin} />
+              <TaskCard key={t.id} task={t} allTasks={tasks} {...sharedCardProps} isSelected={selectedIds.has(t.id)} />
             ))
           )}
         </>
       )}
 
       {/* Completed */}
-      <CompletedCollapse
-        tasks={completedTasks}
-        allTasks={tasks}
-        onSelect={setSelectedTask}
-        onComplete={handleComplete}
-        onPin={handlePin}
-      />
+      <CompletedCollapse tasks={completedTasks} allTasks={tasks} {...sharedCardProps} />
+
+      {/* Floating Add Task button — hidden during selection mode or when panel is open */}
+      {!isSelectionMode && !selectedTask && (
+        <button
+          onClick={() => setShowCreate(true)}
+          style={{
+            position: 'fixed', bottom: 32, right: 40,
+            padding: '12px 22px', borderRadius: 28,
+            background: '#1A1A1A', color: '#FFF',
+            border: 'none', cursor: 'pointer',
+            fontSize: 14, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+            boxShadow: '0 4px 20px rgba(0,0,0,0.18)',
+            display: 'flex', alignItems: 'center', gap: 8,
+            transition: 'transform 0.15s, box-shadow 0.15s',
+            animation: 'fadeUp 0.3s ease',
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 6px 24px rgba(0,0,0,0.24)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 20px rgba(0,0,0,0.18)' }}
+        >
+          <span style={{ fontSize: 18, lineHeight: 1, marginTop: -1 }}>+</span>
+          New task
+        </button>
+      )}
+
+      {/* Bulk action bar */}
+      {isSelectionMode && (
+        <div style={{
+          position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
+          display: 'flex', alignItems: 'center', gap: 8,
+          background: '#1A1A1A', borderRadius: 28, padding: '10px 10px 10px 18px',
+          boxShadow: '0 8px 32px rgba(0,0,0,0.22)',
+          fontFamily: "'DM Sans', sans-serif",
+          animation: 'slideUp 0.2s ease',
+          whiteSpace: 'nowrap',
+        }}>
+          <span style={{ fontSize: 13, color: '#9CA3AF', marginRight: 4 }}>
+            {selectedIds.size} selected
+          </span>
+          <button onClick={handleBulkComplete} style={{
+            padding: '7px 16px', borderRadius: 20,
+            background: 'rgba(45,184,122,0.18)', border: '1px solid rgba(45,184,122,0.3)',
+            color: '#2DB87A', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
+            ✓ Complete
+          </button>
+          <button onClick={handleBulkDelete} style={{
+            padding: '7px 16px', borderRadius: 20,
+            background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.22)',
+            color: '#EF4444', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
+            Delete
+          </button>
+          <button onClick={() => setSelectedIds(new Set())} style={{
+            padding: '7px 12px', borderRadius: 20,
+            background: 'rgba(255,255,255,0.08)', border: 'none',
+            color: '#9CA3AF', fontSize: 13, cursor: 'pointer',
+            fontFamily: "'DM Sans', sans-serif",
+          }}>
+            Cancel
+          </button>
+        </div>
+      )}
 
       {/* Create input overlay */}
       {showCreate && (

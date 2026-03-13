@@ -89,7 +89,11 @@ export const RECURRENCE_OPTIONS = [
 ]
 
 export const REMINDER_PRESETS: TaskReminder[] = [
-  { offset_minutes: -1440, label: '1 day before'  },
-  { offset_minutes: -480,  label: 'Morning of'    },
-  { offset_minutes: -60,   label: '1 hour before' },
+  { offset_minutes: -2880, label: '2 days before'  },
+  { offset_minutes: -1440, label: '1 day before'   },
+  { offset_minutes: -480,  label: 'Morning of'     },
+  { offset_minutes: -60,   label: '1 hr before'    },
+  { offset_minutes: -30,   label: '30 min before'  },
+  { offset_minutes: -15,   label: '15 min before'  },
+  { offset_minutes: 0,     label: 'At start time'  },
 ]
