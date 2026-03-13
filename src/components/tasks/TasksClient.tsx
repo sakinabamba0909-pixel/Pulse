@@ -213,10 +213,10 @@ function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSe
 
 // ─── Focus Section ─────────────────────────────────────────────────────────────
 
-function FocusSection({ tasks, allTasks, isSelectionMode, selectedIds, onSelect, onComplete, onPin, onToggleSelect }: {
+function FocusSection({ tasks, allTasks, isSelectionMode, selectedIds, onSelect, onComplete, onUncomplete, onPin, onToggleSelect }: {
   tasks: Task[]; allTasks: Task[]
   isSelectionMode: boolean; selectedIds: Set<string>
-  onSelect: (t: Task) => void; onComplete: (id: string) => void
+  onSelect: (t: Task) => void; onComplete: (id: string) => void; onUncomplete: (id: string) => void
   onPin: (id: string, p: boolean) => void; onToggleSelect: (id: string) => void
 }) {
   if (tasks.length === 0) return null
@@ -229,7 +229,7 @@ function FocusSection({ tasks, allTasks, isSelectionMode, selectedIds, onSelect,
       {tasks.map(t => (
         <TaskCard key={t.id} task={t} allTasks={allTasks} isFocused
           isSelectionMode={isSelectionMode} isSelected={selectedIds.has(t.id)}
-          onSelect={onSelect} onComplete={onComplete} onPin={onPin} onToggleSelect={onToggleSelect} />
+          onSelect={onSelect} onComplete={onComplete} onUncomplete={onUncomplete} onPin={onPin} onToggleSelect={onToggleSelect} />
       ))}
     </div>
   )
@@ -276,10 +276,10 @@ function FilterBar({ filter, sort, onFilter, onSort }: {
 
 // ─── Task Group ────────────────────────────────────────────────────────────────
 
-function TaskGroup({ label, tasks, allTasks, emptyMsg, isSelectionMode, selectedIds, onSelect, onComplete, onPin, onToggleSelect }: {
+function TaskGroup({ label, tasks, allTasks, emptyMsg, isSelectionMode, selectedIds, onSelect, onComplete, onUncomplete, onPin, onToggleSelect }: {
   label: string; tasks: Task[]; allTasks: Task[]; emptyMsg?: string
   isSelectionMode: boolean; selectedIds: Set<string>
-  onSelect: (t: Task) => void; onComplete: (id: string) => void
+  onSelect: (t: Task) => void; onComplete: (id: string) => void; onUncomplete: (id: string) => void
   onPin: (id: string, p: boolean) => void; onToggleSelect: (id: string) => void
 }) {
   if (tasks.length === 0 && !emptyMsg) return null
@@ -295,7 +295,7 @@ function TaskGroup({ label, tasks, allTasks, emptyMsg, isSelectionMode, selected
         tasks.map(t => (
           <TaskCard key={t.id} task={t} allTasks={allTasks}
             isSelectionMode={isSelectionMode} isSelected={selectedIds.has(t.id)}
-            onSelect={onSelect} onComplete={onComplete} onPin={onPin} onToggleSelect={onToggleSelect} />
+            onSelect={onSelect} onComplete={onComplete} onUncomplete={onUncomplete} onPin={onPin} onToggleSelect={onToggleSelect} />
         ))
       )}
     </div>
@@ -304,10 +304,10 @@ function TaskGroup({ label, tasks, allTasks, emptyMsg, isSelectionMode, selected
 
 // ─── Completed Collapse ────────────────────────────────────────────────────────
 
-function CompletedCollapse({ tasks, allTasks, isSelectionMode, selectedIds, onSelect, onComplete, onPin, onToggleSelect, onSelectAllCompleted }: {
+function CompletedCollapse({ tasks, allTasks, isSelectionMode, selectedIds, onSelect, onComplete, onUncomplete, onPin, onToggleSelect, onSelectAllCompleted }: {
   tasks: Task[]; allTasks: Task[]
   isSelectionMode: boolean; selectedIds: Set<string>
-  onSelect: (t: Task) => void; onComplete: (id: string) => void
+  onSelect: (t: Task) => void; onComplete: (id: string) => void; onUncomplete: (id: string) => void
   onPin: (id: string, p: boolean) => void; onToggleSelect: (id: string) => void
   onSelectAllCompleted: () => void
 }) {
@@ -353,7 +353,7 @@ function CompletedCollapse({ tasks, allTasks, isSelectionMode, selectedIds, onSe
           {tasks.map(t => (
             <TaskCard key={t.id} task={t} allTasks={allTasks}
               isSelectionMode={isSelectionMode} isSelected={selectedIds.has(t.id)}
-              onSelect={onSelect} onComplete={onComplete} onPin={onPin} onToggleSelect={onToggleSelect} />
+              onSelect={onSelect} onComplete={onComplete} onUncomplete={onUncomplete} onPin={onPin} onToggleSelect={onToggleSelect} />
           ))}
         </div>
       )}
