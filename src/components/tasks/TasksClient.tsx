@@ -228,9 +228,10 @@ function FocusSection({ tasks, allTasks, isSelectionMode, selectedIds, onSelect,
 
 // ─── Filter Bar ────────────────────────────────────────────────────────────────
 
-function FilterBar({ filter, sort, onFilter, onSort }: {
+function FilterBar({ filter, sort, onFilter, onSort, onSelectAll }: {
   filter: Filter; sort: Sort
   onFilter: (f: Filter) => void; onSort: (s: Sort) => void
+  onSelectAll: () => void
 }) {
   const s = { fontFamily: "'DM Sans', sans-serif" }
   const filters: { key: Filter; label: string }[] = [
@@ -252,6 +253,13 @@ function FilterBar({ filter, sort, onFilter, onSort }: {
         }}>{f.label}</button>
       ))}
       <div style={{ flex: 1 }} />
+      <button onClick={onSelectAll} style={{
+        padding: '6px 14px', borderRadius: 20, border: '1px solid rgba(0,0,0,0.1)',
+        background: 'transparent', color: '#6B6B6B',
+        fontSize: 12, fontWeight: 500, cursor: 'pointer', ...s, transition: 'all 0.15s',
+      }}>
+        Select all
+      </button>
       <select
         value={sort}
         onChange={e => onSort(e.target.value as Sort)}
@@ -502,7 +510,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
       <FocusSection tasks={focusTasks} allTasks={tasks} {...sharedCardProps} />
 
       {/* Filter bar */}
-      <FilterBar filter={filter} sort={sort} onFilter={setFilter} onSort={setSort} />
+      <FilterBar filter={filter} sort={sort} onFilter={setFilter} onSort={setSort} onSelectAll={handleSelectAll} />
 
       {/* Task list */}
       {filter === 'all' ? (
