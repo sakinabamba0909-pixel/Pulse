@@ -228,10 +228,9 @@ function FocusSection({ tasks, allTasks, isSelectionMode, selectedIds, onSelect,
 
 // ─── Filter Bar ────────────────────────────────────────────────────────────────
 
-function FilterBar({ filter, sort, onFilter, onSort, onSelectAll }: {
+function FilterBar({ filter, sort, onFilter, onSort }: {
   filter: Filter; sort: Sort
   onFilter: (f: Filter) => void; onSort: (s: Sort) => void
-  onSelectAll: () => void
 }) {
   const s = { fontFamily: "'DM Sans', sans-serif" }
   const filters: { key: Filter; label: string }[] = [
@@ -253,13 +252,6 @@ function FilterBar({ filter, sort, onFilter, onSort, onSelectAll }: {
         }}>{f.label}</button>
       ))}
       <div style={{ flex: 1 }} />
-      <button onClick={onSelectAll} style={{
-        padding: '6px 14px', borderRadius: 20, border: '1px solid rgba(0,0,0,0.1)',
-        background: 'transparent', color: '#6B6B6B',
-        fontSize: 12, fontWeight: 500, cursor: 'pointer', ...s, transition: 'all 0.15s',
-      }}>
-        Select all
-      </button>
       <select
         value={sort}
         onChange={e => onSort(e.target.value as Sort)}
@@ -510,7 +502,37 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
       <FocusSection tasks={focusTasks} allTasks={tasks} {...sharedCardProps} />
 
       {/* Filter bar */}
-      <FilterBar filter={filter} sort={sort} onFilter={setFilter} onSort={setSort} onSelectAll={handleSelectAll} />
+      <FilterBar filter={filter} sort={sort} onFilter={setFilter} onSort={setSort} />
+
+      {/* Select all row */}
+      {activeTasks.length > 0 && (() => {
+        const allSelected = activeTasks.every(t => selectedIds.has(t.id))
+        return (
+          <div
+            onClick={handleSelectAll}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 14px', borderRadius: 12, marginBottom: 16,
+              background: allSelected ? 'rgba(45,184,122,0.06)' : 'rgba(0,0,0,0.02)',
+              border: `1px solid ${allSelected ? 'rgba(45,184,122,0.25)' : 'rgba(0,0,0,0.07)'}`,
+              cursor: 'pointer', transition: 'all 0.15s',
+            }}
+          >
+            <div style={{
+              width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+              border: `1.5px solid ${allSelected ? '#2DB87A' : 'rgba(0,0,0,0.25)'}`,
+              background: allSelected ? '#2DB87A' : 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.15s',
+            }}>
+              {allSelected && <span style={{ color: '#FFF', fontSize: 10, fontWeight: 800 }}>✓</span>}
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 500, color: allSelected ? '#2DB87A' : '#6B6B6B', fontFamily: "'DM Sans', sans-serif" }}>
+              {allSelected ? `All ${activeTasks.length} tasks selected` : `Select all ${activeTasks.length} tasks`}
+            </span>
+          </div>
+        )
+      })()}
 
       {/* Task list */}
       {filter === 'all' ? (
