@@ -63,7 +63,7 @@ interface CardProps {
 function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSelect, onComplete, onPin, onToggleSelect }: CardProps) {
   const [checking, setChecking] = useState(false)
   const [hovered,  setHovered]  = useState(false)
-  const cfg       = PRIORITY_CONFIG[task.priority]
+  const cfg       = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG['normal']
   const sub       = allTasks.filter(t => t.parent_task_id === task.id)
   const done      = sub.filter(t => t.status === 'done')
   const isBlocked = !!task.blocked_by_task_id && allTasks.find(t => t.id === task.blocked_by_task_id)?.status === 'pending'
