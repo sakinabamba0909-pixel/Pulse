@@ -72,9 +72,12 @@ function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSe
 
   async function handleCheck(e: React.MouseEvent) {
     e.stopPropagation()
-    if (isDone) return
     setChecking(true)
-    await onComplete(task.id)
+    if (isDone) {
+      await onUncomplete(task.id)
+    } else {
+      await onComplete(task.id)
+    }
     setChecking(false)
   }
 
@@ -191,21 +194,13 @@ function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSe
         )}
       </div>
 
-      {/* Undo (completed tasks) or Pin (active tasks) — hide in selection mode */}
-      {!isSelectionMode && (
-        isDone ? (
-          <button
-            onClick={e => { e.stopPropagation(); onUncomplete(task.id) }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: '#9CA3AF', fontSize: 13, flexShrink: 0, fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}
-            title="Mark as pending"
-          >↩</button>
-        ) : (
-          <button
-            onClick={e => { e.stopPropagation(); onPin(task.id, !task.is_pinned) }}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: task.is_pinned ? '#2DB87A' : '#D1D5DB', fontSize: 14, flexShrink: 0 }}
-            title={task.is_pinned ? 'Unpin from Focus' : 'Pin to Focus'}
-          >◉</button>
-        )
+      {/* Pin — hide in selection mode and for completed tasks */}
+      {!isSelectionMode && !isDone && (
+        <button
+          onClick={e => { e.stopPropagation(); onPin(task.id, !task.is_pinned) }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: task.is_pinned ? '#2DB87A' : '#D1D5DB', fontSize: 14, flexShrink: 0 }}
+          title={task.is_pinned ? 'Unpin from Focus' : 'Pin to Focus'}
+        >◉</button>
       )}
     </div>
   )
