@@ -11,6 +11,7 @@ const NAV = [
   { href: '/app/relationships', icon: '◑', label: 'People'      },
   { href: '/app/reminders',     icon: '◷', label: 'Reminders'   },
   { href: '/app/projects',      icon: '▦', label: 'Projects'    },
+  { href: '/app/settings',      icon: '⚙', label: 'Settings'    },
 ];
 
 export default function Sidebar({ name }: { name: string }) {
