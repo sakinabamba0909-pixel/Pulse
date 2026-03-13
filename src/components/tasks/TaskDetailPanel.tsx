@@ -292,6 +292,8 @@ export default function TaskDetailPanel({
   const [newSubtaskTitle, setNewSubtaskTitle] = useState('')
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [savedFeedback, setSavedFeedback] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => { setMounted(true) }, [])
@@ -309,29 +311,64 @@ export default function TaskDetailPanel({
     try { await onUpdate(task.id, updates) } finally { setIsSaving(false) }
   }
 
-  async function saveAll() {
-    const reminderObjs = reminders.map(m => {
-      const preset = REMINDER_PRESETS.find(p => p.offset_minutes === m)
-      return { offset_minutes: m, label: preset?.label ?? `${Math.abs(m)} min before` }
-    })
-    await save({
-      title: title.trim() || task.title,
-      description: description || undefined,
-      due_at: dueAt ? new Date(dueAt).toISOString() : undefined,
-      priority,
-      project_id: projectId || undefined,
-      duration_minutes: durationMinutes ?? undefined,
-      relationship_id: relationshipId || undefined,
-      is_delegated: isDelegated,
-      delegated_to: isDelegated ? delegatedTo : undefined,
-      delegated_at: isDelegated && !task.delegated_at ? new Date().toISOString() : task.delegated_at,
-      is_recurring: isRecurring,
-      recurrence_rule: isRecurring ? ({ type: recurrenceType } as RecurrenceRule) : undefined,
-      blocked_by_task_id: blockedByTaskId || undefined,
-      reminders: reminderObjs.length ? reminderObjs : undefined,
-      scheduled_start: scheduledStart ? new Date(scheduledStart).toISOString() : undefined,
-      scheduled_end: scheduledEnd ? new Date(scheduledEnd).toISOString() : undefined,
-    })
+  async function handleSave() {
+    setIsSaving(true)
+    try {
+      const reminderObjs = reminders.map(m => {
+        const preset = REMINDER_PRESETS.find(p => p.offset_minutes === m)
+        return { offset_minutes: m, label: preset?.label ?? `${Math.abs(m)} min before` }
+      })
+      await onUpdate(task.id, {
+        title: title.trim() || task.title,
+        description: description || undefined,
+        due_at: dueAt ? new Date(dueAt).toISOString() : undefined,
+        priority,
+        project_id: projectId || undefined,
+        duration_minutes: durationMinutes ?? undefined,
+        relationship_id: relationshipId || undefined,
+        is_delegated: isDelegated,
+        delegated_to: isDelegated ? delegatedTo : undefined,
+        delegated_at: isDelegated && !task.delegated_at ? new Date().toISOString() : task.delegated_at,
+        is_recurring: isRecurring,
+        recurrence_rule: isRecurring ? ({ type: recurrenceType } as RecurrenceRule) : undefined,
+        blocked_by_task_id: blockedByTaskId || undefined,
+        reminders: reminderObjs.length ? reminderObjs : undefined,
+        scheduled_start: scheduledStart ? new Date(scheduledStart).toISOString() : undefined,
+        scheduled_end: scheduledEnd ? new Date(scheduledEnd).toISOString() : undefined,
+      })
+
+      // Sync reminder records: clear old ones, create new ones
+      if (reminders.length > 0) {
+        const baseDate = dueAt ? new Date(dueAt) : scheduledStart ? new Date(scheduledStart) : null
+        if (baseDate) {
+          await fetch(`/api/reminders?task_id=${task.id}`, { method: 'DELETE' })
+          await Promise.all(reminders.map(offsetMinutes => {
+            const remindAt = new Date(baseDate.getTime() + offsetMinutes * 60000)
+            if (remindAt <= new Date()) return Promise.resolve()
+            return fetch('/api/reminders', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                task_id: task.id,
+                remind_at: remindAt.toISOString(),
+                channel: 'push',
+                message: title.trim() || task.title,
+                status: 'pending',
+              }),
+            })
+          }))
+        }
+      } else {
+        // If reminders were cleared, delete any existing records
+        await fetch(`/api/reminders?task_id=${task.id}`, { method: 'DELETE' })
+      }
+
+      setIsDirty(false)
+      setSavedFeedback(true)
+      setTimeout(() => setSavedFeedback(false), 2000)
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   async function handleAddSubtask() {
@@ -396,8 +433,7 @@ export default function TaskDetailPanel({
           {/* Title */}
           <input
             value={title}
-            onChange={e => setTitle(e.target.value)}
-            onBlur={saveAll}
+            onChange={e => { setTitle(e.target.value); setIsDirty(true) }}
             style={{
               border: 'none', borderBottom: '1.5px solid rgba(0,0,0,0.08)', outline: 'none',
               fontSize: 20, fontWeight: 600, background: 'transparent',
@@ -414,8 +450,7 @@ export default function TaskDetailPanel({
             </label>
             <textarea
               value={description}
-              onChange={e => setDescription(e.target.value)}
-              onBlur={saveAll}
+              onChange={e => { setDescription(e.target.value); setIsDirty(true) }}
               placeholder="Add notes, links, or context…"
               rows={3}
               style={{
@@ -434,8 +469,7 @@ export default function TaskDetailPanel({
             <input
               type="datetime-local"
               value={dueAt}
-              onChange={e => setDueAt(e.target.value)}
-              onBlur={saveAll}
+              onChange={e => { setDueAt(e.target.value); setIsDirty(true) }}
               style={{
                 border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '8px 12px',
                 fontSize: 13, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none',
@@ -674,8 +708,7 @@ export default function TaskDetailPanel({
               <>
                 <input
                   value={delegatedTo}
-                  onChange={e => setDelegatedTo(e.target.value)}
-                  onBlur={saveAll}
+                  onChange={e => { setDelegatedTo(e.target.value); setIsDirty(true) }}
                   placeholder="Who are you waiting on?"
                   style={{
                     marginTop: 10, width: '100%', border: '1px solid rgba(249,115,22,0.3)',
@@ -767,7 +800,7 @@ export default function TaskDetailPanel({
                   <button key={r.offset_minutes} onClick={() => {
                     const next = on ? reminders.filter(m => m !== r.offset_minutes) : [...reminders, r.offset_minutes]
                     setReminders(next)
-                    save({ reminders: next.map(m => ({ offset_minutes: m, label: REMINDER_PRESETS.find(p => p.offset_minutes === m)?.label ?? '' })) })
+                    setIsDirty(true)
                   }} style={{
                     padding: '5px 12px', borderRadius: 20, border: '1px solid',
                     borderColor: on ? '#3B82F6' : 'rgba(0,0,0,0.1)',
@@ -797,6 +830,24 @@ export default function TaskDetailPanel({
             </div>
           </div>
 
+          {/* Save button */}
+          <div style={{ paddingTop: 8 }}>
+            <button
+              onClick={handleSave}
+              disabled={isSaving}
+              style={{
+                width: '100%', padding: '12px 0', borderRadius: 14,
+                background: isSaving ? 'rgba(45,184,122,0.4)' : savedFeedback ? 'rgba(45,184,122,0.15)' : '#1A1A1A',
+                color: savedFeedback ? '#2DB87A' : '#FFF',
+                border: savedFeedback ? '1px solid rgba(45,184,122,0.3)' : 'none',
+                fontSize: 14, fontWeight: 600, cursor: isSaving ? 'default' : 'pointer',
+                transition: 'all 0.2s', ...s,
+              }}
+            >
+              {isSaving ? 'Saving…' : savedFeedback ? '✓ Saved' : isDirty ? 'Save changes' : 'Save'}
+            </button>
+          </div>
+
           {/* Delete */}
           <div style={{ paddingTop: 4 }}>
             {!showDeleteConfirm ? (
@@ -818,10 +869,6 @@ export default function TaskDetailPanel({
               </div>
             )}
           </div>
-
-          {isSaving && (
-            <p style={{ fontSize: 11, color: '#2DB87A', textAlign: 'right', ...s }}>Saving…</p>
-          )}
         </div>
       </div>
     </>

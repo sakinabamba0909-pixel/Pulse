@@ -32,6 +32,25 @@ export async function POST(req: Request) {
   return NextResponse.json(data)
 }
 
+export async function DELETE(req: Request) {
+  const supabase = await createServerClient()
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+
+  const url = new URL(req.url)
+  const taskId = url.searchParams.get('task_id')
+  if (!taskId) return NextResponse.json({ error: 'Missing task_id' }, { status: 400 })
+
+  const { error } = await supabase
+    .from('reminders')
+    .delete()
+    .eq('task_id', taskId)
+    .eq('user_id', user.id)
+
+  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  return NextResponse.json({ ok: true })
+}
+
 export async function PATCH(req: Request) {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
