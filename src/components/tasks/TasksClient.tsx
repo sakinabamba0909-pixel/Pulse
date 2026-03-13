@@ -295,14 +295,16 @@ function TaskGroup({ label, tasks, allTasks, emptyMsg, isSelectionMode, selected
 
 // ─── Completed Collapse ────────────────────────────────────────────────────────
 
-function CompletedCollapse({ tasks, allTasks, isSelectionMode, selectedIds, onSelect, onComplete, onPin, onToggleSelect }: {
+function CompletedCollapse({ tasks, allTasks, isSelectionMode, selectedIds, onSelect, onComplete, onPin, onToggleSelect, onSelectAllCompleted }: {
   tasks: Task[]; allTasks: Task[]
   isSelectionMode: boolean; selectedIds: Set<string>
   onSelect: (t: Task) => void; onComplete: (id: string) => void
   onPin: (id: string, p: boolean) => void; onToggleSelect: (id: string) => void
+  onSelectAllCompleted: () => void
 }) {
   const [open, setOpen] = useState(false)
   if (tasks.length === 0) return null
+  const allSelected = tasks.every(t => selectedIds.has(t.id))
   return (
     <div style={{ marginTop: 16 }}>
       <button onClick={() => setOpen(!open)} style={{
@@ -315,6 +317,30 @@ function CompletedCollapse({ tasks, allTasks, isSelectionMode, selectedIds, onSe
       </button>
       {open && (
         <div style={{ marginTop: 8 }}>
+          {/* Select all completed row */}
+          <div
+            onClick={onSelectAllCompleted}
+            style={{
+              display: 'flex', alignItems: 'center', gap: 10,
+              padding: '10px 14px', borderRadius: 12, marginBottom: 10,
+              background: allSelected ? 'rgba(239,68,68,0.05)' : 'rgba(0,0,0,0.02)',
+              border: `1px solid ${allSelected ? 'rgba(239,68,68,0.2)' : 'rgba(0,0,0,0.07)'}`,
+              cursor: 'pointer', transition: 'all 0.15s',
+            }}
+          >
+            <div style={{
+              width: 18, height: 18, borderRadius: '50%', flexShrink: 0,
+              border: `1.5px solid ${allSelected ? '#EF4444' : 'rgba(0,0,0,0.25)'}`,
+              background: allSelected ? '#EF4444' : 'transparent',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              transition: 'all 0.15s',
+            }}>
+              {allSelected && <span style={{ color: '#FFF', fontSize: 10, fontWeight: 800 }}>✓</span>}
+            </div>
+            <span style={{ fontSize: 13, fontWeight: 500, color: allSelected ? '#EF4444' : '#9CA3AF', fontFamily: "'DM Sans', sans-serif" }}>
+              {allSelected ? `All ${tasks.length} selected` : `Select all ${tasks.length} completed`}
+            </span>
+          </div>
           {tasks.map(t => (
             <TaskCard key={t.id} task={t} allTasks={allTasks}
               isSelectionMode={isSelectionMode} isSelected={selectedIds.has(t.id)}
@@ -477,6 +503,16 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
     }
   }, [activeTasks, selectedIds])
 
+  const handleSelectAllCompleted = useCallback(() => {
+    const ids = completedTasks.map(t => t.id)
+    const allSelected = ids.every(id => selectedIds.has(id))
+    if (allSelected) {
+      setSelectedIds(prev => { const next = new Set(prev); ids.forEach(id => next.delete(id)); return next })
+    } else {
+      setSelectedIds(prev => new Set([...prev, ...ids]))
+    }
+  }, [completedTasks, selectedIds])
+
   const sharedCardProps = { isSelectionMode, selectedIds, onSelect: setSelectedTask, onComplete: handleComplete, onPin: handlePin, onToggleSelect: handleToggleSelect }
 
   return (
@@ -568,7 +604,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
       )}
 
       {/* Completed */}
-      <CompletedCollapse tasks={completedTasks} allTasks={tasks} {...sharedCardProps} />
+      <CompletedCollapse tasks={completedTasks} allTasks={tasks} {...sharedCardProps} onSelectAllCompleted={handleSelectAllCompleted} />
 
       {/* Floating Add Task button — hidden during selection mode or when panel is open */}
       {!isSelectionMode && !selectedTask && (
