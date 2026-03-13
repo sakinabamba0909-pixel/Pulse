@@ -497,15 +497,16 @@ export default function TaskDetailPanel({
                   const newMins = durationMinutes === o.minutes ? null : o.minutes
                   setDurationMinutes(newMins)
                   const updates: Partial<Task> = { duration_minutes: newMins ?? undefined }
-                  if (newMins && !scheduledStart) {
-                    const now = new Date()
-                    const rounded = new Date(Math.ceil(now.getTime() / (15 * 60000)) * (15 * 60000))
-                    const endDate = new Date(rounded.getTime() + newMins * 60000)
-                    const start = toLocalDatetimeInput(rounded.toISOString())
+                  if (newMins) {
+                    const base = scheduledStart
+                      ? new Date(scheduledStart)
+                      : new Date(Math.ceil(Date.now() / (15 * 60000)) * (15 * 60000))
+                    const endDate = new Date(base.getTime() + newMins * 60000)
+                    const start = toLocalDatetimeInput(base.toISOString())
                     const end   = toLocalDatetimeInput(endDate.toISOString())
                     setScheduledStart(start)
                     setScheduledEnd(end)
-                    updates.scheduled_start = rounded.toISOString()
+                    updates.scheduled_start = base.toISOString()
                     updates.scheduled_end   = endDate.toISOString()
                   }
                   save(updates)
