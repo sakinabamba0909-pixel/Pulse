@@ -56,11 +56,12 @@ interface CardProps {
   isSelected: boolean
   onSelect: (t: Task) => void
   onComplete: (id: string) => void
+  onUncomplete: (id: string) => void
   onPin: (id: string, pinned: boolean) => void
   onToggleSelect: (id: string) => void
 }
 
-function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSelect, onComplete, onPin, onToggleSelect }: CardProps) {
+function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSelect, onComplete, onUncomplete, onPin, onToggleSelect }: CardProps) {
   const [checking, setChecking] = useState(false)
   const [hovered,  setHovered]  = useState(false)
   const cfg       = PRIORITY_CONFIG[task.priority] ?? PRIORITY_CONFIG['normal']
@@ -190,13 +191,21 @@ function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSe
         )}
       </div>
 
-      {/* Pin — hide in selection mode */}
+      {/* Undo (completed tasks) or Pin (active tasks) — hide in selection mode */}
       {!isSelectionMode && (
-        <button
-          onClick={e => { e.stopPropagation(); onPin(task.id, !task.is_pinned) }}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: task.is_pinned ? '#2DB87A' : '#D1D5DB', fontSize: 14, flexShrink: 0 }}
-          title={task.is_pinned ? 'Unpin from Focus' : 'Pin to Focus'}
-        >◉</button>
+        isDone ? (
+          <button
+            onClick={e => { e.stopPropagation(); onUncomplete(task.id) }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: '#9CA3AF', fontSize: 13, flexShrink: 0, fontFamily: "'DM Sans', sans-serif", fontWeight: 500 }}
+            title="Mark as pending"
+          >↩</button>
+        ) : (
+          <button
+            onClick={e => { e.stopPropagation(); onPin(task.id, !task.is_pinned) }}
+            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: task.is_pinned ? '#2DB87A' : '#D1D5DB', fontSize: 14, flexShrink: 0 }}
+            title={task.is_pinned ? 'Unpin from Focus' : 'Pin to Focus'}
+          >◉</button>
+        )
       )}
     </div>
   )
@@ -456,6 +465,11 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
     if (selectedTask?.id === id) setSelectedTask(null)
   }, [selectedTask])
 
+  const handleUncomplete = useCallback(async (id: string) => {
+    await fetch(`/api/tasks/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'pending', completed_at: null }) })
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: 'pending' as const, completed_at: undefined } : t))
+  }, [])
+
   const handlePin = useCallback(async (id: string, pinned: boolean) => {
     await handleUpdate(id, { is_pinned: pinned })
   }, [handleUpdate])
@@ -485,6 +499,13 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
     if (selectedTask && ids.includes(selectedTask.id)) setSelectedTask(null)
   }, [selectedIds, selectedTask])
 
+  const handleBulkUncomplete = useCallback(async () => {
+    const ids = [...selectedIds].filter(id => tasks.find(t => t.id === id)?.status === 'done')
+    setSelectedIds(new Set())
+    await Promise.all(ids.map(id => fetch(`/api/tasks/${id}`, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ status: 'pending', completed_at: null }) })))
+    setTasks(prev => prev.map(t => ids.includes(t.id) ? { ...t, status: 'pending' as const, completed_at: undefined } : t))
+  }, [selectedIds, tasks])
+
   const handleBulkDelete = useCallback(async () => {
     const ids = [...selectedIds]
     setSelectedIds(new Set())
@@ -513,7 +534,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
     }
   }, [completedTasks, selectedIds])
 
-  const sharedCardProps = { isSelectionMode, selectedIds, onSelect: setSelectedTask, onComplete: handleComplete, onPin: handlePin, onToggleSelect: handleToggleSelect }
+  const sharedCardProps = { isSelectionMode, selectedIds, onSelect: setSelectedTask, onComplete: handleComplete, onUncomplete: handleUncomplete, onPin: handlePin, onToggleSelect: handleToggleSelect }
 
   return (
     <div style={{ padding: '48px 40px 120px', fontFamily: "'DM Sans', sans-serif", maxWidth: 700 }}>
@@ -632,6 +653,8 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
       {/* Bulk action bar */}
       {isSelectionMode && (() => {
         const allSelected = activeTasks.length > 0 && activeTasks.every(t => selectedIds.has(t.id))
+        const hasCompleted = [...selectedIds].some(id => tasks.find(t => t.id === id)?.status === 'done')
+        const hasActive    = [...selectedIds].some(id => tasks.find(t => t.id === id)?.status !== 'done')
         return (
           <div style={{
             position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
@@ -653,14 +676,26 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
             }}>
               {allSelected ? 'Deselect all' : 'Select all'}
             </button>
-            <button onClick={handleBulkComplete} style={{
-              padding: '6px 14px', borderRadius: 20,
-              background: 'rgba(45,184,122,0.18)', border: '1px solid rgba(45,184,122,0.3)',
-              color: '#2DB87A', fontSize: 13, fontWeight: 600, cursor: 'pointer',
-              fontFamily: "'DM Sans', sans-serif",
-            }}>
-              ✓ Complete
-            </button>
+            {hasActive && (
+              <button onClick={handleBulkComplete} style={{
+                padding: '6px 14px', borderRadius: 20,
+                background: 'rgba(45,184,122,0.18)', border: '1px solid rgba(45,184,122,0.3)',
+                color: '#2DB87A', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                ✓ Complete
+              </button>
+            )}
+            {hasCompleted && (
+              <button onClick={handleBulkUncomplete} style={{
+                padding: '6px 14px', borderRadius: 20,
+                background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)',
+                color: '#FFFFFF', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+                fontFamily: "'DM Sans', sans-serif",
+              }}>
+                ↩ Undo
+              </button>
+            )}
             <button onClick={handleBulkDelete} style={{
               padding: '6px 14px', borderRadius: 20,
               background: 'rgba(239,68,68,0.12)', border: '1px solid rgba(239,68,68,0.22)',
