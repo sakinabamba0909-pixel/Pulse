@@ -68,9 +68,9 @@ export default function TaskDetailPanel({
   const [priority, setPriority] = useState<Priority>(task.priority)
   const [projectId, setProjectId] = useState(task.project_id ?? '')
   const [durationMinutes, setDurationMinutes] = useState<number | null>(task.duration_minutes ?? null)
-  const [relationshipId, setRelationshipId] = useState(task.relationship_id ?? '')
-  const [isDelegated, setIsDelegated] = useState(task.is_delegated)
-  const [delegatedTo, setDelegatedTo] = useState(task.delegated_to ?? '')
+  const [relationshipId] = useState(task.relationship_id ?? '')
+  const [isDelegated] = useState(task.is_delegated)
+  const [delegatedTo] = useState(task.delegated_to ?? '')
   const [isRecurring, setIsRecurring] = useState(task.is_recurring)
   const [recurrenceType, setRecurrenceType] = useState<RecurrenceRule['type']>(
     (task.recurrence_rule as RecurrenceRule)?.type ?? 'weekly'
@@ -400,25 +400,6 @@ export default function TaskDetailPanel({
             </select>
           </div>
 
-          {/* Person / commitment */}
-          <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: 0.8, display: 'block', marginBottom: 6 }}>
-              WHO IS THIS FOR?
-            </label>
-            <select
-              value={relationshipId}
-              onChange={e => { setRelationshipId(e.target.value); save({ relationship_id: e.target.value || undefined }) }}
-              style={{
-                border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '8px 12px',
-                fontSize: 13, ...s, color: '#1A1A1A', background: '#FAFAF9', outline: 'none',
-                width: '100%',
-              }}
-            >
-              <option value="">Just me</option>
-              {relationships.map(r => <option key={r.id} value={r.id}>{r.person_name}</option>)}
-            </select>
-          </div>
-
           {/* Subtasks */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
@@ -469,61 +450,6 @@ export default function TaskDetailPanel({
                 border: 'none', cursor: 'pointer', fontSize: 12, ...s,
               }}>Add</button>
             </div>
-          </div>
-
-          {/* Delegation */}
-          <div style={{ padding: '14px 16px', borderRadius: 14, background: isDelegated ? 'rgba(249,115,22,0.06)' : 'rgba(0,0,0,0.03)', border: `1px solid ${isDelegated ? 'rgba(249,115,22,0.2)' : 'rgba(0,0,0,0.07)'}` }}>
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div>
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#1A1A1A', ...s }}>Waiting on someone?</p>
-                {isDelegated && task.delegated_at && (
-                  <p style={{ fontSize: 11, color: daysSince(task.delegated_at) >= 5 ? '#D97706' : '#9CA3AF', ...s, marginTop: 2 }}>
-                    {daysSince(task.delegated_at) >= 5
-                      ? `${daysSince(task.delegated_at)} days — consider following up`
-                      : `Assigned ${daysSince(task.delegated_at)}d ago`}
-                  </p>
-                )}
-              </div>
-              <button onClick={() => { setIsDelegated(!isDelegated); save({ is_delegated: !isDelegated }) }} style={{
-                width: 40, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer',
-                background: isDelegated ? '#F97316' : 'rgba(0,0,0,0.15)',
-                position: 'relative', transition: 'background 0.2s',
-              }}>
-                <span style={{
-                  position: 'absolute', top: 3, left: isDelegated ? 21 : 3, width: 16, height: 16,
-                  borderRadius: '50%', background: '#FFF', transition: 'left 0.2s',
-                }} />
-              </button>
-            </div>
-            {isDelegated && (
-              <>
-                <input
-                  value={delegatedTo}
-                  onChange={e => { setDelegatedTo(e.target.value); setIsDirty(true) }}
-                  placeholder="Who are you waiting on?"
-                  style={{
-                    marginTop: 10, width: '100%', border: '1px solid rgba(249,115,22,0.3)',
-                    borderRadius: 8, padding: '6px 10px', fontSize: 13, ...s,
-                    color: '#1A1A1A', outline: 'none', background: '#FAFAF9',
-                  }}
-                />
-                {task.delegated_at && daysSince(task.delegated_at) >= 5 && (
-                  <button
-                    onClick={() => {
-                      const name = delegatedTo || 'them'
-                      navigator.clipboard.writeText(`Hey ${name}, just checking in on "${task.title}" — any update?`)
-                    }}
-                    style={{
-                      marginTop: 8, padding: '5px 12px', borderRadius: 8, fontSize: 12, ...s,
-                      background: 'rgba(217,119,6,0.08)', border: '1px solid rgba(217,119,6,0.25)',
-                      color: '#D97706', cursor: 'pointer', fontWeight: 500,
-                    }}
-                  >
-                    Copy follow-up message
-                  </button>
-                )}
-              </>
-            )}
           </div>
 
           {/* Recurring */}

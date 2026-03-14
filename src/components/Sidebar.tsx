@@ -1,7 +1,9 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { createClient } from '@/lib/supabase/client';
 import Orb from './Orb';
 
 const NAV = [
@@ -24,7 +26,16 @@ const BOTTOM_NAV = [
 
 export default function Sidebar({ name }: { name: string }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [signingOut, setSigningOut] = useState(false);
   const initial = name?.[0]?.toUpperCase() || 'P';
+
+  const handleSignOut = async () => {
+    setSigningOut(true);
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
 
   function isActive(href: string) {
     if (href === '/app') return pathname === '/app';
@@ -123,9 +134,23 @@ export default function Sidebar({ name }: { name: string }) {
             fontSize: 13, fontWeight: 500, color: '#3A3A3A',
             fontFamily: "'DM Sans', sans-serif",
             overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            flex: 1,
           }}>
             {name}
           </span>
+          <button
+            onClick={handleSignOut}
+            disabled={signingOut}
+            title="Sign out"
+            style={{
+              background: 'none', border: 'none', cursor: signingOut ? 'default' : 'pointer',
+              color: '#9CA3AF', fontSize: 14, padding: '4px 6px', borderRadius: 6,
+              flexShrink: 0, lineHeight: 1,
+              fontFamily: "'DM Sans', sans-serif",
+            }}
+          >
+            {signingOut ? '…' : '↪'}
+          </button>
         </div>
       </aside>
 
