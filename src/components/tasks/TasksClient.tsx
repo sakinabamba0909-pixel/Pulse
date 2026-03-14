@@ -532,7 +532,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
   const sharedCardProps = { isSelectionMode, selectedIds, onSelect: setSelectedTask, onComplete: handleComplete, onUncomplete: handleUncomplete, onPin: handlePin, onToggleSelect: handleToggleSelect }
 
   return (
-    <div style={{ padding: '48px 40px 120px', fontFamily: "'DM Sans', sans-serif", maxWidth: 700 }}>
+    <div className="page-shell" style={{ padding: '48px 40px 120px', fontFamily: "'DM Sans', sans-serif", maxWidth: 700 }}>
       <style>{`
         @keyframes checkBounce { 0% { transform: scale(1); } 40% { transform: scale(1.3); } 70% { transform: scale(0.9); } 100% { transform: scale(1); } }
         @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
@@ -542,7 +542,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
       {/* Header */}
       <div style={{ marginBottom: 36, animation: 'fadeUp 0.4s ease' }}>
         <p style={{ fontSize: 12, color: '#9CA3AF', marginBottom: 6, letterSpacing: 0.2 }}>Tasks</p>
-        <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 36, fontWeight: 400, letterSpacing: -0.5, color: '#1A1A1A', margin: '0 0 4px' }}>
+        <h1 className="page-title" style={{ fontFamily: "'Instrument Serif', serif", fontSize: 36, fontWeight: 400, letterSpacing: -0.5, color: '#1A1A1A', margin: '0 0 4px' }}>
           What needs doing.
         </h1>
         <p style={{ fontSize: 14, color: '#9CA3AF' }}>
@@ -625,6 +625,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
       {/* Floating Add Task button — hidden during selection mode or when panel is open */}
       {!isSelectionMode && !selectedTask && (
         <button
+          className="fab-button"
           onClick={() => setShowCreate(true)}
           style={{
             position: 'fixed', bottom: 32, right: 40,
@@ -651,7 +652,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
         const hasCompleted = [...selectedIds].some(id => tasks.find(t => t.id === id)?.status === 'done')
         const hasActive    = [...selectedIds].some(id => tasks.find(t => t.id === id)?.status !== 'done')
         return (
-          <div style={{
+          <div className="bulk-bar" style={{
             position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
             display: 'flex', alignItems: 'center', gap: 6,
             background: '#1A1A1A', borderRadius: 28, padding: '8px 8px 8px 16px',

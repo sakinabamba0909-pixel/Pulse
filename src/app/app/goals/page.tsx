@@ -27,9 +27,9 @@ export default async function GoalsPage() {
     .order('created_at');
 
   return (
-    <div style={{ padding: '64px 40px', fontFamily: "'DM Sans', sans-serif", color: '#1A1A1A' }}>
+    <div className="page-shell" style={{ padding: '64px 40px', fontFamily: "'DM Sans', sans-serif", color: '#1A1A1A' }}>
       <p style={{ fontSize: 12, color: '#8A949E', marginBottom: 8, letterSpacing: 0.2 }}>Goals</p>
-      <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 38, fontWeight: 400, letterSpacing: -0.5, margin: '0 0 6px' }}>
+      <h1 className="page-title" style={{ fontFamily: "'Instrument Serif', serif", fontSize: 38, fontWeight: 400, letterSpacing: -0.5, margin: '0 0 6px' }}>
         What you&apos;re working towards.
       </h1>
       <p style={{ fontSize: 15, color: '#8A949E', marginBottom: 48 }}>
@@ -39,7 +39,7 @@ export default async function GoalsPage() {
       </p>
 
       {goals && goals.length > 0 ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, maxWidth: 740 }}>
+        <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: 14, maxWidth: 740 }}>
           {goals.map(g => {
             const meta = GOAL_META[g.category] || { icon: '◈', label: g.title, desc: '' };
             return (

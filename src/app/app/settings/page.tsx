@@ -56,7 +56,7 @@ export default function SettingsPage() {
 
   return (
     <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: "'DM Sans', sans-serif" }}>
-      <div style={{ maxWidth: 560, margin: '0 auto', padding: '56px 24px 100px' }}>
+      <div className="page-shell" style={{ maxWidth: 560, margin: '0 auto', padding: '56px 24px 100px' }}>
 
         <h1 style={{
           fontFamily: "'Instrument Serif', serif",

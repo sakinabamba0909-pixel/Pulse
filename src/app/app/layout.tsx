@@ -20,7 +20,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
       fontFamily: "'DM Sans', sans-serif",
     }}>
       <Sidebar name={profile?.name || ''} />
-      <main style={{ flex: 1, marginLeft: 210, minHeight: '100vh' }}>
+      <main className="app-main">
         {children}
       </main>
     </div>

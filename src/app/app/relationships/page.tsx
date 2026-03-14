@@ -34,7 +34,7 @@ export default async function RelationshipsPage() {
         <p style={{ fontSize: 11, fontWeight: 700, color: '#8A949E', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 14 }}>
           {title}
         </p>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
+        <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
           {items.map(p => {
             const initials = p.person_name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
             const days = daysSince(p.last_contact_at);
@@ -74,9 +74,9 @@ export default async function RelationshipsPage() {
   };
 
   return (
-    <div style={{ padding: '64px 40px', fontFamily: "'DM Sans', sans-serif", color: '#1A1A1A' }}>
+    <div className="page-shell" style={{ padding: '64px 40px', fontFamily: "'DM Sans', sans-serif", color: '#1A1A1A' }}>
       <p style={{ fontSize: 12, color: '#8A949E', marginBottom: 8, letterSpacing: 0.2 }}>People</p>
-      <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 38, fontWeight: 400, letterSpacing: -0.5, margin: '0 0 6px' }}>
+      <h1 className="page-title" style={{ fontFamily: "'Instrument Serif', serif", fontSize: 38, fontWeight: 400, letterSpacing: -0.5, margin: '0 0 6px' }}>
         The people who matter.
       </h1>
       <p style={{ fontSize: 15, color: '#8A949E', marginBottom: 48 }}>

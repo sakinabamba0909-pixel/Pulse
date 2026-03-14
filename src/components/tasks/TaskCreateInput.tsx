@@ -512,7 +512,7 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
       <div onClick={onClose} style={{ position: 'absolute', inset: 0, background: 'rgba(0,0,0,0.12)', backdropFilter: 'blur(4px)' }} />
 
       {/* Card */}
-      <div style={{
+      <div className="create-overlay" style={{
         position: 'relative', width: '100%', maxWidth: 580,
         background: '#FFFFFF', borderRadius: 24, boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
         padding: 24, margin: '0 16px', maxHeight: '80vh', overflowY: 'auto',

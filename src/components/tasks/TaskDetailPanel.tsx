@@ -191,7 +191,7 @@ export default function TaskDetailPanel({
       />
 
       {/* Panel */}
-      <div style={{
+      <div className="detail-panel" style={{
         position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 50,
         width: 440, background: '#FFFFFF',
         boxShadow: '-8px 0 40px rgba(0,0,0,0.1)',

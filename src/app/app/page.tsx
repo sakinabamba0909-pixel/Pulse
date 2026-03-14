@@ -182,14 +182,14 @@ export default async function AppPage() {
         ::-webkit-scrollbar { height: 0; width: 0; }
       `}</style>
 
-      <div style={{ maxWidth: 740, margin: '0 auto', padding: '0 24px 100px' }}>
+      <div className="page-shell" style={{ maxWidth: 740, margin: '0 auto', padding: '0 24px 100px' }}>
 
         {/* ──────────────────── Hero greeting ──────────────────── */}
-        <div style={{ paddingTop: 64, paddingBottom: 44, animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) both' }}>
+        <div className="page-hero" style={{ paddingTop: 64, paddingBottom: 44, animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) both' }}>
           <p style={{ fontSize: 12, color: C.muted, marginBottom: 8, letterSpacing: 0.2 }}>
             {dateStr} &nbsp;·&nbsp; {timeStr}
           </p>
-          <h1 style={{
+          <h1 className="page-title" style={{
             fontFamily: "'Instrument Serif', serif",
             fontSize: 38, fontWeight: 400, lineHeight: 1.1,
             letterSpacing: -0.5, color: C.text, margin: '0 0 8px',
@@ -202,7 +202,7 @@ export default async function AppPage() {
         </div>
 
         {/* ──────────────────── Row 1: Your Day + Goals ──────────────────── */}
-        <div style={{
+        <div className="dashboard-grid" style={{
           display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14,
           animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) 0.08s both',
         }}>
@@ -383,7 +383,7 @@ export default async function AppPage() {
         )}
 
         {/* ──────────────────── Footer status bar ──────────────────── */}
-        <div style={{
+        <div className="status-footer" style={{
           marginTop: 48, paddingTop: 20, borderTop: `1px solid ${C.divider}`,
           display: 'flex', justifyContent: 'space-between', alignItems: 'center',
           animation: 'fadeUp 0.5s ease 0.4s both',

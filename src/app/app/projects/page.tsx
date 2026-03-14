@@ -22,9 +22,9 @@ export default async function ProjectsPage() {
     .order('created_at');
 
   return (
-    <div style={{ padding: '64px 40px', fontFamily: "'DM Sans', sans-serif", color: '#1A1A1A' }}>
+    <div className="page-shell" style={{ padding: '64px 40px', fontFamily: "'DM Sans', sans-serif", color: '#1A1A1A' }}>
       <p style={{ fontSize: 12, color: '#8A949E', marginBottom: 8, letterSpacing: 0.2 }}>Projects</p>
-      <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 38, fontWeight: 400, letterSpacing: -0.5, margin: '0 0 6px' }}>
+      <h1 className="page-title" style={{ fontFamily: "'Instrument Serif', serif", fontSize: 38, fontWeight: 400, letterSpacing: -0.5, margin: '0 0 6px' }}>
         Things in motion.
       </h1>
       <p style={{ fontSize: 15, color: '#8A949E', marginBottom: 48 }}>
@@ -34,7 +34,7 @@ export default async function ProjectsPage() {
       </p>
 
       {projects && projects.length > 0 ? (
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14, maxWidth: 740 }}>
+        <div className="dashboard-grid" style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14, maxWidth: 740 }}>
           {projects.map(p => {
             const meta = CATEGORY_META[p.category] || { icon: '▦' };
             return (

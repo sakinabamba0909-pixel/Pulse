@@ -67,9 +67,9 @@ export default function RemindersPage() {
   const dismissed = reminders.filter(r => r.status === 'dismissed' || r.status === 'sent')
 
   return (
-    <div style={{ padding: '64px 40px', fontFamily: "'DM Sans', sans-serif", color: '#1A1A1A', maxWidth: 680 }}>
+    <div className="page-shell" style={{ padding: '64px 40px', fontFamily: "'DM Sans', sans-serif", color: '#1A1A1A', maxWidth: 680 }}>
       <p style={{ fontSize: 12, color: '#8A949E', marginBottom: 8, letterSpacing: 0.2 }}>Reminders</p>
-      <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 38, fontWeight: 400, letterSpacing: -0.5, margin: '0 0 6px' }}>
+      <h1 className="page-title" style={{ fontFamily: "'Instrument Serif', serif", fontSize: 38, fontWeight: 400, letterSpacing: -0.5, margin: '0 0 6px' }}>
         Don&apos;t let things slip.
       </h1>
       <p style={{ fontSize: 15, color: '#8A949E', marginBottom: 40 }}>
