@@ -66,9 +66,9 @@ export interface Relationship {
 }
 
 export const PRIORITY_CONFIG: Record<Priority, { label: string; color: string; bg: string; border: string }> = {
-  urgent: { label: 'Urgent', color: '#EF4444', bg: 'rgba(239,68,68,0.08)',  border: 'rgba(239,68,68,0.2)'  },
-  normal: { label: 'Normal', color: '#3B82F6', bg: 'rgba(59,130,246,0.08)', border: 'rgba(59,130,246,0.2)' },
-  low:    { label: 'Low',    color: '#9CA3AF', bg: 'rgba(156,163,175,0.08)',border: 'rgba(156,163,175,0.2)'},
+  urgent: { label: 'Urgent', color: '#D4727A', bg: 'rgba(212,114,122,0.08)',  border: 'rgba(212,114,122,0.2)'  },
+  normal: { label: 'Normal', color: '#7AABC8', bg: 'rgba(122,171,200,0.08)',  border: 'rgba(122,171,200,0.2)'  },
+  low:    { label: 'Low',    color: '#B5ADA5', bg: 'rgba(181,173,165,0.08)',  border: 'rgba(181,173,165,0.2)'  },
 }
 
 export const DURATION_OPTIONS = [

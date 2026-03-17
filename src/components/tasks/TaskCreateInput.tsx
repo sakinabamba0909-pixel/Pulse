@@ -37,7 +37,7 @@ interface Props {
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const PROJECT_COLORS = ['#2DB87A', '#3B82F6', '#F97316', '#8B5CF6', '#EC4899', '#14B8A6', '#F59E0B', '#6B7280']
+const PROJECT_COLORS = ['#9B7EC8', '#7AABC8', '#D4A47A', '#9B7EC8', '#EC4899', '#14B8A6', '#F59E0B', '#6B7280']
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -94,22 +94,22 @@ function ParsedTaskCard({ task, projects, relationships, checked, onToggle, onDi
   const project  = projects.find(p => p.id === task.project_id)
   const person   = relationships.find(r => r.id === task.relationship_id)
   const dotColor = task.priority
-    ? ({ urgent: '#EF4444', normal: '#3B82F6', low: '#9CA3AF' } as Record<string,string>)[task.priority]
-    : '#9CA3AF'
+    ? ({ urgent: '#D4727A', normal: '#7AABC8', low: '#9E958B' } as Record<string,string>)[task.priority]
+    : '#9E958B'
 
   return (
     <div style={{
-      border: `1px solid ${checked ? 'rgba(45,184,122,0.25)' : 'rgba(0,0,0,0.08)'}`,
+      border: `1px solid ${checked ? 'rgba(155,126,200,0.25)' : 'rgba(0,0,0,0.08)'}`,
       borderRadius: 14, padding: '11px 14px', marginBottom: 8,
-      background: checked ? 'rgba(45,184,122,0.03)' : '#FAFAF9',
+      background: checked ? 'rgba(155,126,200,0.04)' : 'rgba(255,255,255,0.45)',
       transition: 'all 0.15s',
     }}>
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
         {/* Checkbox */}
         <button onClick={onToggle} style={{
           width: 18, height: 18, borderRadius: 5, flexShrink: 0, marginTop: 2,
-          border: `1.5px solid ${checked ? '#2DB87A' : 'rgba(0,0,0,0.2)'}`,
-          background: checked ? '#2DB87A' : 'transparent',
+          border: `1.5px solid ${checked ? '#9B7EC8' : 'rgba(0,0,0,0.2)'}`,
+          background: checked ? '#9B7EC8' : 'transparent',
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
         }}>
           {checked && <span style={{ color: '#FFF', fontSize: 9, fontWeight: 800, lineHeight: 1 }}>✓</span>}
@@ -124,9 +124,9 @@ function ParsedTaskCard({ task, projects, relationships, checked, onToggle, onDi
               onBlur={() => setExpanded(false)}
               autoFocus
               style={{
-                width: '100%', border: 'none', borderBottom: '1.5px solid #2DB87A',
+                width: '100%', border: 'none', borderBottom: '1.5px solid #9B7EC8',
                 outline: 'none', fontSize: 14, fontWeight: 500,
-                fontFamily: "'DM Sans', sans-serif", color: '#1A1A1A',
+                fontFamily: "'Outfit', sans-serif", color: '#2D2A26',
                 background: 'transparent', marginBottom: 6, padding: '1px 0',
               }}
             />
@@ -135,8 +135,8 @@ function ParsedTaskCard({ task, projects, relationships, checked, onToggle, onDi
               onClick={() => setExpanded(true)}
               title="Click to edit"
               style={{
-                fontSize: 14, fontWeight: 500, color: '#1A1A1A',
-                fontFamily: "'DM Sans', sans-serif", cursor: 'text',
+                fontSize: 14, fontWeight: 500, color: '#2D2A26',
+                fontFamily: "'Outfit', sans-serif", cursor: 'text',
                 overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
                 marginBottom: 5,
               }}
@@ -149,33 +149,33 @@ function ParsedTaskCard({ task, projects, relationships, checked, onToggle, onDi
               <span style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, display: 'inline-block', flexShrink: 0 }} />
             )}
             {task.due_at && (
-              <span style={{ fontSize: 11, color: '#6B6B6B', fontFamily: "'DM Sans', sans-serif", background: 'rgba(0,0,0,0.05)', padding: '1px 7px', borderRadius: 6 }}>
+              <span style={{ fontSize: 11, color: '#5C5650', fontFamily: "'Outfit', sans-serif", background: 'rgba(0,0,0,0.05)', padding: '1px 7px', borderRadius: 6 }}>
                 {formatDueShort(task.due_at)}
               </span>
             )}
             {task.duration_minutes && (
-              <span style={{ fontSize: 11, color: '#9CA3AF', fontFamily: "'DM Sans', sans-serif" }}>
+              <span style={{ fontSize: 11, color: '#9E958B', fontFamily: "'Outfit', sans-serif" }}>
                 {task.duration_minutes < 60 ? `${task.duration_minutes}m` : `${task.duration_minutes / 60}h`}
               </span>
             )}
             {project && (
-              <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 10, background: `${project.color}18`, color: project.color, fontWeight: 600, fontFamily: "'DM Sans', sans-serif" }}>
+              <span style={{ fontSize: 11, padding: '1px 7px', borderRadius: 10, background: `${project.color}18`, color: project.color, fontWeight: 600, fontFamily: "'Outfit', sans-serif" }}>
                 {project.name}
               </span>
             )}
             {person && (
-              <span style={{ fontSize: 11, color: '#8B5CF6', fontFamily: "'DM Sans', sans-serif" }}>
+              <span style={{ fontSize: 11, color: '#9B7EC8', fontFamily: "'Outfit', sans-serif" }}>
                 @{person.person_name.split(' ')[0]}
               </span>
             )}
             {task.is_commitment && (
-              <span style={{ fontSize: 10, color: '#F97316', fontWeight: 700, fontFamily: "'DM Sans', sans-serif", letterSpacing: 0.3 }}>COMMITMENT</span>
+              <span style={{ fontSize: 10, color: '#D4A47A', fontWeight: 700, fontFamily: "'Outfit', sans-serif", letterSpacing: 0.3 }}>COMMITMENT</span>
             )}
             {!task.due_at && !task.priority && !project && (
-              <span style={{ fontSize: 11, color: '#C4C9D0', fontFamily: "'DM Sans', sans-serif", fontStyle: 'italic' }}>no details detected</span>
+              <span style={{ fontSize: 11, color: '#C9C1B8', fontFamily: "'Outfit', sans-serif", fontStyle: 'italic' }}>no details detected</span>
             )}
             {onEditDetails && (
-              <button onClick={onEditDetails} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#9CA3AF', fontFamily: "'DM Sans', sans-serif", padding: 0, marginLeft: 'auto' }}>
+              <button onClick={onEditDetails} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 11, color: '#9E958B', fontFamily: "'Outfit', sans-serif", padding: 0, marginLeft: 'auto' }}>
                 Edit details →
               </button>
             )}
@@ -185,7 +185,7 @@ function ParsedTaskCard({ task, projects, relationships, checked, onToggle, onDi
         {/* Dismiss */}
         <button
           onClick={onDismiss}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4C9D0', fontSize: 16, flexShrink: 0, padding: '0 2px', lineHeight: 1 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C9C1B8', fontSize: 16, flexShrink: 0, padding: '0 2px', lineHeight: 1 }}
         >×</button>
       </div>
     </div>
@@ -229,7 +229,7 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
   // Inline project creation
   const [showNewProject,  setShowNewProject]  = useState(false)
   const [newProjectName,  setNewProjectName]  = useState('')
-  const [newProjectColor, setNewProjectColor] = useState('#2DB87A')
+  const [newProjectColor, setNewProjectColor] = useState('#9B7EC8')
   const [localProjects,   setLocalProjects]   = useState(projects)
 
   const nlRef    = useRef<HTMLTextAreaElement>(null)
@@ -498,7 +498,7 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
     <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex', alignItems: 'flex-end', justifyContent: 'center', padding: '0 0 80px' }}>
       <style>{`
         @keyframes slideUp   { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
-        @keyframes micPulse  { 0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,0.4)} 50%{box-shadow:0 0 0 7px rgba(239,68,68,0)} }
+        @keyframes micPulse  { 0%,100%{box-shadow:0 0 0 0 rgba(212,114,122,0.4)} 50%{box-shadow:0 0 0 7px rgba(212,114,122,0)} }
         @keyframes waveBar1  { 0%,100%{height:4px}  50%{height:20px} }
         @keyframes waveBar2  { 0%,100%{height:8px}  25%{height:26px} 75%{height:6px} }
         @keyframes waveBar3  { 0%,100%{height:14px} 50%{height:6px} }
@@ -522,28 +522,28 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
         {/* ══ SUGGESTIONS MODE (post-creation) ══ */}
         {activeSuggestions.length > 0 && (
           <div style={{ animation: 'fadeInUp 0.3s ease' }}>
-            <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 14, fontFamily: "'DM Sans', sans-serif" }}>
+            <p style={{ fontSize: 11, fontWeight: 700, color: '#9E958B', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 14, fontFamily: "'Outfit', sans-serif" }}>
               ✦ One-tap actions
             </p>
             {activeSuggestions.map((s, i) => (
               <div key={i} style={{
                 display: 'flex', alignItems: 'center', gap: 10, marginBottom: 8,
                 padding: '10px 14px', borderRadius: 12,
-                background: 'rgba(45,184,122,0.05)', border: '1px solid rgba(45,184,122,0.15)',
+                background: 'rgba(155,126,200,0.06)', border: '1px solid rgba(155,126,200,0.18)',
                 animation: `fadeInUp 0.25s ease ${i * 0.07}s both`,
               }}>
-                <span style={{ flex: 1, fontSize: 13, color: '#1A1A1A', fontFamily: "'DM Sans', sans-serif" }}>{s.text}</span>
+                <span style={{ flex: 1, fontSize: 13, color: '#2D2A26', fontFamily: "'Outfit', sans-serif" }}>{s.text}</span>
                 <button onClick={() => acceptSuggestion(s)} style={{
-                  padding: '4px 14px', borderRadius: 8, background: '#1A1A1A', color: '#FFF',
-                  border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
+                  padding: '4px 14px', borderRadius: 8, background: '#2D2A26', color: '#FFF',
+                  border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
                 }}>Yes</button>
-                <button onClick={() => dismissSuggestion(s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C4C9D0', fontSize: 18, padding: '0 2px', lineHeight: 1 }}>×</button>
+                <button onClick={() => dismissSuggestion(s)} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C9C1B8', fontSize: 18, padding: '0 2px', lineHeight: 1 }}>×</button>
               </div>
             ))}
             <button onClick={onClose} style={{
               width: '100%', marginTop: 6, padding: '9px', borderRadius: 12,
               border: '1px solid rgba(0,0,0,0.08)', background: 'transparent',
-              color: '#9CA3AF', fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+              color: '#9E958B', fontSize: 13, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
             }}>Skip all</button>
           </div>
         )}
@@ -556,9 +556,9 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
               {!showPreview && (['natural', 'form'] as const).map(m => (
                 <button key={m} onClick={() => { setMode(m); setShowPreview(false) }} style={{
                   padding: '5px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
-                  fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
-                  background: mode === m ? '#1A1A1A' : 'rgba(0,0,0,0.06)',
-                  color: mode === m ? '#FFFFFF' : '#6B6B6B', transition: 'all 0.15s',
+                  fontSize: 12, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
+                  background: mode === m ? '#2D2A26' : 'rgba(0,0,0,0.06)',
+                  color: mode === m ? '#FFFFFF' : '#5C5650', transition: 'all 0.15s',
                 }}>
                   {m === 'natural' ? '✦ Smart' : '≡ Full form'}
                 </button>
@@ -566,17 +566,17 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
               {showPreview && (
                 <button onClick={() => { setShowPreview(false); setMode('natural') }} style={{
                   padding: '5px 14px', borderRadius: 20, border: 'none', cursor: 'pointer',
-                  fontSize: 12, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
-                  background: 'rgba(0,0,0,0.06)', color: '#6B6B6B',
+                  fontSize: 12, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
+                  background: 'rgba(0,0,0,0.06)', color: '#5C5650',
                 }}>← Back</button>
               )}
-              <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#9CA3AF', fontSize: 20, lineHeight: 1, padding: '2px 6px' }}>×</button>
+              <button onClick={onClose} style={{ marginLeft: 'auto', background: 'none', border: 'none', cursor: 'pointer', color: '#9E958B', fontSize: 20, lineHeight: 1, padding: '2px 6px' }}>×</button>
             </div>
 
             {/* ── Preview cards (single or multi) ── */}
             {showPreview && (
               <div style={{ animation: 'fadeInUp 0.25s ease' }}>
-                <p style={{ fontSize: 11, fontWeight: 700, color: '#9CA3AF', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12, fontFamily: "'DM Sans', sans-serif" }}>
+                <p style={{ fontSize: 11, fontWeight: 700, color: '#9E958B', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12, fontFamily: "'Outfit', sans-serif" }}>
                   {parsedTasks.length === 1 ? '✦ Got it — looks right?' : `✦ ${parsedTasks.length} tasks — uncheck any to skip`}
                 </p>
                 {parsedTasks.map((task, i) => (
@@ -614,10 +614,10 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
                   disabled={checkedCount === 0 || isSubmitting}
                   style={{
                     width: '100%', padding: '11px', borderRadius: 14, border: 'none', marginTop: 4,
-                    background: checkedCount > 0 && !isSubmitting ? '#1A1A1A' : '#E5E7EB',
-                    color: checkedCount > 0 && !isSubmitting ? '#FFFFFF' : '#9CA3AF',
+                    background: checkedCount > 0 && !isSubmitting ? '#2D2A26' : '#E5E7EB',
+                    color: checkedCount > 0 && !isSubmitting ? '#FFFFFF' : '#9E958B',
                     fontSize: 14, fontWeight: 600, cursor: checkedCount > 0 ? 'pointer' : 'not-allowed',
-                    fontFamily: "'DM Sans', sans-serif",
+                    fontFamily: "'Outfit', sans-serif",
                   }}
                 >
                   {isSubmitting ? 'Adding...' : checkedCount === 1 ? 'Add task' : `Add ${checkedCount} tasks`}
@@ -633,18 +633,18 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '14px 0 8px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: 5, height: 32, marginBottom: 10 }}>
                       {(['waveBar1 0.9s', 'waveBar2 1.1s', 'waveBar3 0.8s', 'waveBar4 1.2s', 'waveBar5 1.0s']).map((anim, i) => (
-                        <div key={i} style={{ width: 4, borderRadius: 2, background: '#EF4444', animation: `${anim} ease-in-out infinite` }} />
+                        <div key={i} style={{ width: 4, borderRadius: 2, background: '#D4727A', animation: `${anim} ease-in-out infinite` }} />
                       ))}
                     </div>
                     {nlText && (
-                      <p style={{ fontSize: 13, color: '#6B6B6B', fontFamily: "'DM Sans', sans-serif", textAlign: 'center', fontStyle: 'italic', maxWidth: 320 }}>
+                      <p style={{ fontSize: 13, color: '#5C5650', fontFamily: "'Outfit', sans-serif", textAlign: 'center', fontStyle: 'italic', maxWidth: 320 }}>
                         &ldquo;{nlText}&rdquo;
                       </p>
                     )}
-                    <p style={{ fontSize: 12, color: '#EF4444', fontFamily: "'DM Sans', sans-serif", marginTop: 6 }}>Listening...</p>
+                    <p style={{ fontSize: 12, color: '#D4727A', fontFamily: "'Outfit', sans-serif", marginTop: 6 }}>Listening...</p>
                     <button onClick={toggleListening} style={{
-                      marginTop: 10, padding: '5px 16px', borderRadius: 20, border: '1px solid rgba(239,68,68,0.3)',
-                      background: 'transparent', color: '#EF4444', fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                      marginTop: 10, padding: '5px 16px', borderRadius: 20, border: '1px solid rgba(212,114,122,0.3)',
+                      background: 'transparent', color: '#D4727A', fontSize: 12, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
                     }}>Stop</button>
                   </div>
                 )}
@@ -653,13 +653,13 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
                 {isParsing && !isListening && (
                   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', padding: '18px 0 10px' }}>
                     <div style={{
-                      width: 36, height: 36, borderRadius: '50%', background: 'rgba(45,184,122,0.12)',
+                      width: 36, height: 36, borderRadius: '50%', background: 'rgba(155,126,200,0.15)',
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       animation: 'orbPulse 1.2s ease-in-out infinite', marginBottom: 12,
                     }}>
                       <span style={{ fontSize: 16 }}>✦</span>
                     </div>
-                    <p style={{ fontSize: 14, color: '#9CA3AF', fontFamily: "'DM Sans', sans-serif" }}>Understanding...</p>
+                    <p style={{ fontSize: 14, color: '#9E958B', fontFamily: "'Outfit', sans-serif" }}>Understanding...</p>
                   </div>
                 )}
 
@@ -675,13 +675,13 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
                       rows={2}
                       style={{
                         width: '100%', resize: 'none', border: 'none', outline: 'none',
-                        fontSize: 16, fontFamily: "'DM Sans', sans-serif", color: '#1A1A1A',
+                        fontSize: 16, fontFamily: "'Outfit', sans-serif", color: '#2D2A26',
                         lineHeight: 1.6, background: 'transparent',
                       }}
                     />
-                    {parseError && <p style={{ fontSize: 12, color: '#EF4444', marginTop: 4, fontFamily: "'DM Sans', sans-serif" }}>{parseError}</p>}
+                    {parseError && <p style={{ fontSize: 12, color: '#D4727A', marginTop: 4, fontFamily: "'Outfit', sans-serif" }}>{parseError}</p>}
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 14 }}>
-                      <p style={{ fontSize: 12, color: '#C4C9D0', fontFamily: "'DM Sans', sans-serif" }}>
+                      <p style={{ fontSize: 12, color: '#C9C1B8', fontFamily: "'Outfit', sans-serif" }}>
                         Enter ↵ &nbsp;·&nbsp; or speak
                       </p>
                       <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
@@ -692,7 +692,7 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
                             style={{
                               width: 36, height: 36, borderRadius: '50%', border: 'none', cursor: 'pointer',
                               display: 'flex', alignItems: 'center', justifyContent: 'center',
-                              background: 'rgba(0,0,0,0.06)', color: '#6B6B6B', transition: 'background 0.15s',
+                              background: 'rgba(0,0,0,0.06)', color: '#5C5650', transition: 'background 0.15s',
                             }}
                           >
                             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -708,9 +708,11 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
                           disabled={!nlText.trim()}
                           style={{
                             padding: '8px 20px', borderRadius: 20, border: 'none', cursor: nlText.trim() ? 'pointer' : 'not-allowed',
-                            fontSize: 13, fontWeight: 600, fontFamily: "'DM Sans', sans-serif",
-                            background: nlText.trim() ? '#1A1A1A' : '#E5E7EB',
-                            color: nlText.trim() ? '#FFFFFF' : '#9CA3AF', transition: 'all 0.15s',
+                            fontSize: 13, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
+                            background: nlText.trim() ? 'linear-gradient(135deg, #9B7EC8, #D4849A)' : '#E5E7EB',
+                            color: nlText.trim() ? '#FFFFFF' : '#9E958B',
+                            boxShadow: nlText.trim() ? '0 4px 16px rgba(155,126,200,0.3)' : 'none',
+                            transition: 'all 0.4s cubic-bezier(0.4,0,0.2,1)',
                           }}
                         >Parse</button>
                       </div>
@@ -724,7 +726,7 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
             {showForm && (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
                 {parsedTasks.length > 0 && (
-                  <div style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(45,184,122,0.08)', border: '1px solid rgba(45,184,122,0.2)', fontSize: 12, color: '#2DB87A', fontFamily: "'DM Sans', sans-serif" }}>
+                  <div style={{ padding: '8px 12px', borderRadius: 10, background: 'rgba(155,126,200,0.10)', border: '1px solid rgba(155,126,200,0.2)', fontSize: 12, color: '#9B7EC8', fontFamily: "'Outfit', sans-serif" }}>
                     ✦ AI parsed — edit below to confirm
                   </div>
                 )}
@@ -736,26 +738,26 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
                   placeholder="Task title"
                   style={{
                     border: 'none', borderBottom: '1.5px solid rgba(0,0,0,0.1)', outline: 'none',
-                    fontSize: 17, fontWeight: 500, fontFamily: "'DM Sans', sans-serif",
-                    color: '#1A1A1A', padding: '4px 0', background: 'transparent',
+                    fontSize: 17, fontWeight: 500, fontFamily: "'Outfit', sans-serif",
+                    color: '#2D2A26', padding: '4px 0', background: 'transparent',
                   }}
                 />
 
                 {/* Due + Priority */}
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr auto', gap: 12, alignItems: 'flex-start' }}>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#9CA3AF', letterSpacing: 0.5, display: 'block', marginBottom: 4, fontFamily: "'DM Sans', sans-serif" }}>DUE</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#9E958B', letterSpacing: 0.5, display: 'block', marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>DUE</label>
                     <input
                       type="datetime-local"
                       value={dueAt}
                       onChange={e => setDueAt(e.target.value)}
-                      style={{ border: '1px solid rgba(0,0,0,0.1)', borderRadius: 8, padding: '6px 10px', fontSize: 13, fontFamily: "'DM Sans', sans-serif", color: '#1A1A1A', background: '#FAFAF9', outline: 'none' }}
+                      style={{ border: '1px solid rgba(0,0,0,0.1)', borderRadius: 8, padding: '6px 10px', fontSize: 13, fontFamily: "'Outfit', sans-serif", color: '#2D2A26', background: 'rgba(255,255,255,0.45)', outline: 'none' }}
                     />
                     {!dueAt && (() => {
                       const suggestion = smartSuggestDate(allTasks)
                       if (!suggestion) return null
                       return (
-                        <p style={{ fontSize: 11, color: '#9CA3AF', marginTop: 5, fontFamily: "'DM Sans', sans-serif" }}>
+                        <p style={{ fontSize: 11, color: '#9E958B', marginTop: 5, fontFamily: "'Outfit', sans-serif" }}>
                           💡 You look free {suggestion.label} —{' '}
                           <button
                             onClick={() => {
@@ -763,14 +765,14 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
                               const pad = (n: number) => String(n).padStart(2, '0')
                               setDueAt(`${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`)
                             }}
-                            style={{ background: 'none', border: 'none', color: '#2DB87A', fontWeight: 600, fontSize: 11, cursor: 'pointer', padding: 0, fontFamily: "'DM Sans', sans-serif" }}
+                            style={{ background: 'none', border: 'none', color: '#9B7EC8', fontWeight: 600, fontSize: 11, cursor: 'pointer', padding: 0, fontFamily: "'Outfit', sans-serif" }}
                           >Set it</button>
                         </p>
                       )
                     })()}
                   </div>
                   <div>
-                    <label style={{ fontSize: 11, fontWeight: 600, color: '#9CA3AF', letterSpacing: 0.5, display: 'block', marginBottom: 4, fontFamily: "'DM Sans', sans-serif" }}>PRIORITY</label>
+                    <label style={{ fontSize: 11, fontWeight: 600, color: '#9E958B', letterSpacing: 0.5, display: 'block', marginBottom: 4, fontFamily: "'Outfit', sans-serif" }}>PRIORITY</label>
                     <div style={{ display: 'flex', gap: 6 }}>
                       {(['urgent', 'normal', 'low'] as Priority[]).map(p => {
                         const cfg = PRIORITY_CONFIG[p]
@@ -789,15 +791,15 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
 
                 {/* Duration */}
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: '#9CA3AF', letterSpacing: 0.5, display: 'block', marginBottom: 6, fontFamily: "'DM Sans', sans-serif" }}>ESTIMATED TIME</label>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#9E958B', letterSpacing: 0.5, display: 'block', marginBottom: 6, fontFamily: "'Outfit', sans-serif" }}>ESTIMATED TIME</label>
                   <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                     {[15, 30, 60, 120, 240].map(m => (
                       <button key={m} onClick={() => setDurationMinutes(durationMinutes === m ? null : m)} style={{
                         padding: '4px 12px', borderRadius: 20, border: '1px solid',
-                        borderColor: durationMinutes === m ? '#2DB87A' : 'rgba(0,0,0,0.1)',
-                        background: durationMinutes === m ? 'rgba(45,184,122,0.09)' : 'transparent',
-                        color: durationMinutes === m ? '#2DB87A' : '#6B6B6B',
-                        fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                        borderColor: durationMinutes === m ? '#9B7EC8' : 'rgba(0,0,0,0.1)',
+                        background: durationMinutes === m ? 'rgba(155,126,200,0.10)' : 'transparent',
+                        color: durationMinutes === m ? '#9B7EC8' : '#5C5650',
+                        fontSize: 12, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
                       }}>
                         {m < 60 ? `${m}m` : `${m / 60}h`}
                       </button>
@@ -822,27 +824,27 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
 
                 {/* Project */}
                 <div>
-                  <label style={{ fontSize: 11, fontWeight: 600, color: '#9CA3AF', letterSpacing: 0.5, display: 'block', marginBottom: 6, fontFamily: "'DM Sans', sans-serif" }}>PROJECT</label>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: '#9E958B', letterSpacing: 0.5, display: 'block', marginBottom: 6, fontFamily: "'Outfit', sans-serif" }}>PROJECT</label>
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
                     <button onClick={() => setProjectId('')} style={{
                       padding: '4px 12px', borderRadius: 20, border: '1px solid',
-                      borderColor: !projectId ? '#2DB87A' : 'rgba(0,0,0,0.1)',
-                      background: !projectId ? 'rgba(45,184,122,0.09)' : 'transparent',
-                      color: !projectId ? '#2DB87A' : '#6B6B6B',
-                      fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                      borderColor: !projectId ? '#9B7EC8' : 'rgba(0,0,0,0.1)',
+                      background: !projectId ? 'rgba(155,126,200,0.10)' : 'transparent',
+                      color: !projectId ? '#9B7EC8' : '#5C5650',
+                      fontSize: 12, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
                     }}>Inbox</button>
                     {localProjects.map(p => (
                       <button key={p.id} onClick={() => setProjectId(p.id)} style={{
                         padding: '4px 12px', borderRadius: 20, border: '1px solid',
                         borderColor: projectId === p.id ? p.color : 'rgba(0,0,0,0.1)',
                         background: projectId === p.id ? `${p.color}15` : 'transparent',
-                        color: projectId === p.id ? p.color : '#6B6B6B',
-                        fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                        color: projectId === p.id ? p.color : '#5C5650',
+                        fontSize: 12, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
                       }}>{p.name}</button>
                     ))}
                     <button onClick={() => setShowNewProject(!showNewProject)} style={{
                       padding: '4px 12px', borderRadius: 20, border: '1px dashed rgba(0,0,0,0.2)',
-                      background: 'transparent', color: '#9CA3AF', fontSize: 12, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif",
+                      background: 'transparent', color: '#9E958B', fontSize: 12, cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
                     }}>+ New</button>
                   </div>
 
@@ -853,14 +855,14 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
                         onChange={e => setNewProjectName(e.target.value)}
                         placeholder="Project name"
                         onKeyDown={e => e.key === 'Enter' && createProject()}
-                        style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 8, padding: '5px 10px', fontSize: 13, fontFamily: "'DM Sans', sans-serif", outline: 'none', color: '#1A1A1A' }}
+                        style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 8, padding: '5px 10px', fontSize: 13, fontFamily: "'Outfit', sans-serif", outline: 'none', color: '#2D2A26' }}
                       />
                       <div style={{ display: 'flex', gap: 4 }}>
                         {PROJECT_COLORS.map(c => (
                           <button key={c} onClick={() => setNewProjectColor(c)} style={{ width: 18, height: 18, borderRadius: '50%', background: c, border: 'none', cursor: 'pointer', outline: newProjectColor === c ? `2px solid ${c}` : 'none', outlineOffset: 2 }} />
                         ))}
                       </div>
-                      <button onClick={createProject} style={{ padding: '5px 12px', borderRadius: 8, background: '#1A1A1A', color: '#FFF', border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: "'DM Sans', sans-serif" }}>Add</button>
+                      <button onClick={createProject} style={{ padding: '5px 12px', borderRadius: 8, background: '#2D2A26', color: '#FFF', border: 'none', cursor: 'pointer', fontSize: 12, fontFamily: "'Outfit', sans-serif" }}>Add</button>
                     </div>
                   )}
                 </div>
@@ -872,22 +874,22 @@ export default function TaskCreateInput({ projects, allTasks, relationships, onA
                     onChange={e => setNotes(e.target.value)}
                     placeholder="Notes (optional)"
                     rows={2}
-                    style={{ border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '8px 12px', fontSize: 13, fontFamily: "'DM Sans', sans-serif", color: '#1A1A1A', resize: 'none', outline: 'none', background: '#FAFAF9' }}
+                    style={{ border: '1px solid rgba(0,0,0,0.08)', borderRadius: 10, padding: '8px 12px', fontSize: 13, fontFamily: "'Outfit', sans-serif", color: '#2D2A26', resize: 'none', outline: 'none', background: 'rgba(255,255,255,0.45)' }}
                   />
                 )}
 
                 {/* Actions */}
                 <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 4 }}>
-                  <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: 14, border: '1px solid rgba(0,0,0,0.1)', background: 'transparent', color: '#6B6B6B', fontSize: 13, cursor: 'pointer', fontFamily: "'DM Sans', sans-serif" }}>Cancel</button>
+                  <button onClick={onClose} style={{ padding: '9px 18px', borderRadius: 14, border: '1px solid rgba(0,0,0,0.1)', background: 'transparent', color: '#5C5650', fontSize: 13, cursor: 'pointer', fontFamily: "'Outfit', sans-serif" }}>Cancel</button>
                   <button
                     onClick={handleSubmit}
                     disabled={!title.trim() || isSubmitting}
                     style={{
                       padding: '9px 22px', borderRadius: 14, border: 'none',
-                      background: title.trim() && !isSubmitting ? '#1A1A1A' : '#E5E7EB',
-                      color: title.trim() && !isSubmitting ? '#FFFFFF' : '#9CA3AF',
+                      background: title.trim() && !isSubmitting ? '#2D2A26' : '#E5E7EB',
+                      color: title.trim() && !isSubmitting ? '#FFFFFF' : '#9E958B',
                       fontSize: 13, fontWeight: 600, cursor: title.trim() ? 'pointer' : 'not-allowed',
-                      fontFamily: "'DM Sans', sans-serif",
+                      fontFamily: "'Outfit', sans-serif",
                     }}
                   >
                     {isSubmitting ? 'Adding...' : 'Add task'}

@@ -31,7 +31,7 @@ export default async function RelationshipsPage() {
     if (!items || items.length === 0) return null;
     return (
       <div style={{ marginBottom: 40 }}>
-        <p style={{ fontSize: 11, fontWeight: 700, color: '#8A949E', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 14 }}>
+        <p style={{ fontSize: 11, fontWeight: 700, color: '#9E958B', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 14 }}>
           {title}
         </p>
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(200px, 1fr))', gap: 12 }}>
@@ -40,23 +40,23 @@ export default async function RelationshipsPage() {
             const days = daysSince(p.last_contact_at);
             return (
               <div key={p.id} style={{
-                background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)',
+                background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.05)',
                 borderRadius: 18, padding: '18px 18px',
                 display: 'flex', alignItems: 'center', gap: 14,
               }}>
                 <div style={{
                   width: 42, height: 42, borderRadius: '50%', flexShrink: 0,
-                  background: 'rgba(45,184,122,0.09)', border: '1.5px solid rgba(45,184,122,0.2)',
+                  background: 'rgba(155,126,200,0.10)', border: '1.5px solid rgba(45,184,122,0.2)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  fontSize: 13, fontWeight: 700, color: '#2DB87A',
+                  fontSize: 13, fontWeight: 700, color: '#9B7EC8',
                 }}>
                   {initials}
                 </div>
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <p style={{ fontSize: 14, fontWeight: 600, color: '#1A1A1A', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                  <p style={{ fontSize: 14, fontWeight: 600, color: '#2D2A26', marginBottom: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                     {p.person_name}
                   </p>
-                  <p style={{ fontSize: 12, color: '#8A949E' }}>
+                  <p style={{ fontSize: 12, color: '#9E958B' }}>
                     {FREQ_LABEL[p.contact_frequency?.toLowerCase()] || p.contact_frequency}
                   </p>
                   {days !== null && (
@@ -74,12 +74,12 @@ export default async function RelationshipsPage() {
   };
 
   return (
-    <div style={{ padding: '64px 40px', fontFamily: "'DM Sans', sans-serif", color: '#1A1A1A' }}>
-      <p style={{ fontSize: 12, color: '#8A949E', marginBottom: 8, letterSpacing: 0.2 }}>People</p>
-      <h1 style={{ fontFamily: "'Instrument Serif', serif", fontSize: 38, fontWeight: 400, letterSpacing: -0.5, margin: '0 0 6px' }}>
+    <div style={{ padding: '64px 40px', fontFamily: "'Outfit', sans-serif", color: '#2D2A26' }}>
+      <p style={{ fontSize: 12, color: '#9E958B', marginBottom: 8, letterSpacing: 0.2 }}>People</p>
+      <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 38, fontWeight: 400, letterSpacing: -0.5, margin: '0 0 6px' }}>
         The people who matter.
       </h1>
-      <p style={{ fontSize: 15, color: '#8A949E', marginBottom: 48 }}>
+      <p style={{ fontSize: 15, color: '#9E958B', marginBottom: 48 }}>
         {people && people.length > 0
           ? `${people.length} connection${people.length !== 1 ? 's' : ''} tracked.`
           : 'Add people to stay in touch with who matters most.'}
@@ -92,12 +92,12 @@ export default async function RelationshipsPage() {
         </div>
       ) : (
         <div style={{
-          background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.07)', borderRadius: 20,
+          background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.05)', borderRadius: 20,
           padding: '48px 40px', textAlign: 'center', maxWidth: 480,
         }}>
           <p style={{ fontSize: 32, marginBottom: 16 }}>◑</p>
-          <p style={{ fontSize: 16, fontWeight: 500, color: '#1A1A1A', marginBottom: 6 }}>No people added yet</p>
-          <p style={{ fontSize: 14, color: '#8A949E', lineHeight: 1.6 }}>
+          <p style={{ fontSize: 16, fontWeight: 500, color: '#2D2A26', marginBottom: 6 }}>No people added yet</p>
+          <p style={{ fontSize: 14, color: '#9E958B', lineHeight: 1.6 }}>
             People you selected during onboarding will show up here.
           </p>
         </div>

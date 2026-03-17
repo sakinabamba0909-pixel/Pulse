@@ -140,23 +140,23 @@ export default async function AppPage() {
 
   // ─── Palette ───
   const C = {
-    bg:          '#F5F4F2',
-    card:        '#FFFFFF',
-    cardBorder:  'rgba(0,0,0,0.07)',
-    text:        '#1A1A1A',
-    muted:       '#8A949E',
+    bg:          '#F0EBE6',
+    card:        'rgba(255,255,255,0.52)',
+    cardBorder:  'rgba(0,0,0,0.05)',
+    text:        '#2D2A26',
+    muted:       '#9E958B',
     faint:       'rgba(0,0,0,0.03)',
     divider:     'rgba(0,0,0,0.06)',
-    accent:      '#2DB87A',
-    accentDim:   'rgba(45,184,122,0.09)',
-    accentBorder:'rgba(45,184,122,0.22)',
-    amber:       '#D97706',
+    accent:      '#9B7EC8',
+    accentDim:   'rgba(155,126,200,0.10)',
+    accentBorder:'rgba(155,126,200,0.25)',
+    amber:       '#D4A47A',
     amberDim:    'rgba(217,119,6,0.08)',
     amberBorder: 'rgba(217,119,6,0.2)',
   };
 
   const cardStyle: React.CSSProperties = {
-    background: C.card,
+    background: C.card, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
     border: `1px solid ${C.cardBorder}`,
     borderRadius: 22,
     padding: '22px 24px',
@@ -168,15 +168,15 @@ export default async function AppPage() {
   };
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: 'transparent', color: C.text, fontFamily: "'Outfit', sans-serif" }}>
       <style>{`
         @keyframes fadeUp {
           from { opacity: 0; transform: translateY(16px); }
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes pulseGlow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(45,184,122,0); }
-          50%       { box-shadow: 0 0 16px 4px rgba(45,184,122,0.1); }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(155,126,200,0); }
+          50%       { box-shadow: 0 0 16px 4px rgba(155,126,200,0.1); }
         }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { height: 0; width: 0; }
@@ -190,7 +190,7 @@ export default async function AppPage() {
             {dateStr} &nbsp;·&nbsp; {timeStr}
           </p>
           <h1 style={{
-            fontFamily: "'Instrument Serif', serif",
+            fontFamily: "'Fraunces', serif",
             fontSize: 38, fontWeight: 400, lineHeight: 1.1,
             letterSpacing: -0.5, color: C.text, margin: '0 0 8px',
           }}>
@@ -279,7 +279,7 @@ export default async function AppPage() {
                 <span style={{ fontSize: 11, color: C.accent, fontWeight: 600 }}>View all →</span>
               </div>
               {focusTasks.map((t: any, i: number) => {
-                const dotColor = ({ urgent: '#EF4444', high: '#F97316', normal: '#3B82F6', low: '#9CA3AF' } as Record<string, string>)[t.priority] ?? '#9CA3AF'
+                const dotColor = ({ urgent: '#D4727A', high: '#D4A47A', normal: '#7AABC8', low: '#9E958B' } as Record<string, string>)[t.priority] ?? '#9E958B'
                 const proj = Array.isArray(t.project) ? t.project[0] : t.project
                 return (
                   <div key={t.id} style={{

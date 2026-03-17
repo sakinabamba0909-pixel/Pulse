@@ -63,7 +63,7 @@ export default function LoginPage() {
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#FAFAF9', padding: 24, fontFamily: "'DM Sans', sans-serif",
+      background: '#F0EBE6', padding: 24, fontFamily: "'Outfit', sans-serif",
     }}>
       <div style={{ width: '100%', maxWidth: 400, animation: 'fadeIn 0.6s ease' }}>
         {/* Logo + Orb */}
@@ -72,12 +72,12 @@ export default function LoginPage() {
             <Orb size={80} />
           </div>
           <h1 style={{
-            fontFamily: "'Instrument Serif', serif", fontSize: 36,
-            fontWeight: 400, letterSpacing: -0.5, color: '#1A1A1A', marginBottom: 8,
+            fontFamily: "'Fraunces', serif", fontSize: 36,
+            fontWeight: 400, letterSpacing: -0.5, color: '#2D2A26', marginBottom: 8,
           }}>
             Pulse
           </h1>
-          <p style={{ fontSize: 15, color: '#6B6B6B', lineHeight: 1.5 }}>
+          <p style={{ fontSize: 15, color: '#5C5650', lineHeight: 1.5 }}>
             {isSignUp ? 'Create your account to get started' : 'Welcome back'}
           </p>
         </div>
@@ -85,10 +85,10 @@ export default function LoginPage() {
         {/* Google Sign In */}
         <button onClick={handleGoogleAuth} style={{
           width: '100%', padding: '14px 20px', borderRadius: 14,
-          background: '#FFFFFF', border: '1.5px solid #E8E6E3',
+          background: '#FFFFFF', border: '1.5px solid rgba(155,126,200,0.25)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          fontSize: 14, fontWeight: 500, color: '#1A1A1A', cursor: 'pointer',
-          fontFamily: "'DM Sans', sans-serif", marginBottom: 20,
+          fontSize: 14, fontWeight: 500, color: '#2D2A26', cursor: 'pointer',
+          fontFamily: "'Outfit', sans-serif", marginBottom: 20,
           boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
           transition: 'all 0.15s',
         }}>
@@ -105,15 +105,15 @@ export default function LoginPage() {
         <div style={{
           display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20,
         }}>
-          <div style={{ flex: 1, height: 1, background: '#E8E6E3' }} />
-          <span style={{ fontSize: 12, color: '#9B9B9B', fontWeight: 500 }}>or</span>
-          <div style={{ flex: 1, height: 1, background: '#E8E6E3' }} />
+          <div style={{ flex: 1, height: 1, background: 'rgba(155,126,200,0.25)' }} />
+          <span style={{ fontSize: 12, color: '#9E958B', fontWeight: 500 }}>or</span>
+          <div style={{ flex: 1, height: 1, background: 'rgba(155,126,200,0.25)' }} />
         </div>
 
         {/* Email/Password Form */}
         <form onSubmit={handleEmailAuth}>
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#6B6B6B', marginBottom: 6 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#5C5650', marginBottom: 6 }}>
               Email
             </label>
             <input
@@ -121,17 +121,17 @@ export default function LoginPage() {
               placeholder="you@example.com" required
               style={{
                 width: '100%', padding: '13px 16px', borderRadius: 12,
-                border: '1.5px solid #E8E6E3', background: '#FFFFFF',
-                fontSize: 14, color: '#1A1A1A', fontFamily: "'DM Sans', sans-serif",
+                border: '1.5px solid rgba(155,126,200,0.25)', background: '#FFFFFF',
+                fontSize: 14, color: '#2D2A26', fontFamily: "'Outfit', sans-serif",
                 transition: 'border-color 0.2s',
               }}
-              onFocus={e => e.target.style.borderColor = '#2DB87A'}
-              onBlur={e => e.target.style.borderColor = '#E8E6E3'}
+              onFocus={e => e.target.style.borderColor = '#9B7EC8'}
+              onBlur={e => e.target.style.borderColor = 'rgba(155,126,200,0.25)'}
             />
           </div>
 
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#6B6B6B', marginBottom: 6 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#5C5650', marginBottom: 6 }}>
               Password
             </label>
             <input
@@ -140,12 +140,12 @@ export default function LoginPage() {
               required minLength={6}
               style={{
                 width: '100%', padding: '13px 16px', borderRadius: 12,
-                border: '1.5px solid #E8E6E3', background: '#FFFFFF',
-                fontSize: 14, color: '#1A1A1A', fontFamily: "'DM Sans', sans-serif",
+                border: '1.5px solid rgba(155,126,200,0.25)', background: '#FFFFFF',
+                fontSize: 14, color: '#2D2A26', fontFamily: "'Outfit', sans-serif",
                 transition: 'border-color 0.2s',
               }}
-              onFocus={e => e.target.style.borderColor = '#2DB87A'}
-              onBlur={e => e.target.style.borderColor = '#E8E6E3'}
+              onFocus={e => e.target.style.borderColor = '#9B7EC8'}
+              onBlur={e => e.target.style.borderColor = 'rgba(155,126,200,0.25)'}
             />
           </div>
 
@@ -154,25 +154,25 @@ export default function LoginPage() {
               padding: '10px 14px', borderRadius: 10, marginBottom: 16,
               background: 'rgba(239,107,107,0.08)', border: '1px solid rgba(239,107,107,0.2)',
             }}>
-              <p style={{ fontSize: 13, color: '#EF6B6B' }}>{error}</p>
+              <p style={{ fontSize: 13, color: '#D4727A' }}>{error}</p>
             </div>
           )}
 
           {message && (
             <div style={{
               padding: '10px 14px', borderRadius: 10, marginBottom: 16,
-              background: 'rgba(45,184,122,0.08)', border: '1px solid rgba(45,184,122,0.2)',
+              background: 'rgba(155,126,200,0.10)', border: '1px solid rgba(45,184,122,0.2)',
             }}>
-              <p style={{ fontSize: 13, color: '#2DB87A' }}>{message}</p>
+              <p style={{ fontSize: 13, color: '#9B7EC8' }}>{message}</p>
             </div>
           )}
 
           <button type="submit" disabled={loading} style={{
             width: '100%', padding: '14px 20px', borderRadius: 14,
-            background: loading ? '#E8E6E3' : '#2DB87A',
-            border: 'none', color: loading ? '#9B9B9B' : 'white',
+            background: loading ? 'rgba(155,126,200,0.25)' : '#9B7EC8',
+            border: 'none', color: loading ? '#9E958B' : 'white',
             fontSize: 15, fontWeight: 600, cursor: loading ? 'default' : 'pointer',
-            fontFamily: "'DM Sans', sans-serif",
+            fontFamily: "'Outfit', sans-serif",
             boxShadow: loading ? 'none' : '0 4px 16px rgba(45,184,122,0.25)',
             transition: 'all 0.2s',
           }}>
@@ -181,14 +181,14 @@ export default function LoginPage() {
         </form>
 
         {/* Toggle sign up / sign in */}
-        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: '#6B6B6B' }}>
+        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: '#5C5650' }}>
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button
             onClick={() => { setIsSignUp(!isSignUp); setError(''); setMessage(''); }}
             style={{
-              background: 'none', border: 'none', color: '#2DB87A',
+              background: 'none', border: 'none', color: '#9B7EC8',
               fontWeight: 600, cursor: 'pointer', fontSize: 13,
-              fontFamily: "'DM Sans', sans-serif",
+              fontFamily: "'Outfit', sans-serif",
             }}
           >
             {isSignUp ? 'Sign in' : 'Sign up'}
