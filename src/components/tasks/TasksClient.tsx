@@ -5,7 +5,7 @@ import type { Task, Project, Relationship, Priority } from '@/lib/tasks/types'
 import { PRIORITY_CONFIG } from '@/lib/tasks/types'
 import TaskDetailPanel from './TaskDetailPanel'
 import TaskCreateInput from './TaskCreateInput'
-import { useBloom } from '@/components/AppShell'
+import { useBloom } from '@/lib/BloomContext'
 
 // ─── Helpers ───────────────────────────────────────────────────────────────────
 

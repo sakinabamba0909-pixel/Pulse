@@ -1,18 +1,11 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
 import GanzfeldLight from './GanzfeldLight';
+import { BloomContext } from '@/lib/BloomContext';
 
-interface BloomContextType {
-  triggerBloom: () => void;
-}
-
-export const BloomContext = createContext<BloomContextType>({ triggerBloom: () => {} });
-
-export function useBloom() {
-  return useContext(BloomContext);
-}
+export { useBloom } from '@/lib/BloomContext';
 
 function getMood(pathname: string): string {
   if (pathname === '/app') return 'home';

@@ -161,7 +161,7 @@ export default function LoginPage() {
           {message && (
             <div style={{
               padding: '10px 14px', borderRadius: 10, marginBottom: 16,
-              background: 'rgba(155,126,200,0.10)', border: '1px solid rgba(45,184,122,0.2)',
+              background: 'rgba(155,126,200,0.10)', border: '1px solid rgba(155,126,200,0.2)',
             }}>
               <p style={{ fontSize: 13, color: '#9B7EC8' }}>{message}</p>
             </div>
@@ -173,7 +173,7 @@ export default function LoginPage() {
             border: 'none', color: loading ? '#9E958B' : 'white',
             fontSize: 15, fontWeight: 600, cursor: loading ? 'default' : 'pointer',
             fontFamily: "'Outfit', sans-serif",
-            boxShadow: loading ? 'none' : '0 4px 16px rgba(45,184,122,0.25)',
+            boxShadow: loading ? 'none' : '0 4px 16px rgba(155,126,200,0.25)',
             transition: 'all 0.2s',
           }}>
             {loading ? 'Loading...' : isSignUp ? 'Create Account' : 'Sign In'}
