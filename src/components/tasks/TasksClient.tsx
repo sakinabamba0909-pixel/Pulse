@@ -42,7 +42,7 @@ function isOverdue(due_at?: string): boolean {
   return new Date(due_at) < startOfDay(new Date())
 }
 
-function priorityRank(p: Priority) { return { urgent: 0, normal: 1, low: 2 }[p] }
+function priorityRank(p: Priority) { return { urgent: 0, normal: 1, low: 2 }[p] ?? 1 }
 
 type Filter = 'all' | 'today' | 'week' | 'waiting' | 'priority'
 type Sort   = 'due_date' | 'priority' | 'created_at'
@@ -64,7 +64,7 @@ interface CardProps {
 function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSelect, onComplete, onPin, onToggleSelect }: CardProps) {
   const [checking, setChecking] = useState(false)
   const [hovered,  setHovered]  = useState(false)
-  const cfg       = PRIORITY_CONFIG[task.priority]
+  const cfg       = PRIORITY_CONFIG[task.priority] || PRIORITY_CONFIG.normal
   const sub       = allTasks.filter(t => t.parent_task_id === task.id)
   const done      = sub.filter(t => t.status === 'done')
   const isBlocked = !!task.blocked_by_task_id && allTasks.find(t => t.id === task.blocked_by_task_id)?.status === 'pending'
