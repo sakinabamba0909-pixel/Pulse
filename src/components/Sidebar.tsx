@@ -20,10 +20,10 @@ export default function Sidebar({ name }: { name: string }) {
   return (
     <aside style={{
       width: 230, flexShrink: 0,
-      background: 'rgba(255,255,255,0.35)',
+      background: 'rgba(255,255,255,0.25)',
       backdropFilter: 'blur(40px)',
       WebkitBackdropFilter: 'blur(40px)',
-      borderRight: '1px solid rgba(255,255,255,0.3)',
+      borderRight: '1px solid rgba(255,255,255,0.30)',
       display: 'flex', flexDirection: 'column',
       position: 'fixed', top: 0, left: 0, bottom: 0,
       zIndex: 20,
@@ -32,12 +32,12 @@ export default function Sidebar({ name }: { name: string }) {
       <div style={{
         padding: '32px 24px 24px',
         display: 'flex', alignItems: 'center', gap: 10,
-        borderBottom: '1px solid rgba(0,0,0,0.04)',
+        borderBottom: '1px solid rgba(255,255,255,0.15)',
       }}>
         <Orb size={26} animate={false} />
         <span style={{
           fontFamily: "'Fraunces', serif",
-          fontSize: 22, fontWeight: 400, color: '#2D2A26', letterSpacing: -0.5,
+          fontSize: 22, fontWeight: 400, color: '#2A2D35', letterSpacing: -0.5,
         }}>
           Pulse
         </span>
@@ -55,21 +55,21 @@ export default function Sidebar({ name }: { name: string }) {
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 10,
                 padding: '11px 16px', borderRadius: 12,
-                background: isActive ? 'rgba(155,126,200,0.08)' : 'transparent',
-                border: isActive ? '1px solid rgba(155,126,200,0.12)' : '1px solid transparent',
+                background: isActive ? 'rgba(139,126,200,0.12)' : 'transparent',
+                border: isActive ? '1px solid rgba(139,126,200,0.18)' : '1px solid transparent',
                 cursor: 'pointer',
                 transition: 'all 0.4s cubic-bezier(0.4,0,0.2,1)',
               }}>
                 <span style={{
                   fontSize: 13, width: 16, textAlign: 'center', flexShrink: 0,
-                  color: isActive ? '#9B7EC8' : '#9E958B',
+                  color: isActive ? '#8B7EC8' : '#8890A0',
                 }}>
                   {item.icon}
                 </span>
                 <span style={{
                   fontSize: 14,
                   fontWeight: isActive ? 600 : 400,
-                  color: isActive ? '#7B5EA8' : '#5C5650',
+                  color: isActive ? '#6B5EA8' : '#4A4E5A',
                   fontFamily: "'Outfit', sans-serif",
                   letterSpacing: -0.1,
                 }}>
@@ -79,8 +79,8 @@ export default function Sidebar({ name }: { name: string }) {
                   <div style={{
                     marginLeft: 'auto', width: 6, height: 6,
                     borderRadius: '50%',
-                    background: '#9B7EC8',
-                    boxShadow: '0 0 10px rgba(155,126,200,0.5)',
+                    background: '#8B7EC8',
+                    boxShadow: '0 0 10px rgba(139,126,200,0.5)',
                     flexShrink: 0,
                   }} />
                 )}
@@ -93,20 +93,20 @@ export default function Sidebar({ name }: { name: string }) {
       {/* User footer */}
       <div style={{
         padding: '14px 18px',
-        borderTop: '1px solid rgba(0,0,0,0.04)',
+        borderTop: '1px solid rgba(255,255,255,0.15)',
         display: 'flex', alignItems: 'center', gap: 10,
       }}>
         <div style={{
           width: 28, height: 28, borderRadius: '50%',
-          background: 'linear-gradient(135deg, rgba(155,126,200,0.12), rgba(212,132,154,0.08))',
-          border: '1.5px solid rgba(155,126,200,0.18)',
+          background: 'linear-gradient(135deg, rgba(139,126,200,0.15), rgba(200,136,158,0.10))',
+          border: '1.5px solid rgba(139,126,200,0.22)',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 11, fontWeight: 700, color: '#9B7EC8', flexShrink: 0,
+          fontSize: 11, fontWeight: 700, color: '#8B7EC8', flexShrink: 0,
         }}>
           {initial}
         </div>
         <span style={{
-          fontSize: 13, fontWeight: 500, color: '#5C5650',
+          fontSize: 13, fontWeight: 500, color: '#4A4E5A',
           fontFamily: "'Outfit', sans-serif",
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
         }}>

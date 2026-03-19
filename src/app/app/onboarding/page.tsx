@@ -30,18 +30,18 @@ function ChoiceCard({ icon, title, desc, selected, onClick, small }: {
     <button onClick={onClick} style={{
       width: '100%', display: 'flex', alignItems: 'center', gap: small ? 12 : 16,
       padding: small ? '12px 16px' : '18px 22px', borderRadius: small ? 14 : 18,
-      background: selected ? 'rgba(155,126,200,0.10)' : '#FFFFFF',
-      border: `1.5px solid ${selected ? '#9B7EC8' : 'rgba(155,126,200,0.25)'}`,
+      background: selected ? 'rgba(139,126,200,0.10)' : '#FFFFFF',
+      border: `1.5px solid ${selected ? '#8B7EC8' : 'rgba(139,126,200,0.25)'}`,
       cursor: 'pointer', transition: 'all 0.25s', textAlign: 'left',
-      boxShadow: selected ? '0 0 0 3px rgba(155,126,200,0.10)' : 'none',
+      boxShadow: selected ? '0 0 0 3px rgba(139,126,200,0.10)' : 'none',
       fontFamily: "'Outfit', sans-serif",
     }}>
       <span style={{ fontSize: small ? 22 : 28, flexShrink: 0 }}>{icon}</span>
       <div style={{ flex: 1 }}>
-        <p style={{ fontSize: small ? 14 : 16, fontWeight: 500, color: '#2D2A26', marginBottom: desc ? 2 : 0 }}>{title}</p>
-        {desc && <p style={{ fontSize: small ? 12 : 13, color: '#5C5650', lineHeight: 1.4 }}>{desc}</p>}
+        <p style={{ fontSize: small ? 14 : 16, fontWeight: 500, color: '#2A2D35', marginBottom: desc ? 2 : 0 }}>{title}</p>
+        {desc && <p style={{ fontSize: small ? 12 : 13, color: '#4A4E5A', lineHeight: 1.4 }}>{desc}</p>}
       </div>
-      {selected && <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#9B7EC8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+      {selected && <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#8B7EC8', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
         <span style={{ color: 'white', fontSize: 13, fontWeight: 700 }}>✓</span>
       </div>}
     </button>
@@ -170,33 +170,33 @@ export default function OnboardingPage() {
   // Common styles
   const S = {
     orbMsg: { display: 'flex', alignItems: 'flex-start' as const, gap: 10, marginBottom: 24 },
-    hint: { fontSize: 12, color: '#9E958B', marginTop: 10, marginLeft: 4 },
-    card: { background: '#FFFFFF', borderRadius: 18, border: '1px solid rgba(155,126,200,0.25)', padding: 22, boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.03)' },
+    hint: { fontSize: 12, color: '#8890A0', marginTop: 10, marginLeft: 4 },
+    card: { background: '#FFFFFF', borderRadius: 18, border: '1px solid rgba(139,126,200,0.25)', padding: 22, boxShadow: '0 1px 3px rgba(255,255,255,0.15), 0 4px 12px rgba(0,0,0,0.03)' },
     chip: (sel: boolean) => ({
       padding: '8px 16px', borderRadius: 20,
-      background: sel ? '#9B7EC8' : '#FFFFFF',
-      border: `1.5px solid ${sel ? '#9B7EC8' : 'rgba(155,126,200,0.25)'}`,
-      color: sel ? 'white' : '#2D2A26',
+      background: sel ? '#8B7EC8' : '#FFFFFF',
+      border: `1.5px solid ${sel ? '#8B7EC8' : 'rgba(139,126,200,0.25)'}`,
+      color: sel ? 'white' : '#2A2D35',
       fontSize: 13, fontWeight: 500 as const, cursor: 'pointer',
       transition: 'all 0.2s', fontFamily: "'Outfit', sans-serif",
     }),
     timeBtn: (sel: boolean) => ({
       flex: 1, padding: '10px 8px', borderRadius: 10,
-      background: sel ? '#9B7EC8' : '#F5F5F3',
-      border: `1px solid ${sel ? '#9B7EC8' : 'rgba(155,126,200,0.25)'}`,
-      color: sel ? 'white' : '#2D2A26',
+      background: sel ? '#8B7EC8' : '#F5F5F3',
+      border: `1px solid ${sel ? '#8B7EC8' : 'rgba(139,126,200,0.25)'}`,
+      color: sel ? 'white' : '#2A2D35',
       fontSize: 12, fontWeight: 500 as const, cursor: 'pointer',
       transition: 'all 0.15s', fontFamily: "'Outfit', sans-serif",
     }),
   };
 
   return (
-    <div style={{ background: 'transparent', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: "'Outfit', sans-serif", color: '#2D2A26' }}>
+    <div style={{ background: 'transparent', minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: "'Outfit', sans-serif", color: '#2A2D35' }}>
       {/* Progress bar */}
       {step > 0 && step <= TOTAL_STEPS && (
         <div style={{ position: 'fixed', top: 0, left: 0, right: 0, zIndex: 10 }}>
-          <div style={{ height: 3, background: 'rgba(155,126,200,0.25)' }}>
-            <div style={{ height: '100%', background: 'linear-gradient(90deg, #9B7EC8, #34D399)', width: `${progress * 100}%`, transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)', borderRadius: '0 2px 2px 0' }} />
+          <div style={{ height: 3, background: 'rgba(139,126,200,0.25)' }}>
+            <div style={{ height: '100%', background: 'linear-gradient(90deg, #8B7EC8, #34D399)', width: `${progress * 100}%`, transition: 'width 0.6s cubic-bezier(0.4,0,0.2,1)', borderRadius: '0 2px 2px 0' }} />
           </div>
         </div>
       )}
@@ -214,27 +214,27 @@ export default function OnboardingPage() {
               <TypeWriter text="Hello. I'm Pulse." speed={50} onDone={() => setTyped(true)} />
             </h1>
             {typed && <div style={{ animation: 'fadeIn 0.6s ease' }}>
-              <p style={{ fontSize: 17, color: '#5C5650', lineHeight: 1.6, marginBottom: 40, maxWidth: 360, margin: '0 auto 40px' }}>
+              <p style={{ fontSize: 17, color: '#4A4E5A', lineHeight: 1.6, marginBottom: 40, maxWidth: 360, margin: '0 auto 40px' }}>
                 Your personal assistant for life — tasks, goals, relationships, and everything in between.
               </p>
-              <button onClick={next} style={{ padding: '16px 48px', borderRadius: 16, background: '#9B7EC8', color: 'white', border: 'none', fontSize: 16, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 16px rgba(155,126,200,0.35)', fontFamily: "'Outfit', sans-serif" }}>
+              <button onClick={next} style={{ padding: '16px 48px', borderRadius: 16, background: '#8B7EC8', color: 'white', border: 'none', fontSize: 16, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 16px rgba(139,126,200,0.35)', fontFamily: "'Outfit', sans-serif" }}>
                 Let's get started
               </button>
-              <p style={{ fontSize: 12, color: '#9E958B', marginTop: 16 }}>Takes about 3 minutes</p>
+              <p style={{ fontSize: 12, color: '#8890A0', marginTop: 16 }}>Takes about 3 minutes</p>
             </div>}
           </div>}
 
           {/* STEP 1: Name */}
           {step === 1 && <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#5C5650' }}>First — what should I call you?</p></div>
+            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#4A4E5A' }}>First — what should I call you?</p></div>
             <input type="text" placeholder="Your first name" value={name} onChange={e => setName(e.target.value)} onKeyDown={e => e.key === 'Enter' && canNext() && next()} autoFocus
-              style={{ width: '100%', padding: '18px 22px', borderRadius: 16, border: `1.5px solid ${name ? '#9B7EC8' : 'rgba(155,126,200,0.25)'}`, background: '#FFFFFF', fontSize: 20, fontWeight: 500, color: '#2D2A26', fontFamily: "'Outfit', sans-serif", boxShadow: name ? '0 0 0 3px rgba(155,126,200,0.10)' : 'none', transition: 'all 0.2s' }} />
+              style={{ width: '100%', padding: '18px 22px', borderRadius: 16, border: `1.5px solid ${name ? '#8B7EC8' : 'rgba(139,126,200,0.25)'}`, background: '#FFFFFF', fontSize: 20, fontWeight: 500, color: '#2A2D35', fontFamily: "'Outfit', sans-serif", boxShadow: name ? '0 0 0 3px rgba(139,126,200,0.10)' : 'none', transition: 'all 0.2s' }} />
             <p style={S.hint}>This is how I'll greet you each day</p>
           </div>}
 
           {/* STEP 2: Response Mode */}
           {step === 2 && <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#5C5650' }}>How should I talk to you?</p></div>
+            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#4A4E5A' }}>How should I talk to you?</p></div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <ChoiceCard icon="🔊" title="Talk to me" desc="I'll speak responses aloud — hands-free" selected={responseMode === 'voice'} onClick={() => setResponseMode('voice')} />
               <ChoiceCard icon="💬" title="Text me" desc="Silent mode — like a chat" selected={responseMode === 'text'} onClick={() => setResponseMode('text')} />
@@ -245,9 +245,9 @@ export default function OnboardingPage() {
 
           {/* STEP 3: Contacts */}
           {step === 3 && <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#5C5650', lineHeight: 1.5 }}>Who matters most to you? I'll only track the people you select.</p></div>
+            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#4A4E5A', lineHeight: 1.5 }}>Who matters most to you? I'll only track the people you select.</p></div>
             <div style={{ ...S.card, marginBottom: 12 }}>
-              <p style={{ fontSize: 11, fontWeight: 600, color: '#9E958B', marginBottom: 12, letterSpacing: 0.3, textTransform: 'uppercase' as const }}>From your contacts</p>
+              <p style={{ fontSize: 11, fontWeight: 600, color: '#8890A0', marginBottom: 12, letterSpacing: 0.3, textTransform: 'uppercase' as const }}>From your contacts</p>
               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8 }}>
                 {CONTACTS.map(c => <button key={c} onClick={() => toggle(selectedContacts, setSelectedContacts, c)} style={S.chip(selectedContacts.includes(c))}>
                   {selectedContacts.includes(c) ? `✓ ${c}` : c}
@@ -259,7 +259,7 @@ export default function OnboardingPage() {
 
           {/* STEP 4: Contact Frequency */}
           {step === 4 && <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#5C5650' }}>{selectedContacts.length > 0 ? 'How often for each person?' : 'No contacts selected — you can add later.'}</p></div>
+            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#4A4E5A' }}>{selectedContacts.length > 0 ? 'How often for each person?' : 'No contacts selected — you can add later.'}</p></div>
             {selectedContacts.length > 0 && <div style={{ display: 'flex', flexDirection: 'column', gap: 10, maxHeight: 400, overflowY: 'auto' as const }}>
               {selectedContacts.map(c => <div key={c} style={{ ...S.card, padding: '14px 18px' }}>
                 <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 10 }}>{c}</p>
@@ -272,11 +272,11 @@ export default function OnboardingPage() {
 
           {/* STEP 5: Texts Access */}
           {step === 5 && <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#5C5650', lineHeight: 1.5 }}>Can I check your messages? I only look at dates — never content.</p></div>
+            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#4A4E5A', lineHeight: 1.5 }}>Can I check your messages? I only look at dates — never content.</p></div>
             <div style={S.card}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 14 }}>
                 <span style={{ fontSize: 24 }}>🔒</span>
-                <div><p style={{ fontSize: 14, fontWeight: 600 }}>Privacy first</p><p style={{ fontSize: 12, color: '#5C5650' }}>Only tracks last-contact dates for your selected people.</p></div>
+                <div><p style={{ fontSize: 14, fontWeight: 600 }}>Privacy first</p><p style={{ fontSize: 12, color: '#4A4E5A' }}>Only tracks last-contact dates for your selected people.</p></div>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 <ChoiceCard small icon="✓" title="Allow message access" desc="Only for selected people" selected={textsAccess === true} onClick={() => setTextsAccess(true)} />
@@ -287,24 +287,24 @@ export default function OnboardingPage() {
 
           {/* STEP 6: Goals */}
           {step === 6 && <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#5C5650' }}>What are you working towards?</p></div>
+            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#4A4E5A' }}>What are you working towards?</p></div>
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginBottom: 12 }}>
               {GOAL_OPTIONS.map(g => <button key={g.id} onClick={() => toggle(goals, setGoals, g.id)} style={{
                 display: 'flex', alignItems: 'center', gap: 10, padding: '14px 16px', borderRadius: 14,
-                background: goals.includes(g.id) ? 'rgba(155,126,200,0.10)' : '#FFFFFF',
-                border: `1.5px solid ${goals.includes(g.id) ? '#9B7EC8' : 'rgba(155,126,200,0.25)'}`,
+                background: goals.includes(g.id) ? 'rgba(139,126,200,0.10)' : '#FFFFFF',
+                border: `1.5px solid ${goals.includes(g.id) ? '#8B7EC8' : 'rgba(139,126,200,0.25)'}`,
                 cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left' as const, fontFamily: "'Outfit', sans-serif",
               }}>
                 <span style={{ fontSize: 20 }}>{g.icon}</span>
-                <span style={{ fontSize: 13, fontWeight: 500, color: goals.includes(g.id) ? '#9B7EC8' : '#2D2A26' }}>{g.label}</span>
+                <span style={{ fontSize: 13, fontWeight: 500, color: goals.includes(g.id) ? '#8B7EC8' : '#2A2D35' }}>{g.label}</span>
               </button>)}
             </div>
-            {goals.length > 0 && <p style={{ fontSize: 12, color: '#9B7EC8', marginTop: 10, fontWeight: 500 }}>{goals.length} area{goals.length > 1 ? 's' : ''} selected</p>}
+            {goals.length > 0 && <p style={{ fontSize: 12, color: '#8B7EC8', marginTop: 10, fontWeight: 500 }}>{goals.length} area{goals.length > 1 ? 's' : ''} selected</p>}
           </div>}
 
           {/* STEP 7: Daily Rhythm */}
           {step === 7 && <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#5C5650' }}>Tell me about your daily rhythm.</p></div>
+            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#4A4E5A' }}>Tell me about your daily rhythm.</p></div>
             {[{ q: '☀ Day starts at?', val: wakeTime, set: setWakeTime, opts: ['6:00 AM', '7:00 AM', '8:00 AM', '9:00 AM'] },
               { q: '🌙 Wind down at?', val: windDown, set: setWindDown, opts: ['8:00 PM', '9:00 PM', '10:00 PM', '11:00 PM'] }].map((s, i) => (
               <div key={i} style={{ ...S.card, marginBottom: 14 }}>
@@ -318,7 +318,7 @@ export default function OnboardingPage() {
 
           {/* STEP 8: Tone */}
           {step === 8 && <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#5C5650' }}>Almost done — personality questions.</p></div>
+            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#4A4E5A' }}>Almost done — personality questions.</p></div>
             <div style={{ ...S.card, marginBottom: 14 }}>
               <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 12 }}>How should I sound?</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -337,20 +337,20 @@ export default function OnboardingPage() {
 
           {/* STEP 9: AI Tools */}
           {step === 9 && <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#5C5650', lineHeight: 1.5 }}>Do you use any AI tools? I can track your project progress across them.</p></div>
+            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#4A4E5A', lineHeight: 1.5 }}>Do you use any AI tools? I can track your project progress across them.</p></div>
             <div style={{ ...S.card, marginBottom: 12 }}>
-              <p style={{ fontSize: 12, color: '#5C5650', lineHeight: 1.6, marginBottom: 16 }}>I'll check your recent project chats to give you smart reminders and progress updates. You choose which projects I can see.</p>
+              <p style={{ fontSize: 12, color: '#4A4E5A', lineHeight: 1.6, marginBottom: 16 }}>I'll check your recent project chats to give you smart reminders and progress updates. You choose which projects I can see.</p>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                 {AI_TOOLS.map(t => (
                   <button key={t.id} onClick={() => toggle(aiTools, setAiTools, t.id)} style={{
                     display: 'flex', alignItems: 'center', gap: 14, padding: '14px 18px', borderRadius: 14,
-                    background: aiTools.includes(t.id) ? 'rgba(155,126,200,0.10)' : '#FFFFFF',
-                    border: `1.5px solid ${aiTools.includes(t.id) ? '#9B7EC8' : 'rgba(155,126,200,0.25)'}`,
+                    background: aiTools.includes(t.id) ? 'rgba(139,126,200,0.10)' : '#FFFFFF',
+                    border: `1.5px solid ${aiTools.includes(t.id) ? '#8B7EC8' : 'rgba(139,126,200,0.25)'}`,
                     cursor: 'pointer', transition: 'all 0.2s', textAlign: 'left' as const, width: '100%', fontFamily: "'Outfit', sans-serif",
                   }}>
                     <div style={{ width: 40, height: 40, borderRadius: 12, background: `${t.color}15`, display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 20, color: t.color, fontWeight: 700 }}>{t.icon}</div>
-                    <div style={{ flex: 1 }}><p style={{ fontSize: 14, fontWeight: 600 }}>{t.name}</p><p style={{ fontSize: 11, color: '#5C5650' }}>{t.desc}</p></div>
-                    {aiTools.includes(t.id) && <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#9B7EC8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: 'white', fontSize: 13, fontWeight: 700 }}>✓</span></div>}
+                    <div style={{ flex: 1 }}><p style={{ fontSize: 14, fontWeight: 600 }}>{t.name}</p><p style={{ fontSize: 11, color: '#4A4E5A' }}>{t.desc}</p></div>
+                    {aiTools.includes(t.id) && <div style={{ width: 22, height: 22, borderRadius: '50%', background: '#8B7EC8', display: 'flex', alignItems: 'center', justifyContent: 'center' }}><span style={{ color: 'white', fontSize: 13, fontWeight: 700 }}>✓</span></div>}
                   </button>
                 ))}
               </div>
@@ -360,16 +360,16 @@ export default function OnboardingPage() {
 
           {/* STEP 10: News */}
           {step === 10 && <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#5C5650', lineHeight: 1.5 }}>Want world news in your morning briefing?</p></div>
+            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#4A4E5A', lineHeight: 1.5 }}>Want world news in your morning briefing?</p></div>
             <div style={{ ...S.card, marginBottom: 14 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: newsEnabled ? 16 : 0 }}>
                 <ChoiceCard small icon="🌍" title="Yes, include world news" desc="Top stories alongside your personal briefing" selected={newsEnabled === true} onClick={() => setNewsEnabled(true)} />
                 <ChoiceCard small icon="✗" title="No news, just my life" desc="Keep the briefing personal only" selected={newsEnabled === false} onClick={() => setNewsEnabled(false)} />
               </div>
               {newsEnabled && <>
-                <div style={{ borderTop: '1px solid rgba(155,126,200,0.25)', paddingTop: 16, marginBottom: 16 }}>
+                <div style={{ borderTop: '1px solid rgba(139,126,200,0.25)', paddingTop: 16, marginBottom: 16 }}>
                   <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>What kind of news?</p>
-                  <p style={{ fontSize: 12, color: '#5C5650', marginBottom: 12 }}>This shapes how the world feels when you wake up</p>
+                  <p style={{ fontSize: 12, color: '#4A4E5A', marginBottom: 12 }}>This shapes how the world feels when you wake up</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
                     {[{ id: 'positive', i: '☀', l: 'Positive news only', d: 'Progress, science, kindness' },
                       { id: 'balanced', i: '⚖', l: 'Balanced mix', d: 'Important stories, grounded tone' },
@@ -377,9 +377,9 @@ export default function OnboardingPage() {
                     ].map(t => <ChoiceCard key={t.id} small icon={t.i} title={t.l} desc={t.d} selected={newsTone === t.id} onClick={() => setNewsTone(t.id)} />)}
                   </div>
                 </div>
-                <div style={{ borderTop: '1px solid rgba(155,126,200,0.25)', paddingTop: 16 }}>
+                <div style={{ borderTop: '1px solid rgba(139,126,200,0.25)', paddingTop: 16 }}>
                   <p style={{ fontSize: 14, fontWeight: 600, marginBottom: 4 }}>Preferred sources</p>
-                  <p style={{ fontSize: 12, color: '#5C5650', marginBottom: 12 }}>Optional — or I'll pick the best sources</p>
+                  <p style={{ fontSize: 12, color: '#4A4E5A', marginBottom: 12 }}>Optional — or I'll pick the best sources</p>
                   <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 6 }}>
                     {NEWS_OUTLETS.map(n => <button key={n.id} onClick={() => toggle(newsOutlets, setNewsOutlets, n.id)} style={S.chip(newsOutlets.includes(n.id))}>{n.icon} {n.name}</button>)}
                   </div>
@@ -390,7 +390,7 @@ export default function OnboardingPage() {
 
           {/* STEP 11: Briefing Format */}
           {step === 11 && <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#5C5650', lineHeight: 1.5 }}>How should your morning briefing arrive?</p></div>
+            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#4A4E5A', lineHeight: 1.5 }}>How should your morning briefing arrive?</p></div>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
               <ChoiceCard icon="🔔" title="Wake me up with it" desc="Pulse becomes your alarm — starts speaking your briefing at the time you choose." selected={briefingFormat === 'alarm'} onClick={() => setBriefingFormat('alarm')} />
               <ChoiceCard icon="📖" title="Beautiful written briefing" desc="A calm, one-thing-at-a-time written briefing waiting when you open the app." selected={briefingFormat === 'written'} onClick={() => setBriefingFormat('written')} />
@@ -400,19 +400,19 @@ export default function OnboardingPage() {
 
           {/* STEP 12: Briefing Time */}
           {step === 12 && <div style={{ animation: 'fadeIn 0.5s ease' }}>
-            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#5C5650' }}>{briefingFormat === 'alarm' || briefingFormat === 'both' ? 'What time should I wake you up?' : 'When should your briefing be ready?'}</p></div>
+            <div style={S.orbMsg}><Orb size={36} animate={false} /><p style={{ fontSize: 16, color: '#4A4E5A' }}>{briefingFormat === 'alarm' || briefingFormat === 'both' ? 'What time should I wake you up?' : 'When should your briefing be ready?'}</p></div>
             <div style={S.card}>
               <div style={{ display: 'flex', flexWrap: 'wrap' as const, gap: 8 }}>
                 {['6:00 AM', '6:30 AM', '7:00 AM', '7:30 AM', '8:00 AM', '8:30 AM'].map(t => <button key={t} onClick={() => setBriefingTime(t)} style={{
                   padding: '10px 18px', borderRadius: 12,
-                  background: briefingTime === t ? '#9B7EC8' : '#FFFFFF',
-                  border: `1.5px solid ${briefingTime === t ? '#9B7EC8' : 'rgba(155,126,200,0.25)'}`,
-                  color: briefingTime === t ? 'white' : '#2D2A26',
+                  background: briefingTime === t ? '#8B7EC8' : '#FFFFFF',
+                  border: `1.5px solid ${briefingTime === t ? '#8B7EC8' : 'rgba(139,126,200,0.25)'}`,
+                  color: briefingTime === t ? 'white' : '#2A2D35',
                   fontSize: 14, fontWeight: 500, cursor: 'pointer', transition: 'all 0.15s', fontFamily: "'Outfit', sans-serif",
                 }}>{t}</button>)}
               </div>
-              {briefingTime && <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 12, background: 'rgba(155,126,200,0.10)', animation: 'fadeIn 0.3s ease' }}>
-                <p style={{ fontSize: 13, color: '#9B7EC8', fontWeight: 500 }}>
+              {briefingTime && <div style={{ marginTop: 16, padding: '12px 16px', borderRadius: 12, background: 'rgba(139,126,200,0.10)', animation: 'fadeIn 0.3s ease' }}>
+                <p style={{ fontSize: 13, color: '#8B7EC8', fontWeight: 500 }}>
                   {briefingFormat === 'alarm' || briefingFormat === 'both' ? `✓ I'll wake you at ${briefingTime}` : `✓ Briefing at ${briefingTime} daily`}
                 </p>
               </div>}
@@ -423,9 +423,9 @@ export default function OnboardingPage() {
           {step === 13 && <div style={{ textAlign: 'center', animation: 'fadeIn 0.8s ease' }}>
             <div style={{ marginBottom: 28, animation: 'float 3s ease infinite' }}><Orb size={120} /></div>
             <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 36, fontWeight: 400, marginBottom: 8 }}>You're all set, {name}.</h1>
-            <p style={{ fontSize: 16, color: '#5C5650', lineHeight: 1.6, maxWidth: 380, margin: '0 auto 28px' }}>I know your rhythm, your people, your goals, and how you like to start your day.</p>
-            <div style={{ ...S.card, padding: 24, textAlign: 'left' as const, marginBottom: 28, boxShadow: '0 2px 8px rgba(0,0,0,0.04), 0 12px 32px rgba(0,0,0,0.06)' }}>
-              <p style={{ fontSize: 11, fontWeight: 600, color: '#9E958B', marginBottom: 14, letterSpacing: 0.4, textTransform: 'uppercase' as const }}>Your profile</p>
+            <p style={{ fontSize: 16, color: '#4A4E5A', lineHeight: 1.6, maxWidth: 380, margin: '0 auto 28px' }}>I know your rhythm, your people, your goals, and how you like to start your day.</p>
+            <div style={{ ...S.card, padding: 24, textAlign: 'left' as const, marginBottom: 28, boxShadow: '0 2px 8px rgba(255,255,255,0.15), 0 12px 32px rgba(0,0,0,0.06)' }}>
+              <p style={{ fontSize: 11, fontWeight: 600, color: '#8890A0', marginBottom: 14, letterSpacing: 0.4, textTransform: 'uppercase' as const }}>Your profile</p>
               {[
                 { l: 'Mode', v: responseMode === 'voice' ? '🔊 Voice' : responseMode === 'text' ? '💬 Text' : '🔊💬 Hybrid' },
                 { l: 'People', v: selectedContacts.length > 0 ? selectedContacts.slice(0, 3).join(', ') + (selectedContacts.length > 3 ? ` +${selectedContacts.length - 3}` : '') : 'None yet' },
@@ -435,17 +435,17 @@ export default function OnboardingPage() {
                 { l: 'Briefing', v: `${briefingTime} · ${({ alarm: '🔔 Alarm', written: '📖 Written', both: '🔔📖 Both' }[briefingFormat]) || ''}` },
                 { l: 'Tone', v: ({ warm: 'Warm', calm: 'Calm', pro: 'Professional', hype: 'Encouraging' }[tone]) || '—' },
               ].map((r, i) => <div key={i} style={{ display: 'flex', justifyContent: 'space-between', padding: '7px 0', borderBottom: i < 6 ? '1px solid #F5F5F3' : 'none' }}>
-                <span style={{ fontSize: 12, color: '#9E958B' }}>{r.l}</span>
-                <span style={{ fontSize: 12, color: '#2D2A26', fontWeight: 500 }}>{r.v}</span>
+                <span style={{ fontSize: 12, color: '#8890A0' }}>{r.l}</span>
+                <span style={{ fontSize: 12, color: '#2A2D35', fontWeight: 500 }}>{r.v}</span>
               </div>)}
             </div>
             <button onClick={finishOnboarding} disabled={saving} style={{
               padding: '16px 48px', borderRadius: 16,
-              background: saving ? 'rgba(155,126,200,0.25)' : '#9B7EC8',
-              color: saving ? '#9E958B' : 'white', border: 'none',
+              background: saving ? 'rgba(139,126,200,0.25)' : '#8B7EC8',
+              color: saving ? '#8890A0' : 'white', border: 'none',
               fontSize: 16, fontWeight: 600,
               cursor: saving ? 'default' : 'pointer',
-              boxShadow: saving ? 'none' : '0 4px 16px rgba(155,126,200,0.35)',
+              boxShadow: saving ? 'none' : '0 4px 16px rgba(139,126,200,0.35)',
               fontFamily: "'Outfit', sans-serif",
             }}>
               {saving ? 'Setting up your world...' : 'Open Pulse'}
@@ -454,12 +454,12 @@ export default function OnboardingPage() {
 
           {/* Navigation */}
           {step > 0 && step < 13 && <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 32 }}>
-            <button onClick={back} style={{ padding: '10px 20px', borderRadius: 12, background: 'transparent', border: '1px solid rgba(155,126,200,0.25)', color: '#5C5650', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: "'Outfit', sans-serif" }}>← Back</button>
-            <span style={{ fontSize: 12, color: '#9E958B' }}>{step} of 12</span>
+            <button onClick={back} style={{ padding: '10px 20px', borderRadius: 12, background: 'transparent', border: '1px solid rgba(139,126,200,0.25)', color: '#4A4E5A', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: "'Outfit', sans-serif" }}>← Back</button>
+            <span style={{ fontSize: 12, color: '#8890A0' }}>{step} of 12</span>
             <button onClick={next} disabled={!canNext()} style={{
               padding: '10px 24px', borderRadius: 12,
-              background: canNext() ? '#9B7EC8' : '#F5F5F3',
-              border: 'none', color: canNext() ? 'white' : '#9E958B',
+              background: canNext() ? '#8B7EC8' : '#F5F5F3',
+              border: 'none', color: canNext() ? 'white' : '#8890A0',
               fontSize: 13, fontWeight: 600,
               cursor: canNext() ? 'pointer' : 'default',
               transition: 'all 0.2s', fontFamily: "'Outfit', sans-serif",

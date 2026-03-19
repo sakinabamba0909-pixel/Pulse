@@ -79,23 +79,23 @@ function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSe
   }
 
   const cardBg = isSelected
-    ? 'rgba(155,126,200,0.08)'
+    ? 'rgba(139,126,200,0.08)'
     : isFocused
-    ? 'rgba(155,126,200,0.05)'
-    : 'rgba(255,255,255,0.52)'
+    ? 'rgba(139,126,200,0.05)'
+    : 'rgba(255,255,255,0.55)'
 
   const cardBorder = isSelected
-    ? 'rgba(155,126,200,0.25)'
+    ? 'rgba(139,126,200,0.25)'
     : isFocused
-    ? 'rgba(155,126,200,0.18)'
+    ? 'rgba(139,126,200,0.18)'
     : hovered
-    ? 'rgba(0,0,0,0.08)'
-    : 'rgba(0,0,0,0.05)'
+    ? 'rgba(255,255,255,0.35)'
+    : 'rgba(255,255,255,0.25)'
 
   const cardShadow = isFocused
-    ? '0 0 24px rgba(155,126,200,0.08), 0 4px 16px rgba(0,0,0,0.03)'
+    ? '0 0 24px rgba(139,126,200,0.08), 0 4px 16px rgba(0,0,0,0.03)'
     : hovered
-    ? '0 2px 8px rgba(0,0,0,0.03), 0 12px 32px rgba(0,0,0,0.05)'
+    ? '0 2px 8px rgba(0,0,0,0.03), 0 12px 32px rgba(255,255,255,0.25)'
     : '0 1px 2px rgba(0,0,0,0.02), 0 4px 16px rgba(0,0,0,0.03)'
 
   return (
@@ -120,8 +120,8 @@ function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSe
         onClick={e => { e.stopPropagation(); onToggleSelect(task.id) }}
         style={{
           width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginTop: 1,
-          border: `1.5px solid ${isSelected ? '#9B7EC8' : hovered ? 'rgba(155,126,200,0.4)' : 'rgba(0,0,0,0.15)'}`,
-          background: isSelected ? '#9B7EC8' : 'transparent',
+          border: `1.5px solid ${isSelected ? '#8B7EC8' : hovered ? 'rgba(139,126,200,0.4)' : 'rgba(139,126,200,0.25)'}`,
+          background: isSelected ? '#8B7EC8' : 'transparent',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           opacity: isSelected || hovered ? 1 : 0.4,
           transition: 'opacity 0.15s, border-color 0.15s, background 0.15s',
@@ -136,11 +136,11 @@ function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSe
         onClick={handleCheck}
         style={{
           width: 20, height: 20, borderRadius: 7, flexShrink: 0, marginTop: 1,
-          border: `1.5px solid ${isDone ? '#9B7EC8' : checking ? '#9B7EC8' : '#C9C1B8'}`,
+          border: `1.5px solid ${isDone ? '#8B7EC8' : checking ? '#8B7EC8' : '#B0B6C4'}`,
           background: isDone
-            ? 'linear-gradient(135deg, #9B7EC8, #D4849A)'
+            ? 'linear-gradient(135deg, #8B7EC8, #C8889E)'
             : 'transparent',
-          boxShadow: isDone ? '0 0 14px rgba(155,126,200,0.15)' : 'none',
+          boxShadow: isDone ? '0 0 14px rgba(139,126,200,0.15)' : 'none',
           cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center',
           animation: checking ? 'checkBounce 0.3s ease' : 'none',
           transition: 'border-color 0.15s, background 0.15s',
@@ -154,7 +154,7 @@ function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSe
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
           <span style={{ width: 7, height: 7, borderRadius: '50%', background: cfg.color, flexShrink: 0, display: 'inline-block' }} />
           <span style={{
-            fontSize: 14, fontWeight: 500, color: isDone ? '#C9C1B8' : '#2D2A26',
+            fontSize: 14, fontWeight: 500, color: isDone ? '#B0B6C4' : '#2A2D35',
             fontFamily: "'Outfit', sans-serif",
             textDecoration: isDone ? 'line-through' : 'none',
             flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
@@ -166,19 +166,19 @@ function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSe
             const daysPending = task.delegated_at ? Math.floor((Date.now() - new Date(task.delegated_at).getTime()) / 86400000) : 0
             const needsNudge = daysPending >= 5
             return (
-              <span title={needsNudge ? `Waiting ${daysPending} days — consider following up` : undefined} style={{ fontSize: 11, color: needsNudge ? '#D4A47A' : '#D4A47A', fontWeight: 600, fontFamily: "'Outfit', sans-serif" }}>
+              <span title={needsNudge ? `Waiting ${daysPending} days — consider following up` : undefined} style={{ fontSize: 11, color: needsNudge ? '#C8A088' : '#C8A088', fontWeight: 600, fontFamily: "'Outfit', sans-serif" }}>
                 {needsNudge ? `↩ ${daysPending}d` : 'Waiting'}
               </span>
             )
           })()}
           {task.is_recurring && task.streak_count > 0 && (
-            <span style={{ fontSize: 11, color: '#9B7EC8', fontWeight: 600, fontFamily: "'Outfit', sans-serif" }}>🔥{task.streak_count}</span>
+            <span style={{ fontSize: 11, color: '#8B7EC8', fontWeight: 600, fontFamily: "'Outfit', sans-serif" }}>🔥{task.streak_count}</span>
           )}
         </div>
 
         <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
           {task.due_at && (
-            <span style={{ fontSize: 11, fontWeight: 500, color: isOverdue(task.due_at) ? '#D4727A' : '#9E958B', fontFamily: "'Outfit', sans-serif" }}>
+            <span style={{ fontSize: 11, fontWeight: 500, color: isOverdue(task.due_at) ? '#C87882' : '#8890A0', fontFamily: "'Outfit', sans-serif" }}>
               {isOverdue(task.due_at) ? '⚠ ' : ''}{formatDue(task.due_at)}
             </span>
           )}
@@ -188,10 +188,10 @@ function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSe
             </span>
           )}
           {sub.length > 0 && (
-            <span style={{ fontSize: 11, color: '#9E958B', fontFamily: "'Outfit', sans-serif" }}>{done.length}/{sub.length} subtasks</span>
+            <span style={{ fontSize: 11, color: '#8890A0', fontFamily: "'Outfit', sans-serif" }}>{done.length}/{sub.length} subtasks</span>
           )}
           {task.duration_minutes && !task.scheduled_start && (
-            <span style={{ fontSize: 11, color: '#9E958B', fontFamily: "'Outfit', sans-serif" }}>
+            <span style={{ fontSize: 11, color: '#8890A0', fontFamily: "'Outfit', sans-serif" }}>
               {task.duration_minutes < 60 ? `${task.duration_minutes}m` : `${task.duration_minutes / 60}h`}
             </span>
           )}
@@ -201,7 +201,7 @@ function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSe
             const fmt = (d: Date) => d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true }).replace(':00', '').replace(' ', '')
             const day = s.toLocaleDateString('en-US', { weekday: 'short' })
             return (
-              <span style={{ fontSize: 11, color: '#5C5650', fontFamily: "'Outfit', sans-serif", background: 'rgba(255,255,255,0.3)', padding: '1px 6px', borderRadius: 6 }}>
+              <span style={{ fontSize: 11, color: '#4A4E5A', fontFamily: "'Outfit', sans-serif", background: 'rgba(255,255,255,0.3)', padding: '1px 6px', borderRadius: 6 }}>
                 🗓 {day} {fmt(s)}{e ? `–${fmt(e)}` : ''}
               </span>
             )
@@ -209,11 +209,11 @@ function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSe
         </div>
 
         {sub.length > 0 && (
-          <div style={{ height: 2, background: 'rgba(0,0,0,0.05)', borderRadius: 2, marginTop: 6 }}>
+          <div style={{ height: 2, background: 'rgba(255,255,255,0.25)', borderRadius: 2, marginTop: 6 }}>
             <div style={{
               height: '100%',
-              background: 'linear-gradient(90deg, #9B7EC8, #D4849A)',
-              boxShadow: '0 0 8px rgba(155,126,200,0.15)',
+              background: 'linear-gradient(90deg, #8B7EC8, #C8889E)',
+              boxShadow: '0 0 8px rgba(139,126,200,0.15)',
               borderRadius: 2,
               width: `${(done.length / sub.length) * 100}%`,
               transition: 'width 0.4s',
@@ -226,7 +226,7 @@ function TaskCard({ task, allTasks, isFocused, isSelectionMode, isSelected, onSe
       {!isSelectionMode && (
         <button
           onClick={e => { e.stopPropagation(); onPin(task.id, !task.is_pinned) }}
-          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: task.is_pinned ? '#9B7EC8' : '#C9C1B8', fontSize: 14, flexShrink: 0 }}
+          style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 4px', color: task.is_pinned ? '#8B7EC8' : '#B0B6C4', fontSize: 14, flexShrink: 0 }}
           title={task.is_pinned ? 'Unpin from Focus' : 'Pin to Focus'}
         >◉</button>
       )}
@@ -248,7 +248,7 @@ function FocusSection({ tasks, allTasks, isSelectionMode, selectedIds, onSelect,
       {/* Gradient border wrapper */}
       <div style={{
         padding: 1.5, borderRadius: 22,
-        background: 'linear-gradient(135deg, rgba(155,126,200,0.25), rgba(212,132,154,0.1), transparent 70%)',
+        background: 'linear-gradient(135deg, rgba(139,126,200,0.25), rgba(200,136,158,0.1), transparent 70%)',
       }}>
         <div style={{
           background: 'rgba(255,255,255,0.42)',
@@ -260,12 +260,12 @@ function FocusSection({ tasks, allTasks, isSelectionMode, selectedIds, onSelect,
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 12 }}>
             <div style={{
               width: 7, height: 7, borderRadius: '50%',
-              background: '#9B7EC8',
-              boxShadow: '0 0 10px rgba(155,126,200,0.5)',
+              background: '#8B7EC8',
+              boxShadow: '0 0 10px rgba(139,126,200,0.5)',
               animation: 'glowPulse 2.5s ease infinite',
             }} />
-            <span style={{ fontSize: 12, fontWeight: 700, color: '#9E958B', letterSpacing: 1, fontFamily: "'Outfit', sans-serif", textTransform: 'uppercase' }}>Focus</span>
-            <span style={{ fontSize: 11, color: '#9E958B', fontFamily: "'Outfit', sans-serif" }}>— your top {tasks.length} for today</span>
+            <span style={{ fontSize: 12, fontWeight: 700, color: '#8890A0', letterSpacing: 1, fontFamily: "'Outfit', sans-serif", textTransform: 'uppercase' }}>Focus</span>
+            <span style={{ fontSize: 11, color: '#8890A0', fontFamily: "'Outfit', sans-serif" }}>— your top {tasks.length} for today</span>
           </div>
           {tasks.map(t => (
             <TaskCard key={t.id} task={t} allTasks={allTasks} isFocused
@@ -296,12 +296,12 @@ function FilterBar({ filter, sort, onFilter, onSort }: {
       {filters.map(f => (
         <button key={f.key} onClick={() => onFilter(f.key)} style={{
           padding: '6px 14px', borderRadius: 20, border: '1px solid',
-          borderColor: filter === f.key ? 'rgba(155,126,200,0.25)' : 'rgba(0,0,0,0.04)',
-          background: filter === f.key ? 'rgba(155,126,200,0.10)' : 'rgba(255,255,255,0.3)',
+          borderColor: filter === f.key ? 'rgba(139,126,200,0.25)' : 'rgba(255,255,255,0.15)',
+          background: filter === f.key ? 'rgba(139,126,200,0.10)' : 'rgba(255,255,255,0.3)',
           backdropFilter: 'blur(8px)',
           WebkitBackdropFilter: 'blur(8px)',
-          color: filter === f.key ? '#7B5EA8' : '#5C5650',
-          boxShadow: filter === f.key ? '0 0 12px rgba(155,126,200,0.15)' : 'none',
+          color: filter === f.key ? '#6B5EA8' : '#4A4E5A',
+          boxShadow: filter === f.key ? '0 0 12px rgba(139,126,200,0.15)' : 'none',
           fontSize: 12, fontWeight: 500, cursor: 'pointer',
           fontFamily: "'Outfit', sans-serif",
           transition: 'all 0.4s cubic-bezier(0.4,0,0.2,1)',
@@ -312,8 +312,8 @@ function FilterBar({ filter, sort, onFilter, onSort }: {
         value={sort}
         onChange={e => onSort(e.target.value as Sort)}
         style={{
-          border: '1px solid rgba(0,0,0,0.05)', borderRadius: 10, padding: '6px 10px',
-          fontSize: 12, fontFamily: "'Outfit', sans-serif", color: '#5C5650',
+          border: '1px solid rgba(255,255,255,0.25)', borderRadius: 10, padding: '6px 10px',
+          fontSize: 12, fontFamily: "'Outfit', sans-serif", color: '#4A4E5A',
           background: 'rgba(255,255,255,0.3)', outline: 'none', cursor: 'pointer',
         }}
       >
@@ -337,18 +337,18 @@ function TaskGroup({ label, tasks, allTasks, emptyMsg, isSelectionMode, selected
   return (
     <div style={{ marginBottom: 28 }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#9E958B', letterSpacing: 0.8, fontFamily: "'Outfit', sans-serif", textTransform: 'uppercase' }}>{label}</span>
-        {tasks.length > 0 && <span style={{ fontSize: 11, color: '#C9C1B8', fontFamily: "'Outfit', sans-serif" }}>{tasks.length}</span>}
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#8890A0', letterSpacing: 0.8, fontFamily: "'Outfit', sans-serif", textTransform: 'uppercase' }}>{label}</span>
+        {tasks.length > 0 && <span style={{ fontSize: 11, color: '#B0B6C4', fontFamily: "'Outfit', sans-serif" }}>{tasks.length}</span>}
       </div>
       {tasks.length === 0 && emptyMsg ? (
         <div style={{
           background: 'rgba(255,255,255,0.3)',
           backdropFilter: 'blur(12px)',
           WebkitBackdropFilter: 'blur(12px)',
-          border: '1px solid rgba(155,126,200,0.1)',
+          border: '1px solid rgba(139,126,200,0.1)',
           borderRadius: 12, padding: '12px 16px',
         }}>
-          <p style={{ fontSize: 13, color: '#7B5EA8', fontFamily: "'Outfit', sans-serif", paddingLeft: 4 }}>{emptyMsg}</p>
+          <p style={{ fontSize: 13, color: '#6B5EA8', fontFamily: "'Outfit', sans-serif", paddingLeft: 4 }}>{emptyMsg}</p>
         </div>
       ) : (
         tasks.map(t => (
@@ -376,10 +376,10 @@ function CompletedCollapse({ tasks, allTasks, isSelectionMode, selectedIds, onSe
       <button onClick={() => setOpen(!open)} style={{
         display: 'flex', alignItems: 'center', gap: 8, background: 'none', border: 'none', cursor: 'pointer', padding: '6px 0',
       }}>
-        <span style={{ fontSize: 12, fontWeight: 700, color: '#C9C1B8', letterSpacing: 0.8, fontFamily: "'Outfit', sans-serif", textTransform: 'uppercase' }}>
+        <span style={{ fontSize: 12, fontWeight: 700, color: '#B0B6C4', letterSpacing: 0.8, fontFamily: "'Outfit', sans-serif", textTransform: 'uppercase' }}>
           Completed this week ({tasks.length})
         </span>
-        <span style={{ color: '#C9C1B8', fontSize: 12, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
+        <span style={{ color: '#B0B6C4', fontSize: 12, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>▾</span>
       </button>
       {open && (
         <div style={{ marginTop: 8 }}>
@@ -561,11 +561,11 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
 
       {/* Header */}
       <div style={{ marginBottom: 36, animation: 'fadeUp 0.4s ease' }}>
-        <p style={{ fontSize: 12, color: '#9E958B', marginBottom: 6, letterSpacing: 0.5, fontFamily: "'Outfit', sans-serif" }}>Tasks</p>
-        <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 36, fontWeight: 400, letterSpacing: -0.5, color: '#2D2A26', margin: '0 0 4px' }}>
+        <p style={{ fontSize: 12, color: '#8890A0', marginBottom: 6, letterSpacing: 0.5, fontFamily: "'Outfit', sans-serif" }}>Tasks</p>
+        <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 36, fontWeight: 400, letterSpacing: -0.5, color: '#2A2D35', margin: '0 0 4px' }}>
           What needs doing.
         </h1>
-        <p style={{ fontSize: 14, color: '#9E958B', fontFamily: "'Outfit', sans-serif" }}>
+        <p style={{ fontSize: 14, color: '#8890A0', fontFamily: "'Outfit', sans-serif" }}>
           {activeTasks.length === 0 ? 'All clear — inbox zero 🎉' : `${activeTasks.length} task${activeTasks.length !== 1 ? 's' : ''} remaining`}
         </p>
       </div>
@@ -585,8 +585,8 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
           {activeTasks.length === 0 && (
             <div style={{ textAlign: 'center', padding: '48px 0' }}>
               <p style={{ fontSize: 28, marginBottom: 12 }}>◉</p>
-              <p style={{ fontSize: 16, fontWeight: 500, color: '#2D2A26', marginBottom: 4 }}>You&apos;re all caught up</p>
-              <p style={{ fontSize: 14, color: '#9E958B' }}>Add a task to get started</p>
+              <p style={{ fontSize: 16, fontWeight: 500, color: '#2A2D35', marginBottom: 4 }}>You&apos;re all caught up</p>
+              <p style={{ fontSize: 14, color: '#8890A0' }}>Add a task to get started</p>
             </div>
           )}
         </>
@@ -594,7 +594,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
         <>
           {activeTasks.length === 0 ? (
             <div style={{ textAlign: 'center', padding: '48px 0' }}>
-              <p style={{ fontSize: 14, color: '#9E958B' }}>
+              <p style={{ fontSize: 14, color: '#8890A0' }}>
                 {filter === 'today' && 'Nothing due today — nice work!'}
                 {filter === 'week' && 'Your week is clear.'}
                 {filter === 'waiting' && 'No tasks waiting on others.'}
@@ -619,18 +619,18 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
           style={{
             position: 'fixed', bottom: 32, right: 40,
             padding: '12px 22px', borderRadius: 28,
-            background: 'linear-gradient(135deg, #9B7EC8, #D4849A)',
+            background: 'linear-gradient(135deg, #8B7EC8, #C8889E)',
             color: '#FFF',
             border: 'none', cursor: 'pointer',
             fontSize: 14, fontWeight: 600, fontFamily: "'Outfit', sans-serif",
-            boxShadow: '0 4px 24px rgba(155,126,200,0.35), 0 0 48px rgba(155,126,200,0.1)',
+            boxShadow: '0 4px 24px rgba(139,126,200,0.35), 0 0 48px rgba(139,126,200,0.1)',
             display: 'flex', alignItems: 'center', gap: 8,
             transition: 'transform 0.4s cubic-bezier(0.4,0,0.2,1), box-shadow 0.4s',
             animation: 'fadeUp 0.3s ease',
             zIndex: 10,
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 32px rgba(155,126,200,0.45), 0 0 48px rgba(155,126,200,0.15)' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 24px rgba(155,126,200,0.35), 0 0 48px rgba(155,126,200,0.1)' }}
+          onMouseEnter={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(-2px)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 8px 32px rgba(139,126,200,0.45), 0 0 48px rgba(139,126,200,0.15)' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLButtonElement).style.transform = 'translateY(0)'; (e.currentTarget as HTMLButtonElement).style.boxShadow = '0 4px 24px rgba(139,126,200,0.35), 0 0 48px rgba(139,126,200,0.1)' }}
         >
           <span style={{ fontSize: 18, lineHeight: 1, marginTop: -1 }}>+</span>
           New task
@@ -644,14 +644,14 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
           <div style={{
             position: 'fixed', bottom: 32, left: '50%', transform: 'translateX(-50%)',
             display: 'flex', alignItems: 'center', gap: 6,
-            background: '#2D2A26', borderRadius: 28, padding: '8px 8px 8px 16px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.15)',
+            background: '#2A2D35', borderRadius: 28, padding: '8px 8px 8px 16px',
+            boxShadow: '0 8px 32px rgba(139,126,200,0.25)',
             fontFamily: "'Outfit', sans-serif",
             animation: 'slideUp 0.2s ease',
             whiteSpace: 'nowrap',
             zIndex: 10,
           }}>
-            <span style={{ fontSize: 13, color: '#9E958B', marginRight: 2 }}>
+            <span style={{ fontSize: 13, color: '#8890A0', marginRight: 2 }}>
               {selectedIds.size} selected
             </span>
             <button onClick={handleSelectAll} style={{
@@ -664,8 +664,8 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
             </button>
             <button onClick={handleBulkComplete} style={{
               padding: '6px 14px', borderRadius: 20,
-              background: 'rgba(155,126,200,0.18)', border: '1px solid rgba(155,126,200,0.3)',
-              color: '#9B7EC8', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              background: 'rgba(139,126,200,0.18)', border: '1px solid rgba(139,126,200,0.3)',
+              color: '#8B7EC8', fontSize: 13, fontWeight: 600, cursor: 'pointer',
               fontFamily: "'Outfit', sans-serif",
             }}>
               ✓ Complete
@@ -673,7 +673,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
             <button onClick={handleBulkDelete} style={{
               padding: '6px 14px', borderRadius: 20,
               background: 'rgba(212,114,122,0.12)', border: '1px solid rgba(212,114,122,0.22)',
-              color: '#D4727A', fontSize: 13, fontWeight: 600, cursor: 'pointer',
+              color: '#C87882', fontSize: 13, fontWeight: 600, cursor: 'pointer',
               fontFamily: "'Outfit', sans-serif",
             }}>
               Delete
@@ -681,7 +681,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialRela
             <button onClick={() => setSelectedIds(new Set())} style={{
               padding: '6px 10px', borderRadius: 20,
               background: 'rgba(255,255,255,0.08)', border: 'none',
-              color: '#9E958B', fontSize: 18, lineHeight: 1, cursor: 'pointer',
+              color: '#8890A0', fontSize: 18, lineHeight: 1, cursor: 'pointer',
             }}>×</button>
           </div>
         )

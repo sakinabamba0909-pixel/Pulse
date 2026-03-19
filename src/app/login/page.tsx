@@ -63,7 +63,8 @@ export default function LoginPage() {
   return (
     <div style={{
       minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: '#F0EBE6', padding: 24, fontFamily: "'Outfit', sans-serif",
+      background: 'linear-gradient(170deg, #C5CDDA 0%, #C8C0D5 50%, #D5B8C8 100%)',
+      padding: 24, fontFamily: "'Outfit', sans-serif",
     }}>
       <div style={{ width: '100%', maxWidth: 400, animation: 'fadeIn 0.6s ease' }}>
         {/* Logo + Orb */}
@@ -73,11 +74,11 @@ export default function LoginPage() {
           </div>
           <h1 style={{
             fontFamily: "'Fraunces', serif", fontSize: 36,
-            fontWeight: 400, letterSpacing: -0.5, color: '#2D2A26', marginBottom: 8,
+            fontWeight: 400, letterSpacing: -0.5, color: '#2A2D35', marginBottom: 8,
           }}>
             Pulse
           </h1>
-          <p style={{ fontSize: 15, color: '#5C5650', lineHeight: 1.5 }}>
+          <p style={{ fontSize: 15, color: '#4A4E5A', lineHeight: 1.5 }}>
             {isSignUp ? 'Create your account to get started' : 'Welcome back'}
           </p>
         </div>
@@ -85,11 +86,12 @@ export default function LoginPage() {
         {/* Google Sign In */}
         <button onClick={handleGoogleAuth} style={{
           width: '100%', padding: '14px 20px', borderRadius: 14,
-          background: '#FFFFFF', border: '1.5px solid rgba(155,126,200,0.25)',
+          background: 'rgba(255,255,255,0.75)', border: '1.5px solid rgba(139,126,200,0.25)',
+          backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)',
           display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10,
-          fontSize: 14, fontWeight: 500, color: '#2D2A26', cursor: 'pointer',
+          fontSize: 14, fontWeight: 500, color: '#2A2D35', cursor: 'pointer',
           fontFamily: "'Outfit', sans-serif", marginBottom: 20,
-          boxShadow: '0 1px 3px rgba(0,0,0,0.04)',
+          boxShadow: '0 2px 8px rgba(0,0,0,0.05)',
           transition: 'all 0.15s',
         }}>
           <svg width="18" height="18" viewBox="0 0 24 24">
@@ -105,15 +107,15 @@ export default function LoginPage() {
         <div style={{
           display: 'flex', alignItems: 'center', gap: 16, marginBottom: 20,
         }}>
-          <div style={{ flex: 1, height: 1, background: 'rgba(155,126,200,0.25)' }} />
-          <span style={{ fontSize: 12, color: '#9E958B', fontWeight: 500 }}>or</span>
-          <div style={{ flex: 1, height: 1, background: 'rgba(155,126,200,0.25)' }} />
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.40)' }} />
+          <span style={{ fontSize: 12, color: '#8890A0', fontWeight: 500 }}>or</span>
+          <div style={{ flex: 1, height: 1, background: 'rgba(255,255,255,0.40)' }} />
         </div>
 
         {/* Email/Password Form */}
         <form onSubmit={handleEmailAuth}>
           <div style={{ marginBottom: 12 }}>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#5C5650', marginBottom: 6 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#4A4E5A', marginBottom: 6 }}>
               Email
             </label>
             <input
@@ -121,17 +123,18 @@ export default function LoginPage() {
               placeholder="you@example.com" required
               style={{
                 width: '100%', padding: '13px 16px', borderRadius: 12,
-                border: '1.5px solid rgba(155,126,200,0.25)', background: '#FFFFFF',
-                fontSize: 14, color: '#2D2A26', fontFamily: "'Outfit', sans-serif",
+                border: '1.5px solid rgba(139,126,200,0.25)', background: 'rgba(255,255,255,0.70)',
+                backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+                fontSize: 14, color: '#2A2D35', fontFamily: "'Outfit', sans-serif",
                 transition: 'border-color 0.2s',
               }}
-              onFocus={e => e.target.style.borderColor = '#9B7EC8'}
-              onBlur={e => e.target.style.borderColor = 'rgba(155,126,200,0.25)'}
+              onFocus={e => e.target.style.borderColor = '#8B7EC8'}
+              onBlur={e => e.target.style.borderColor = 'rgba(139,126,200,0.25)'}
             />
           </div>
 
           <div style={{ marginBottom: 20 }}>
-            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#5C5650', marginBottom: 6 }}>
+            <label style={{ display: 'block', fontSize: 12, fontWeight: 500, color: '#4A4E5A', marginBottom: 6 }}>
               Password
             </label>
             <input
@@ -140,40 +143,41 @@ export default function LoginPage() {
               required minLength={6}
               style={{
                 width: '100%', padding: '13px 16px', borderRadius: 12,
-                border: '1.5px solid rgba(155,126,200,0.25)', background: '#FFFFFF',
-                fontSize: 14, color: '#2D2A26', fontFamily: "'Outfit', sans-serif",
+                border: '1.5px solid rgba(139,126,200,0.25)', background: 'rgba(255,255,255,0.70)',
+                backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)',
+                fontSize: 14, color: '#2A2D35', fontFamily: "'Outfit', sans-serif",
                 transition: 'border-color 0.2s',
               }}
-              onFocus={e => e.target.style.borderColor = '#9B7EC8'}
-              onBlur={e => e.target.style.borderColor = 'rgba(155,126,200,0.25)'}
+              onFocus={e => e.target.style.borderColor = '#8B7EC8'}
+              onBlur={e => e.target.style.borderColor = 'rgba(139,126,200,0.25)'}
             />
           </div>
 
           {error && (
             <div style={{
               padding: '10px 14px', borderRadius: 10, marginBottom: 16,
-              background: 'rgba(239,107,107,0.08)', border: '1px solid rgba(239,107,107,0.2)',
+              background: 'rgba(200,120,130,0.10)', border: '1px solid rgba(200,120,130,0.25)',
             }}>
-              <p style={{ fontSize: 13, color: '#D4727A' }}>{error}</p>
+              <p style={{ fontSize: 13, color: '#C87882' }}>{error}</p>
             </div>
           )}
 
           {message && (
             <div style={{
               padding: '10px 14px', borderRadius: 10, marginBottom: 16,
-              background: 'rgba(155,126,200,0.10)', border: '1px solid rgba(155,126,200,0.2)',
+              background: 'rgba(139,126,200,0.10)', border: '1px solid rgba(139,126,200,0.2)',
             }}>
-              <p style={{ fontSize: 13, color: '#9B7EC8' }}>{message}</p>
+              <p style={{ fontSize: 13, color: '#8B7EC8' }}>{message}</p>
             </div>
           )}
 
           <button type="submit" disabled={loading} style={{
             width: '100%', padding: '14px 20px', borderRadius: 14,
-            background: loading ? 'rgba(155,126,200,0.25)' : '#9B7EC8',
-            border: 'none', color: loading ? '#9E958B' : 'white',
+            background: loading ? 'rgba(139,126,200,0.25)' : 'linear-gradient(135deg, #8B7EC8, #C8889E)',
+            border: 'none', color: loading ? '#8890A0' : 'white',
             fontSize: 15, fontWeight: 600, cursor: loading ? 'default' : 'pointer',
             fontFamily: "'Outfit', sans-serif",
-            boxShadow: loading ? 'none' : '0 4px 16px rgba(155,126,200,0.25)',
+            boxShadow: loading ? 'none' : '0 4px 16px rgba(139,126,200,0.30)',
             transition: 'all 0.2s',
           }}>
             {loading ? 'Loading...' : isSignUp ? 'Create Account' : 'Sign In'}
@@ -181,12 +185,12 @@ export default function LoginPage() {
         </form>
 
         {/* Toggle sign up / sign in */}
-        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: '#5C5650' }}>
+        <p style={{ textAlign: 'center', marginTop: 20, fontSize: 13, color: '#4A4E5A' }}>
           {isSignUp ? 'Already have an account?' : "Don't have an account?"}{' '}
           <button
             onClick={() => { setIsSignUp(!isSignUp); setError(''); setMessage(''); }}
             style={{
-              background: 'none', border: 'none', color: '#9B7EC8',
+              background: 'none', border: 'none', color: '#8B7EC8',
               fontWeight: 600, cursor: 'pointer', fontSize: 13,
               fontFamily: "'Outfit', sans-serif",
             }}

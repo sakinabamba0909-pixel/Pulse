@@ -16,9 +16,9 @@ interface Reminder {
 }
 
 const PRIORITY_COLOR: Record<string, string> = {
-  urgent: '#D4727A',
+  urgent: '#C87882',
   normal: '#7AABC8',
-  low:    '#9E958B',
+  low:    '#8890A0',
 }
 
 function formatRemindAt(iso: string): { label: string; past: boolean } {
@@ -67,25 +67,25 @@ export default function RemindersPage() {
   const dismissed = reminders.filter(r => r.status === 'dismissed' || r.status === 'sent')
 
   return (
-    <div style={{ padding: '64px 40px', fontFamily: "'Outfit', sans-serif", color: '#2D2A26', maxWidth: 680 }}>
-      <p style={{ fontSize: 12, color: '#9E958B', marginBottom: 8, letterSpacing: 0.2 }}>Reminders</p>
+    <div style={{ padding: '64px 40px', fontFamily: "'Outfit', sans-serif", color: '#2A2D35', maxWidth: 680 }}>
+      <p style={{ fontSize: 12, color: '#8890A0', marginBottom: 8, letterSpacing: 0.2 }}>Reminders</p>
       <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 38, fontWeight: 400, letterSpacing: -0.5, margin: '0 0 6px' }}>
         Don&apos;t let things slip.
       </h1>
-      <p style={{ fontSize: 15, color: '#9E958B', marginBottom: 40 }}>
+      <p style={{ fontSize: 15, color: '#8890A0', marginBottom: 40 }}>
         Smart nudges based on your rhythm and priorities.
       </p>
 
       {loading ? (
-        <div style={{ color: '#9E958B', fontSize: 14, ...s }}>Loading...</div>
+        <div style={{ color: '#8890A0', fontSize: 14, ...s }}>Loading...</div>
       ) : pending.length === 0 ? (
         <div style={{
-          background: '#FFFFFF', border: '1px solid rgba(0,0,0,0.05)', borderRadius: 20,
+          background: '#FFFFFF', border: '1px solid rgba(255,255,255,0.25)', borderRadius: 20,
           padding: '48px 40px', textAlign: 'center', maxWidth: 480,
         }}>
           <p style={{ fontSize: 32, marginBottom: 16 }}>◷</p>
-          <p style={{ fontSize: 16, fontWeight: 500, color: '#2D2A26', marginBottom: 6 }}>All clear</p>
-          <p style={{ fontSize: 14, color: '#9E958B', lineHeight: 1.6 }}>
+          <p style={{ fontSize: 16, fontWeight: 500, color: '#2A2D35', marginBottom: 6 }}>All clear</p>
+          <p style={{ fontSize: 14, color: '#8890A0', lineHeight: 1.6 }}>
             Set a reminder when creating a task and it will appear here.
           </p>
         </div>
@@ -93,17 +93,17 @@ export default function RemindersPage() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
           {pending.map(r => {
             const { label, past } = formatRemindAt(r.remind_at)
-            const priorityColor = r.task?.priority ? PRIORITY_COLOR[r.task.priority] : '#9E958B'
+            const priorityColor = r.task?.priority ? PRIORITY_COLOR[r.task.priority] : '#8890A0'
             return (
               <div key={r.id} style={{
-                background: '#FFFFFF', border: `1px solid ${past ? 'rgba(212,114,122,0.15)' : 'rgba(0,0,0,0.05)'}`,
+                background: '#FFFFFF', border: `1px solid ${past ? 'rgba(200,120,130,0.15)' : 'rgba(255,255,255,0.25)'}`,
                 borderRadius: 16, padding: '16px 20px',
                 display: 'flex', alignItems: 'flex-start', gap: 14,
               }}>
                 {/* Icon */}
                 <div style={{
                   width: 36, height: 36, borderRadius: 10, flexShrink: 0,
-                  background: past ? 'rgba(212,114,122,0.08)' : 'rgba(155,126,200,0.10)',
+                  background: past ? 'rgba(200,120,130,0.08)' : 'rgba(139,126,200,0.10)',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
                   fontSize: 16,
                 }}>
@@ -115,15 +115,15 @@ export default function RemindersPage() {
                   {r.task && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 3 }}>
                       <span style={{ width: 6, height: 6, borderRadius: '50%', background: priorityColor, flexShrink: 0, display: 'inline-block' }} />
-                      <p style={{ fontSize: 14, fontWeight: 600, color: '#2D2A26', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...s }}>
+                      <p style={{ fontSize: 14, fontWeight: 600, color: '#2A2D35', margin: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', ...s }}>
                         {r.task.title}
                       </p>
                     </div>
                   )}
                   {r.message && !r.task && (
-                    <p style={{ fontSize: 14, fontWeight: 600, color: '#2D2A26', margin: '0 0 3px', ...s }}>{r.message}</p>
+                    <p style={{ fontSize: 14, fontWeight: 600, color: '#2A2D35', margin: '0 0 3px', ...s }}>{r.message}</p>
                   )}
-                  <p style={{ fontSize: 12, color: past ? '#D4727A' : '#9E958B', margin: 0, ...s }}>
+                  <p style={{ fontSize: 12, color: past ? '#C87882' : '#8890A0', margin: 0, ...s }}>
                     {past ? 'Overdue · ' : ''}{label}
                   </p>
                 </div>
@@ -132,8 +132,8 @@ export default function RemindersPage() {
                 <button
                   onClick={() => dismiss(r.id)}
                   style={{
-                    background: 'none', border: '1px solid rgba(0,0,0,0.08)', borderRadius: 8,
-                    padding: '4px 10px', fontSize: 12, color: '#9E958B', cursor: 'pointer',
+                    background: 'none', border: '1px solid rgba(255,255,255,0.30)', borderRadius: 8,
+                    padding: '4px 10px', fontSize: 12, color: '#8890A0', cursor: 'pointer',
                     flexShrink: 0, ...s,
                   }}
                 >
@@ -147,18 +147,18 @@ export default function RemindersPage() {
 
       {dismissed.length > 0 && (
         <div style={{ marginTop: 40 }}>
-          <p style={{ fontSize: 11, fontWeight: 700, color: '#C9C1B8', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12, ...s }}>
+          <p style={{ fontSize: 11, fontWeight: 700, color: '#B0B6C4', letterSpacing: 1, textTransform: 'uppercase', marginBottom: 12, ...s }}>
             Completed
           </p>
           {dismissed.slice(0, 5).map(r => (
             <div key={r.id} style={{
-              padding: '10px 0', borderBottom: '1px solid rgba(0,0,0,0.05)',
+              padding: '10px 0', borderBottom: '1px solid rgba(255,255,255,0.25)',
               display: 'flex', alignItems: 'center', gap: 10,
             }}>
-              <span style={{ fontSize: 13, color: '#C9C1B8', flex: 1, ...s }}>
+              <span style={{ fontSize: 13, color: '#B0B6C4', flex: 1, ...s }}>
                 {r.task?.title ?? r.message ?? 'Reminder'}
               </span>
-              <span style={{ fontSize: 11, color: '#C9C1B8', ...s }}>
+              <span style={{ fontSize: 11, color: '#B0B6C4', ...s }}>
                 {new Date(r.remind_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
               </span>
             </div>

@@ -141,7 +141,7 @@ function IntroSplashInline({
         fontWeight: 400,
         letterSpacing: 4,
         textTransform: 'uppercase',
-        color: 'rgba(155,126,200,0.5)',
+        color: 'rgba(139,126,200,0.5)',
         marginBottom: 20,
       }}>
         PULSE
@@ -155,7 +155,7 @@ function IntroSplashInline({
         fontFamily: "'Fraunces', serif",
         fontSize: 44,
         fontWeight: 400,
-        color: '#2D2A26',
+        color: '#2A2D35',
         marginBottom: 16,
         textAlign: 'center',
       }}>
@@ -169,7 +169,7 @@ function IntroSplashInline({
         transition: 'opacity 0.9s ease, transform 0.9s ease',
         fontFamily: "'Outfit', sans-serif",
         fontSize: 16,
-        color: '#9E958B',
+        color: '#8890A0',
       }}>
         {focusCount} task{focusCount !== 1 ? 's' : ''} in focus · {taskCount} total
       </div>

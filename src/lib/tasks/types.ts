@@ -66,7 +66,7 @@ export interface Relationship {
 }
 
 export const PRIORITY_CONFIG: Record<Priority, { label: string; color: string; bg: string; border: string }> = {
-  urgent: { label: 'Urgent', color: '#D4727A', bg: 'rgba(212,114,122,0.08)',  border: 'rgba(212,114,122,0.2)'  },
+  urgent: { label: 'Urgent', color: '#C87882', bg: 'rgba(200,120,130,0.08)',  border: 'rgba(200,120,130,0.2)'  },
   normal: { label: 'Normal', color: '#7AABC8', bg: 'rgba(122,171,200,0.08)',  border: 'rgba(122,171,200,0.2)'  },
   low:    { label: 'Low',    color: '#B5ADA5', bg: 'rgba(181,173,165,0.08)',  border: 'rgba(181,173,165,0.2)'  },
 }

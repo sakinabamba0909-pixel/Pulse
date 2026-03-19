@@ -9,14 +9,15 @@ interface GanzfeldLightProps {
   isIntro?: boolean;
 }
 
+// Cool blue → lavender → pink palette inspired by the Rythm reference
 const MOODS: Record<string, { a: number[]; b: number[]; c: number[]; d: number[] }> = {
-  intro:     { a: [285, 55, 90], b: [335, 50, 88], c: [10,  45, 92], d: [260, 40, 94] },
-  home:      { a: [280, 45, 91], b: [330, 40, 89], c: [20,  35, 93], d: [250, 35, 94] },
-  tasks:     { a: [275, 40, 91], b: [320, 42, 89], c: [350, 35, 92], d: [240, 30, 94] },
-  goals:     { a: [220, 45, 91], b: [260, 40, 89], c: [200, 35, 93], d: [280, 30, 94] },
-  people:    { a: [330, 45, 90], b: [10,  45, 89], c: [340, 35, 92], d: [300, 30, 94] },
-  reminders: { a: [200, 40, 91], b: [240, 40, 89], c: [180, 30, 93], d: [220, 25, 94] },
-  projects:  { a: [30,  40, 91], b: [280, 35, 90], c: [50,  35, 93], d: [10,  30, 94] },
+  intro:     { a: [220, 50, 80], b: [270, 42, 82], c: [320, 45, 82], d: [240, 38, 84] },
+  home:      { a: [215, 45, 81], b: [265, 38, 83], c: [325, 40, 82], d: [245, 35, 85] },
+  tasks:     { a: [225, 42, 80], b: [275, 40, 82], c: [315, 42, 83], d: [250, 36, 84] },
+  goals:     { a: [210, 48, 80], b: [250, 42, 82], c: [290, 38, 84], d: [230, 40, 83] },
+  people:    { a: [230, 40, 82], b: [290, 42, 81], c: [330, 44, 82], d: [260, 36, 84] },
+  reminders: { a: [210, 44, 82], b: [255, 40, 83], c: [300, 38, 83], d: [235, 38, 85] },
+  projects:  { a: [220, 42, 81], b: [270, 40, 82], c: [310, 40, 83], d: [245, 36, 84] },
 };
 
 export default function GanzfeldLight({ mood, scrollY, bloom, isIntro = false }: GanzfeldLightProps) {
@@ -48,9 +49,9 @@ export default function GanzfeldLight({ mood, scrollY, bloom, isIntro = false }:
       const target = MOODS[moodRef.current] || MOODS.home;
       const cur = currentColors.current;
       const speed = 0.006;
-      const drift = Math.sin(t) * 4;
-      const bloomBoostS = bloomRef.current * 12;
-      const bloomBoostL = bloomRef.current * 3;
+      const drift = Math.sin(t) * 5;
+      const bloomBoostS = bloomRef.current * 14;
+      const bloomBoostL = bloomRef.current * 4;
 
       // Lerp toward target
       for (let i = 0; i < 3; i++) {
@@ -62,35 +63,35 @@ export default function GanzfeldLight({ mood, scrollY, bloom, isIntro = false }:
 
       const hslA = `hsl(${cur.a[0] + drift},${cur.a[1]}%,${cur.a[2]}%)`;
       const hslB = `hsl(${cur.b[0] - drift * 0.5},${cur.b[1]}%,${cur.b[2]}%)`;
-      const hslC = `hsl(${cur.c[0]},${cur.c[1]}%,${cur.c[2]}%)`;
+      const hslC = `hsl(${cur.c[0] + drift * 0.3},${cur.c[1]}%,${cur.c[2]}%)`;
       const hslD = `hsl(${cur.d[0]},${cur.d[1]}%,${cur.d[2]}%)`;
 
       const scrollShift = scrollRef.current * 0.015;
       const scale = isIntroRef.current ? 'scale(1.15)' : 'scale(1)';
 
       if (layer1Ref.current) {
-        layer1Ref.current.style.background = `radial-gradient(ellipse 120% 100% at ${15 + scrollShift * 0.3}% ${10 - scrollShift}%, ${hslA} 0%, transparent 70%)`;
-        layer1Ref.current.style.opacity = '0.35';
+        layer1Ref.current.style.background = `radial-gradient(ellipse 130% 110% at ${15 + scrollShift * 0.3}% ${10 - scrollShift}%, ${hslA} 0%, transparent 65%)`;
+        layer1Ref.current.style.opacity = '0.55';
         layer1Ref.current.style.transform = scale;
       }
       if (layer2Ref.current) {
-        layer2Ref.current.style.background = `radial-gradient(ellipse 100% 120% at ${75 - scrollShift * 0.2}% ${25 - scrollShift * 0.5}%, ${hslB} 0%, transparent 70%)`;
-        layer2Ref.current.style.opacity = '0.3';
+        layer2Ref.current.style.background = `radial-gradient(ellipse 110% 130% at ${80 - scrollShift * 0.2}% ${20 - scrollShift * 0.5}%, ${hslB} 0%, transparent 65%)`;
+        layer2Ref.current.style.opacity = '0.50';
         layer2Ref.current.style.transform = scale;
       }
       if (layer3Ref.current) {
-        layer3Ref.current.style.background = `radial-gradient(ellipse 140% 80% at ${50 + scrollShift * 0.1}% ${95 + scrollShift * 0.3}%, ${hslC} 0%, transparent 70%)`;
-        layer3Ref.current.style.opacity = '0.25';
+        layer3Ref.current.style.background = `radial-gradient(ellipse 140% 90% at ${55 + scrollShift * 0.1}% ${90 + scrollShift * 0.3}%, ${hslC} 0%, transparent 60%)`;
+        layer3Ref.current.style.opacity = '0.50';
         layer3Ref.current.style.transform = scale;
       }
       if (layer4Ref.current) {
-        layer4Ref.current.style.background = `radial-gradient(ellipse 60% 50% at ${55 - scrollShift * 0.1}% ${35 - scrollShift * 0.4}%, ${hslD} 0%, transparent 70%)`;
-        layer4Ref.current.style.opacity = '0.18';
+        layer4Ref.current.style.background = `radial-gradient(ellipse 70% 60% at ${50 - scrollShift * 0.1}% ${40 - scrollShift * 0.4}%, ${hslD} 0%, transparent 65%)`;
+        layer4Ref.current.style.opacity = '0.30';
         layer4Ref.current.style.transform = scale;
       }
       if (layer5Ref.current) {
-        layer5Ref.current.style.background = `linear-gradient(180deg, ${hslA} 0%, transparent 60%)`;
-        layer5Ref.current.style.opacity = '0.2';
+        layer5Ref.current.style.background = `linear-gradient(170deg, ${hslA} 0%, ${hslC} 100%)`;
+        layer5Ref.current.style.opacity = '0.30';
         layer5Ref.current.style.transform = scale;
       }
 
@@ -114,7 +115,7 @@ export default function GanzfeldLight({ mood, scrollY, bloom, isIntro = false }:
       zIndex: 0,
       pointerEvents: 'none',
       overflow: 'hidden',
-      background: '#F0EBE6',
+      background: '#C5CDDA',
     }}>
       <div ref={layer1Ref} style={baseLayer} />
       <div ref={layer2Ref} style={baseLayer} />
