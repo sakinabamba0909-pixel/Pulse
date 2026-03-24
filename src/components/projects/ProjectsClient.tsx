@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 
 const CATEGORY_META: Record<string, { icon: string }> = {
   fitness:  { icon: '💪' }, language: { icon: '🗣️' }, career:  { icon: '📈' },
@@ -50,12 +51,39 @@ interface Props {
   tasks: Task[];
 }
 
+const CATEGORIES = ['fitness', 'language', 'career', 'finance', 'social', 'creative', 'organize', 'mindful'] as const;
+
 export default function ProjectsClient({ projects, steps, tasks }: Props) {
+  const router = useRouter();
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [showForm, setShowForm] = useState(false);
+  const [formName, setFormName] = useState('');
+  const [formCategory, setFormCategory] = useState('career');
+  const [creating, setCreating] = useState(false);
 
   const stepsForProject = (pid: string) => steps.filter(s => s.project_id === pid).sort((a, b) => a.step_number - b.step_number);
   const tasksForStep = (sid: string) => tasks.filter(t => t.step_id === sid);
   const tasksForProject = (pid: string) => tasks.filter(t => t.project_id === pid);
+
+  const handleCreate = async () => {
+    if (!formName.trim() || creating) return;
+    setCreating(true);
+    try {
+      const res = await fetch('/api/projects', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: formName.trim(), category: formCategory }),
+      });
+      if (res.ok) {
+        setFormName('');
+        setFormCategory('career');
+        setShowForm(false);
+        router.refresh();
+      }
+    } finally {
+      setCreating(false);
+    }
+  };
 
   return (
     <div style={{ padding: '64px 40px', fontFamily: "'Outfit', sans-serif", color: '#2A2D35' }}>
@@ -63,11 +91,117 @@ export default function ProjectsClient({ projects, steps, tasks }: Props) {
       <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 38, fontWeight: 400, letterSpacing: -0.5, margin: '0 0 6px' }}>
         Things in motion.
       </h1>
-      <p style={{ fontSize: 15, color: '#8890A0', marginBottom: 48 }}>
-        {projects.length > 0
-          ? `${projects.length} project${projects.length !== 1 ? 's' : ''} active.`
-          : 'Your ongoing projects and initiatives live here.'}
-      </p>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 16, marginBottom: 48 }}>
+        <p style={{ fontSize: 15, color: '#8890A0', margin: 0 }}>
+          {projects.length > 0
+            ? `${projects.length} project${projects.length !== 1 ? 's' : ''} active.`
+            : 'Your ongoing projects and initiatives live here.'}
+        </p>
+        <button
+          onClick={() => setShowForm(true)}
+          style={{
+            background: 'linear-gradient(135deg, #8B7EC8, #C8889E)',
+            color: '#fff',
+            border: 'none',
+            borderRadius: 12,
+            padding: '8px 18px',
+            fontSize: 13,
+            fontWeight: 600,
+            fontFamily: "'Outfit', sans-serif",
+            cursor: 'pointer',
+            whiteSpace: 'nowrap',
+          }}
+        >
+          + New project
+        </button>
+      </div>
+
+      {/* Create project modal */}
+      {showForm && (
+        <div
+          onClick={() => setShowForm(false)}
+          style={{
+            position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.3)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 1000,
+          }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            style={{
+              background: '#fff', borderRadius: 20, padding: '32px 28px',
+              width: 380, maxWidth: '90vw',
+              boxShadow: '0 16px 48px rgba(0,0,0,0.12)',
+            }}
+          >
+            <p style={{ fontSize: 18, fontWeight: 600, color: '#2A2D35', marginBottom: 20 }}>New project</p>
+
+            <label style={{ fontSize: 12, color: '#8890A0', display: 'block', marginBottom: 6 }}>Name</label>
+            <input
+              value={formName}
+              onChange={e => setFormName(e.target.value)}
+              placeholder="e.g. Learn Spanish"
+              onKeyDown={e => e.key === 'Enter' && handleCreate()}
+              style={{
+                width: '100%', padding: '10px 14px', fontSize: 14,
+                border: '1px solid rgba(139,126,200,0.25)', borderRadius: 10,
+                outline: 'none', fontFamily: "'Outfit', sans-serif",
+                boxSizing: 'border-box', marginBottom: 16,
+              }}
+            />
+
+            <label style={{ fontSize: 12, color: '#8890A0', display: 'block', marginBottom: 8 }}>Category</label>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 24 }}>
+              {CATEGORIES.map(cat => {
+                const meta = CATEGORY_META[cat] || { icon: '▦' };
+                const selected = formCategory === cat;
+                return (
+                  <button
+                    key={cat}
+                    onClick={() => setFormCategory(cat)}
+                    style={{
+                      padding: '6px 12px', borderRadius: 10, fontSize: 12,
+                      fontFamily: "'Outfit', sans-serif", cursor: 'pointer',
+                      border: selected ? '1.5px solid #8B7EC8' : '1px solid rgba(139,126,200,0.2)',
+                      background: selected ? 'rgba(139,126,200,0.10)' : '#fff',
+                      color: selected ? '#8B7EC8' : '#4A4E5A',
+                      fontWeight: selected ? 600 : 400,
+                      textTransform: 'capitalize',
+                    }}
+                  >
+                    {meta.icon} {cat}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div style={{ display: 'flex', gap: 10, justifyContent: 'flex-end' }}>
+              <button
+                onClick={() => setShowForm(false)}
+                style={{
+                  padding: '9px 18px', borderRadius: 10, fontSize: 13,
+                  border: '1px solid rgba(139,126,200,0.2)', background: '#fff',
+                  color: '#8890A0', cursor: 'pointer', fontFamily: "'Outfit', sans-serif",
+                }}
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleCreate}
+                disabled={!formName.trim() || creating}
+                style={{
+                  padding: '9px 22px', borderRadius: 10, fontSize: 13, fontWeight: 600,
+                  border: 'none', cursor: formName.trim() ? 'pointer' : 'not-allowed',
+                  background: formName.trim() ? 'linear-gradient(135deg, #8B7EC8, #C8889E)' : 'rgba(139,126,200,0.2)',
+                  color: '#fff', fontFamily: "'Outfit', sans-serif",
+                  opacity: creating ? 0.6 : 1,
+                }}
+              >
+                {creating ? 'Creating...' : 'Create'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {projects.length > 0 ? (
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: 14, maxWidth: 740 }}>
