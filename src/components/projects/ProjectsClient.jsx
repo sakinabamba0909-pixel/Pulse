@@ -394,7 +394,7 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         name: projectName,
-        description: projectDesc,
+        description: projectDesc || projectName,
         context: importedContext || undefined,
         scheduling_preferences: buildSchedPrefs(),
         existing_tasks: tasks.filter(function (t) { return t.status !== 'done'; }),
@@ -403,6 +403,10 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
       .then(function (res) { return res.json(); })
       .then(function (data) {
         setAiTyping(false);
+        if (data.error) {
+          setAiMessage('Error: ' + data.error);
+          return;
+        }
         if (data.steps) {
           var mapped = data.steps.map(function (s, i) {
             var totalMins = s.tasks.reduce(function (a, t) { return a + (t.est_minutes || 0); }, 0);
