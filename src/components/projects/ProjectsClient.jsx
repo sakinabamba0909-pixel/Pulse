@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 
 var FONT_URL =
   'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300&display=swap';
@@ -336,6 +337,7 @@ function Sparkline({ data, color, width, height }) {
 
 /* ═══ MAIN COMPONENT ═══ */
 export default function ProjectsClient({ projects: rawProjects, steps: rawSteps, tasks: rawTasks }) {
+  var router = useRouter();
   var projects = rawProjects || [];
   var steps = rawSteps || [];
   var tasks = rawTasks || [];
@@ -563,14 +565,34 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
     setView('detail');
   };
 
+  var refreshAndStay = function (projectId) {
+    router.refresh();
+    // After refresh, props update — re-select the project
+    setTimeout(function () {
+      var updated = buildProjectViews(rawProjects || [], rawSteps || [], rawTasks || []);
+      var found = updated.find(function (p) { return p.id === projectId; });
+      if (found) setSelectedProject(found);
+    }, 100);
+  };
+
+  // Keep selectedProject in sync when props change
+  useEffect(function () {
+    if (selectedProject && view === 'detail') {
+      var updated = projectViews.find(function (p) { return p.id === selectedProject.id; });
+      if (updated) setSelectedProject(updated);
+    }
+  }, [rawProjects, rawSteps, rawTasks]);
+
   var completeTask = function (taskId) {
+    var pid = selectedProject && selectedProject.id;
     fetch('/api/tasks/' + taskId + '/complete', { method: 'POST' })
-      .then(function () { window.location.reload(); });
+      .then(function () { router.refresh(); });
   };
 
   var completeStep = function (stepId) {
+    var pid = selectedProject && selectedProject.id;
     fetch('/api/projects/steps/' + stepId + '/complete', { method: 'POST' })
-      .then(function () { window.location.reload(); });
+      .then(function () { router.refresh(); });
   };
 
   return (
@@ -753,7 +775,7 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
                     })}
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={function () { setShowReplan(false); setAddInfoText(''); window.location.reload(); }} style={{ padding: '10px 20px', borderRadius: 12, background: T.accent, color: '#FFF', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Approve changes</button>
+                    <button onClick={function () { setShowReplan(false); setAddInfoText(''); router.refresh(); }} style={{ padding: '10px 20px', borderRadius: 12, background: T.accent, color: '#FFF', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Approve changes</button>
                     <button onClick={function () { setShowReplan(false); setAddInfoText(''); }} style={{ padding: '10px 16px', borderRadius: 12, background: 'transparent', border: '1px solid ' + T.border, color: T.inkMuted, fontSize: 13, cursor: 'pointer' }}>Keep original plan</button>
                   </div>
                 </div>
