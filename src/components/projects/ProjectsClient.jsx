@@ -237,109 +237,61 @@ function TypeWriter({ text, speed, onDone }) {
   );
 }
 
-/* ═══ MOCK DATA ═══ */
-var EXISTING_PROJECTS = [
-  {
-    id: 'p1', name: 'Learn French', color: T.sage, status: 'active', progress: 25,
-    currentStep: 'Step 2: Basic Grammar', nextTask: 'Lesson 5 — Verb conjugation',
-    totalSteps: 8, completedSteps: 2, tasksTotal: 24, tasksDone: 6,
-    sparkline: [2, 3, 1, 4, 2, 3, 5],
-    startDate: 'Jan 15', targetDate: 'Sep 15',
-    aiStatus: "On track — 12-day lesson streak. You're ahead of pace on vocabulary but behind on speaking practice.",
-    people: ['Tutor — Marie'],
-    goal: 'Career Growth (Paris transfer)',
-  },
-  {
-    id: 'p2', name: 'Bathroom Renovation', color: T.sky, status: 'active', progress: 45,
-    currentStep: 'Step 3: Demolition', nextTask: 'Remove old tiles',
-    totalSteps: 6, completedSteps: 2, tasksTotal: 18, tasksDone: 8,
-    sparkline: [5, 4, 6, 3, 2, 4, 5],
-    startDate: 'Feb 1', targetDate: 'Apr 30',
-    aiStatus: "Slightly behind — tile removal was delayed 3 days. I've shifted Steps 4-6 forward. Still on track for April if demolition finishes this week.",
-    people: ['Contractor — Mike', 'Amir (helping weekends)'],
-    goal: null,
-  },
-  {
-    id: 'p3', name: 'Q1 Budget Presentation', color: T.accent, status: 'active', progress: 70,
-    currentStep: 'Step 4: Final Review', nextTask: "Incorporate James's feedback",
-    totalSteps: 5, completedSteps: 3, tasksTotal: 12, tasksDone: 8,
-    sparkline: [4, 6, 5, 7, 3, 2, 6],
-    startDate: 'Feb 20', targetDate: 'Apr 2',
-    aiStatus: "Almost there! James sent feedback yesterday — 2 tasks left. Presentation is April 2.",
-    people: ['James Wilson', 'Sarah Chen'],
-    goal: 'Career Growth',
-  },
-  {
-    id: 'p4', name: 'Vancouver Trip', color: T.peach, status: 'active', progress: 60,
-    currentStep: 'Step 3: Activities', nextTask: 'Book Stanley Park tour',
-    totalSteps: 5, completedSteps: 3, tasksTotal: 10, tasksDone: 6,
-    sparkline: [1, 0, 2, 1, 3, 2, 1],
-    startDate: 'Feb 10', targetDate: 'Mar 22',
-    aiStatus: 'Flight and hotel booked. Still need to plan 2 days of activities. Trip is in 4 days!',
-    people: ['Priya'],
-    goal: null,
-  },
-];
+/* ═══ COLORS FOR PROJECTS ═══ */
+var PROJECT_COLORS = [T.sage, T.sky, T.accent, T.peach, T.rose];
 
-var DEMO_STEPS = [
-  {
-    id: 's1', name: 'Research & Planning', status: 'suggested', duration: '3 days',
-    tasks: [
-      { id: 't1', title: 'Research waterproof flooring options', est: '45 min', scheduled: 'Mon Mar 18, 1:00 PM' },
-      { id: 't2', title: 'Get 3 contractor quotes', est: '1.5 hrs', scheduled: 'Mon Mar 18, 2:00 PM' },
-      { id: 't3', title: 'Create mood board & material list', est: '1 hr', scheduled: 'Tue Mar 19, 10:00 AM' },
-    ],
-  },
-  {
-    id: 's2', name: 'Design & Permits', status: 'suggested', duration: '5 days',
-    tasks: [
-      { id: 't4', title: 'Finalize bathroom layout with contractor', est: '2 hrs', scheduled: 'Thu Mar 21, 2:00 PM' },
-      { id: 't5', title: 'Select fixtures (sink, toilet, shower)', est: '1.5 hrs', scheduled: 'Fri Mar 22, 11:00 AM' },
-      { id: 't6', title: 'Submit permit application', est: '1 hr', scheduled: 'Fri Mar 22, 3:00 PM' },
-    ],
-  },
-  {
-    id: 's3', name: 'Demolition', status: 'suggested', duration: '4 days',
-    tasks: [
-      { id: 't7', title: 'Clear bathroom & protect adjacent rooms', est: '2 hrs', scheduled: 'Mon Mar 25, 9:00 AM' },
-      { id: 't8', title: 'Remove old fixtures', est: '3 hrs', scheduled: 'Mon Mar 25, 11:00 AM' },
-      { id: 't9', title: 'Remove old tiles & flooring', est: '4 hrs', scheduled: 'Tue Mar 26, 9:00 AM' },
-    ],
-  },
-  {
-    id: 's4', name: 'Plumbing & Electrical', status: 'suggested', duration: '5 days',
-    tasks: [
-      { id: 't10', title: 'Rough-in plumbing for new layout', est: '4 hrs', scheduled: 'Thu Mar 28, 9:00 AM' },
-      { id: 't11', title: 'Update electrical for new lighting', est: '3 hrs', scheduled: 'Fri Mar 29, 10:00 AM' },
-      { id: 't12', title: 'Inspection checkpoint', est: '1 hr', scheduled: 'Mon Mar 31, 2:00 PM' },
-    ],
-  },
-  {
-    id: 's5', name: 'Installation', status: 'suggested', duration: '7 days',
-    tasks: [
-      { id: 't13', title: 'Install waterproof membrane & tiles', est: '6 hrs', scheduled: 'Tue Apr 1, 9:00 AM' },
-      { id: 't14', title: 'Install vanity & sink', est: '3 hrs', scheduled: 'Thu Apr 3, 10:00 AM' },
-      { id: 't15', title: 'Install shower/tub', est: '4 hrs', scheduled: 'Fri Apr 4, 9:00 AM' },
-      { id: 't16', title: 'Install toilet & accessories', est: '2 hrs', scheduled: 'Mon Apr 7, 10:00 AM' },
-    ],
-  },
-  {
-    id: 's6', name: 'Finishing & Cleanup', status: 'suggested', duration: '3 days',
-    tasks: [
-      { id: 't17', title: 'Paint walls & ceiling', est: '3 hrs', scheduled: 'Tue Apr 8, 9:00 AM' },
-      { id: 't18', title: 'Install lighting & mirror', est: '2 hrs', scheduled: 'Wed Apr 9, 10:00 AM' },
-      { id: 't19', title: 'Final cleanup & walkthrough', est: '1.5 hrs', scheduled: 'Thu Apr 10, 2:00 PM' },
-    ],
-  },
-];
+function pickColor(index) {
+  return PROJECT_COLORS[index % PROJECT_COLORS.length];
+}
 
-var CALENDAR_PREVIEW = [
-  { day: 'Mon 18', slots: [{ time: '9:00 AM', title: 'Standup', type: 'existing' }, { time: '1:00 PM', title: 'Research flooring options', type: 'new', step: 1 }, { time: '2:00 PM', title: 'Get contractor quotes', type: 'new', step: 1 }] },
-  { day: 'Tue 19', slots: [{ time: '10:00 AM', title: 'Create mood board', type: 'new', step: 1 }, { time: '11:00 AM', title: 'Design Review', type: 'existing' }, { time: '2:00 PM', title: 'French Lesson', type: 'existing' }] },
-  { day: 'Wed 20', slots: [{ time: '9:00 AM', title: 'Standup', type: 'existing' }, { time: '3:00 PM', title: 'Gym', type: 'existing' }] },
-  { day: 'Thu 21', slots: [{ time: '2:00 PM', title: 'Finalize layout w/ contractor', type: 'new', step: 2 }] },
-  { day: 'Fri 22', slots: [{ time: '11:00 AM', title: 'Select fixtures', type: 'new', step: 2 }, { time: '3:00 PM', title: 'Submit permit', type: 'new', step: 2 }] },
-];
+function formatDate(dateStr) {
+  if (!dateStr) return '';
+  var d = new Date(dateStr);
+  return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function buildProjectViews(projects, steps, tasks) {
+  return projects.map(function (p, idx) {
+    var pSteps = steps.filter(function (s) { return s.project_id === p.id; }).sort(function (a, b) { return a.step_number - b.step_number; });
+    var pTasks = tasks.filter(function (t) { return t.project_id === p.id; });
+    var doneSteps = pSteps.filter(function (s) { return s.status === 'done'; }).length;
+    var doneTasks = pTasks.filter(function (t) { return t.status === 'done'; }).length;
+    var totalTasks = pTasks.length;
+    var progress = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+    var currentStepObj = pSteps.find(function (s) { return s.status !== 'done'; });
+    var currentStepLabel = currentStepObj ? 'Step ' + currentStepObj.step_number + ': ' + currentStepObj.name : (pSteps.length > 0 ? 'All steps complete' : 'No steps yet');
+    var nextTaskObj = currentStepObj ? pTasks.find(function (t) { return t.step_id === currentStepObj.id && t.status !== 'done'; }) : null;
+    var sparkline = [0, 0, 0, 0, 0, 0, 0];
+    pTasks.forEach(function (t) {
+      if (t.status === 'done' && t.due_at) {
+        var daysAgo = Math.floor((Date.now() - new Date(t.due_at).getTime()) / 86400000);
+        if (daysAgo >= 0 && daysAgo < 7) sparkline[6 - daysAgo]++;
+      }
+    });
+    if (sparkline.every(function (v) { return v === 0; })) sparkline = [1, 1, 1, 1, 1, 1, 1];
+
+    return {
+      id: p.id, name: p.name, color: p.color || pickColor(idx), status: p.status || 'active',
+      progress: progress,
+      currentStep: currentStepLabel,
+      nextTask: nextTaskObj ? nextTaskObj.title : (currentStepObj ? 'No pending tasks' : ''),
+      totalSteps: pSteps.length, completedSteps: doneSteps,
+      tasksTotal: totalTasks, tasksDone: doneTasks,
+      sparkline: sparkline,
+      startDate: formatDate(p.start_date), targetDate: formatDate(p.target_date),
+      aiStatus: doneTasks === 0 && totalTasks === 0
+        ? 'No tasks yet — generate a plan to get started.'
+        : progress === 100
+          ? 'All tasks complete! Nice work.'
+          : doneTasks + ' of ' + totalTasks + ' tasks done (' + progress + '%). ' + (currentStepObj ? 'Currently on: ' + currentStepObj.name + '.' : ''),
+      people: [],
+      goal: null,
+      rawSteps: pSteps,
+      rawTasks: pTasks,
+      raw: p,
+    };
+  });
+}
 
 var SCHED_PREFS = [
   { id: 'spread', label: 'Spread it out', desc: "Don't cluster too many project tasks in one day", icon: '\u27F7' },
@@ -383,10 +335,15 @@ function Sparkline({ data, color, width, height }) {
 }
 
 /* ═══ MAIN COMPONENT ═══ */
-export default function ProjectsClient() {
+export default function ProjectsClient({ projects: rawProjects, steps: rawSteps, tasks: rawTasks }) {
+  var projects = rawProjects || [];
+  var steps = rawSteps || [];
+  var tasks = rawTasks || [];
+  var projectViews = buildProjectViews(projects, steps, tasks);
+
   var [view, setView] = useState('list');
   var [selectedProject, setSelectedProject] = useState(null);
-  var [createMode, setCreateMode] = useState('voice');
+  var [createMode, setCreateMode] = useState('manual');
   var [voiceState, setVoiceState] = useState('idle');
   var [transcript, setTranscript] = useState('');
   var [projectName, setProjectName] = useState('');
@@ -404,66 +361,90 @@ export default function ProjectsClient() {
   var [showReplan, setShowReplan] = useState(false);
   var [expandedStep, setExpandedStep] = useState(null);
   var [reminderFreq, setReminderFreq] = useState('1h');
+  var [generatedSteps, setGeneratedSteps] = useState([]);
+  var [generatedCalendar, setGeneratedCalendar] = useState([]);
+  var [replanChanges, setReplanChanges] = useState([]);
+  var [replanSpeech, setReplanSpeech] = useState('');
+  var [saving, setSaving] = useState(false);
 
-  var typeWords = function (words, cb) {
-    var i = 0;
-    setTranscript('');
-    var iv = setInterval(function () {
-      if (i < words.length) {
-        setTranscript(function (t) {
-          return (t ? t + ' ' : '') + words[i];
-        });
-        i++;
-      } else {
-        clearInterval(iv);
-        cb(words.join(' '));
-      }
-    }, 90);
+  var buildSchedPrefs = function () {
+    var prefs = {};
+    selectedPrefs.forEach(function (id) {
+      if (id === 'morning') prefs.preferred_time = 'morning';
+      if (id === 'afternoon') prefs.preferred_time = 'afternoon';
+      if (id === 'noweekend') prefs.no_weekends = true;
+      if (id === 'weekendok') prefs.no_weekends = false;
+      if (id === 'spread') prefs.style = 'spread';
+      if (id === 'packed') prefs.style = 'packed';
+    });
+    return prefs;
   };
 
-  var startVoiceDemo = function () {
-    setVoiceState('listening');
-    typeWords(
-      "I want to renovate my bathroom it's a full gut renovation I need new tiles flooring vanity and shower the budget is around 15K and I'd like it done by end of April".split(
-        ' ',
-      ),
-      function (full) {
-        setTranscript(full);
-        setVoiceState('thinking');
-        setProjectName('Bathroom Renovation');
-        setTimeout(function () {
-          setVoiceState('idle');
-          setView('creating');
-          setAiTyping(true);
-          setAiMessage('');
-          setTimeout(function () {
-            setAiTyping(false);
-            setAiMessage(
-              "Got it — a full bathroom renovation with a $15K budget, targeting end of April. I've broken this into 6 steps with 19 tasks. Based on your schedule (you prefer afternoons, no weekends, spread out), here's what I'm suggesting:",
-            );
-            setTimeout(function () {
-              setShowSteps(true);
-            }, 600);
-          }, 2500);
-        }, 1500);
-      },
-    );
-  };
-
-  var startManualDemo = function () {
+  var generatePlan = function () {
     setView('creating');
     setAiTyping(true);
-    setTimeout(function () {
-      setAiTyping(false);
-      setAiMessage(
-        "I've analyzed your project details" +
-          (importedContext ? ' and the context you imported' : '') +
-          ". Here's a 6-step plan with 19 tasks. Based on your scheduling preferences, I've placed each task on your calendar where there's availability:",
-      );
-      setTimeout(function () {
-        setShowSteps(true);
-      }, 600);
-    }, 2000);
+    setAiMessage('');
+    setShowSteps(false);
+    setGeneratedSteps([]);
+    setGeneratedCalendar([]);
+    setApprovedSteps({});
+
+    fetch('/api/projects/plan', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: projectName,
+        description: projectDesc,
+        context: importedContext || undefined,
+        scheduling_preferences: buildSchedPrefs(),
+        existing_tasks: tasks.filter(function (t) { return t.status !== 'done'; }),
+      }),
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        setAiTyping(false);
+        if (data.steps) {
+          var mapped = data.steps.map(function (s, i) {
+            var totalMins = s.tasks.reduce(function (a, t) { return a + (t.est_minutes || 0); }, 0);
+            var hrs = Math.round(totalMins / 60 * 10) / 10;
+            return {
+              id: 'gen_' + i,
+              name: s.name,
+              description: s.description,
+              estimated_hours: s.estimated_hours || hrs,
+              status: 'suggested',
+              duration: (s.estimated_hours || hrs) + ' hrs',
+              tasks: s.tasks.map(function (t, ti) {
+                var estLabel = t.est_minutes >= 60 ? (Math.round(t.est_minutes / 60 * 10) / 10) + ' hrs' : t.est_minutes + ' min';
+                var schedLabel = '';
+                if (t.scheduled_start) {
+                  var d = new Date(t.scheduled_start);
+                  schedLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ', ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                }
+                return {
+                  id: 'gen_t_' + i + '_' + ti,
+                  title: t.title,
+                  est: estLabel,
+                  est_minutes: t.est_minutes,
+                  scheduled: schedLabel,
+                  scheduled_start: t.scheduled_start,
+                  scheduled_end: t.scheduled_end,
+                };
+              }),
+            };
+          });
+          setGeneratedSteps(mapped);
+          setAiMessage(data.speech_reply || "Here's the plan I've put together based on your description:");
+          if (data.calendar_blocks) setGeneratedCalendar(data.calendar_blocks);
+          setTimeout(function () { setShowSteps(true); }, 400);
+        } else {
+          setAiMessage('Something went wrong generating the plan. Please try again.');
+        }
+      })
+      .catch(function () {
+        setAiTyping(false);
+        setAiMessage('Failed to connect. Please check your connection and try again.');
+      });
   };
 
   var togglePref = function (id) {
@@ -482,9 +463,92 @@ export default function ProjectsClient() {
     });
   };
 
-  var allApproved = DEMO_STEPS.every(function (s) {
+  var allApproved = generatedSteps.length > 0 && generatedSteps.every(function (s) {
     return approvedSteps[s.id];
   });
+
+  var handleCreateAndSave = function () {
+    if (saving) return;
+    setSaving(true);
+
+    fetch('/api/projects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: projectName,
+        category: 'general',
+        scheduling_preferences: buildSchedPrefs(),
+        description: projectDesc,
+      }),
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (proj) {
+        if (!proj || !proj.id) throw new Error('Failed to create project');
+        return fetch('/api/projects/plan/save', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            project_id: proj.id,
+            steps: generatedSteps.map(function (s) {
+              return {
+                name: s.name,
+                description: s.description,
+                estimated_hours: s.estimated_hours,
+                tasks: s.tasks.map(function (t) {
+                  return {
+                    title: t.title,
+                    est_minutes: t.est_minutes,
+                    scheduled_start: t.scheduled_start,
+                    scheduled_end: t.scheduled_end,
+                  };
+                }),
+              };
+            }),
+          }),
+        });
+      })
+      .then(function (res) { return res.json(); })
+      .then(function () {
+        setSaving(false);
+        window.location.reload();
+      })
+      .catch(function () {
+        setSaving(false);
+        setAiMessage('Failed to save project. Please try again.');
+      });
+  };
+
+  var handleReplan = function () {
+    if (!addInfoText.trim() || !selectedProject) return;
+    setShowAddInfo(false);
+    setShowReplan(false);
+    setAiTyping(true);
+    setReplanChanges([]);
+
+    fetch('/api/projects/update', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        project_id: selectedProject.id,
+        new_info: addInfoText,
+        existing_steps: (selectedProject.rawSteps || []).map(function (s) {
+          return { id: s.id, name: s.name, description: s.description, status: s.status, estimated_hours: s.estimated_hours };
+        }),
+      }),
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        setAiTyping(false);
+        if (data.changes) {
+          setReplanChanges(data.changes);
+          setReplanSpeech(data.speech_reply || 'Here are the suggested changes:');
+          setShowReplan(true);
+        }
+      })
+      .catch(function () {
+        setAiTyping(false);
+      });
+  };
 
   var openProject = function (p) {
     setSelectedProject(p);
@@ -541,7 +605,7 @@ export default function ProjectsClient() {
             <div style={{ paddingTop: 60, paddingBottom: 32, animation: 'fadeUp 0.6s ease both' }}>
               <p style={{ fontSize: 12, color: T.inkMuted, marginBottom: 10, letterSpacing: 0.5, fontWeight: 500 }}>Projects</p>
               <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 36, fontWeight: 400, letterSpacing: -0.5, margin: '0 0 8px', lineHeight: 1.15 }}>Your missions.</h1>
-              <p style={{ fontSize: 14, color: T.inkMuted }}>{EXISTING_PROJECTS.length} active projects</p>
+              <p style={{ fontSize: 14, color: T.inkMuted }}>{projectViews.length} active project{projectViews.length !== 1 ? 's' : ''}</p>
             </div>
 
             {/* New Project Button */}
@@ -565,7 +629,7 @@ export default function ProjectsClient() {
 
             {/* Project Cards */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-              {EXISTING_PROJECTS.map(function (p, i) {
+              {projectViews.map(function (p, i) {
                 return (
                   <button key={p.id} onClick={function () { openProject(p); }} style={{
                     width: '100%', textAlign: 'left', padding: '20px 22px', borderRadius: 18,
@@ -632,7 +696,7 @@ export default function ProjectsClient() {
                     <p style={{ fontSize: 12, fontWeight: 600, color: T.accentText, marginBottom: 10 }}>Update project</p>
                     <textarea value={addInfoText} onChange={function (e) { setAddInfoText(e.target.value); }} placeholder={'Tell Pulse anything new — "the contractor said tiles will take an extra week" or "I found cheaper fixtures at Home Depot"'} rows={3} style={{ width: '100%', padding: 14, borderRadius: 12, border: '1px solid ' + T.border, background: 'rgba(255,255,255,0.5)', fontSize: 14, color: T.ink, fontFamily: "'Outfit', sans-serif", resize: 'none', lineHeight: 1.6 }} />
                     <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
-                      <button onClick={function () { setShowAddInfo(false); setShowReplan(true); }} style={{ padding: '10px 20px', borderRadius: 12, background: 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')', color: '#FFF', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 16px rgba(155,126,200,0.25)' }}>Analyze & adapt plan</button>
+                      <button onClick={handleReplan} disabled={!addInfoText.trim()} style={{ padding: '10px 20px', borderRadius: 12, background: addInfoText.trim() ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : 'rgba(155,126,200,0.2)', color: '#FFF', border: 'none', fontSize: 13, fontWeight: 600, cursor: addInfoText.trim() ? 'pointer' : 'not-allowed', boxShadow: addInfoText.trim() ? '0 4px 16px rgba(155,126,200,0.25)' : 'none' }}>Analyze & adapt plan</button>
                       <button onClick={function () { setShowAddInfo(false); setAddInfoText(''); }} style={{ padding: '10px 16px', borderRadius: 12, background: 'transparent', border: '1px solid ' + T.border, color: T.inkMuted, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
                     </div>
                   </div>
@@ -640,27 +704,39 @@ export default function ProjectsClient() {
               </div>
 
               {/* Replan Suggestion */}
-              {showReplan && (
+              {aiTyping && !showReplan && (
+                <div style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(24px)', borderRadius: 18, border: '1px solid ' + T.accentBorder, padding: 20, marginBottom: 20, animation: 'fadeUp 0.4s ease both' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                    <Orb size={18} />
+                    <div style={{ display: 'flex', gap: 5 }}>
+                      {[0, 1, 2].map(function (i) { return <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: T.accent, animation: 'pulse 1s ease ' + (i * 0.2) + 's infinite' }} />; })}
+                    </div>
+                    <span style={{ fontSize: 12, color: T.accentText, marginLeft: 4 }}>Analyzing...</span>
+                  </div>
+                </div>
+              )}
+
+              {showReplan && replanChanges.length > 0 && (
                 <div style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(24px)', borderRadius: 18, border: '1px solid ' + T.accentBorder, padding: 20, marginBottom: 20, animation: 'fadeUp 0.4s ease both', boxShadow: T.shadowGlow }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
                     <Orb size={18} />
                     <span style={{ fontSize: 12, fontWeight: 600, color: T.accentText }}>Pulse suggests changes</span>
                   </div>
-                  <p style={{ fontSize: 14, color: T.ink, lineHeight: 1.65, marginBottom: 14 }}>Based on the new info, I{"'"}d recommend adjusting the plan:</p>
+                  <p style={{ fontSize: 14, color: T.ink, lineHeight: 1.65, marginBottom: 14 }}>{replanSpeech}</p>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
-                    <div style={{ padding: '10px 14px', borderRadius: 12, background: T.peachSoft, border: '1px solid ' + T.peach + '30' }}>
-                      <p style={{ fontSize: 13, color: T.ink }}><strong style={{ color: T.peach }}>Step 3:</strong> Extend demolition by 2 days — tile removal will take longer than expected</p>
-                    </div>
-                    <div style={{ padding: '10px 14px', borderRadius: 12, background: T.skySoft, border: '1px solid ' + T.sky + '30' }}>
-                      <p style={{ fontSize: 13, color: T.ink }}><strong style={{ color: T.sky }}>Step 5:</strong> Swap fixture supplier — new option saves $800 and ships faster</p>
-                    </div>
-                    <div style={{ padding: '10px 14px', borderRadius: 12, background: 'rgba(0,0,0,0.02)', border: '1px solid ' + T.border }}>
-                      <p style={{ fontSize: 13, color: T.ink }}><strong>Steps 4-6:</strong> Shifted forward 2 days to accommodate. Still on track for April 30.</p>
-                    </div>
+                    {replanChanges.map(function (change, ci) {
+                      var colors = [{ bg: T.peachSoft, border: T.peach }, { bg: T.skySoft, border: T.sky }, { bg: 'rgba(0,0,0,0.02)', border: T.border }];
+                      var c = colors[ci % colors.length];
+                      return (
+                        <div key={ci} style={{ padding: '10px 14px', borderRadius: 12, background: c.bg, border: '1px solid ' + c.border + '30' }}>
+                          <p style={{ fontSize: 13, color: T.ink }}><strong style={{ color: c.border }}>{change.type === 'modify_step' ? 'Modify' : change.type === 'add_step' ? 'Add' : 'Remove'}:</strong> {change.reason}</p>
+                        </div>
+                      );
+                    })}
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
-                    <button onClick={function () { setShowReplan(false); }} style={{ padding: '10px 20px', borderRadius: 12, background: T.accent, color: '#FFF', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Approve changes</button>
-                    <button onClick={function () { setShowReplan(false); }} style={{ padding: '10px 16px', borderRadius: 12, background: 'transparent', border: '1px solid ' + T.border, color: T.inkMuted, fontSize: 13, cursor: 'pointer' }}>Keep original plan</button>
+                    <button onClick={function () { setShowReplan(false); setAddInfoText(''); window.location.reload(); }} style={{ padding: '10px 20px', borderRadius: 12, background: T.accent, color: '#FFF', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Approve changes</button>
+                    <button onClick={function () { setShowReplan(false); setAddInfoText(''); }} style={{ padding: '10px 16px', borderRadius: 12, background: 'transparent', border: '1px solid ' + T.border, color: T.inkMuted, fontSize: 13, cursor: 'pointer' }}>Keep original plan</button>
                   </div>
                 </div>
               )}
@@ -749,7 +825,8 @@ export default function ProjectsClient() {
                     {voiceState === 'idle' && <>
                       <Orb size={64} />
                       <p style={{ fontSize: 15, color: T.inkSoft, marginTop: 16, marginBottom: 20 }}>Tell Pulse about your project</p>
-                      <button onClick={startVoiceDemo} style={{ padding: '14px 32px', borderRadius: 16, background: 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')', color: '#FFF', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 24px rgba(155,126,200,0.35)' }}>{'\uD83C\uDFA4'} Start speaking</button>
+                      <button style={{ padding: '14px 32px', borderRadius: 16, background: 'rgba(155,126,200,0.2)', color: T.inkMuted, border: 'none', fontSize: 15, fontWeight: 600, cursor: 'not-allowed' }}>{'\uD83C\uDFA4'} Coming soon</button>
+                      <p style={{ fontSize: 12, color: T.inkMuted, marginTop: 8 }}>Voice input is coming soon. Use manual mode for now.</p>
                     </>}
                     {voiceState === 'listening' && <>
                       <div style={{ display: 'flex', justifyContent: 'center', gap: 3, marginBottom: 14, height: 32, alignItems: 'center' }}>
@@ -786,7 +863,7 @@ export default function ProjectsClient() {
                       <label style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.3, marginBottom: 6, display: 'block' }}>IMPORT CONTEXT <span style={{ fontWeight: 400, color: T.inkFaint }}>(optional)</span></label>
                       <textarea value={importedContext} onChange={function (e) { setImportedContext(e.target.value); }} placeholder="Paste any project plans, ChatGPT conversations, notes, or research you've already done — Pulse will use it to build a smarter plan" rows={3} style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: '1px dashed ' + T.border, background: 'rgba(155,126,200,0.03)', fontSize: 13, color: T.ink, fontFamily: "'Outfit', sans-serif", resize: 'none', lineHeight: 1.6 }} />
                     </div>
-                    <button onClick={function () { if (!projectName) setProjectName('Bathroom Renovation'); startManualDemo(); }} style={{ padding: '14px 28px', borderRadius: 14, background: 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')', color: '#FFF', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,126,200,0.3)', width: '100%' }}>{'\u2726'} Generate project plan</button>
+                    <button onClick={function () { if (projectName.trim()) generatePlan(); }} disabled={!projectName.trim()} style={{ padding: '14px 28px', borderRadius: 14, background: projectName.trim() ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : 'rgba(155,126,200,0.2)', color: '#FFF', border: 'none', fontSize: 14, fontWeight: 600, cursor: projectName.trim() ? 'pointer' : 'not-allowed', boxShadow: projectName.trim() ? '0 4px 20px rgba(155,126,200,0.3)' : 'none', width: '100%' }}>{'\u2726'} Generate project plan</button>
                   </div>
                 </div>
               )}
@@ -847,9 +924,9 @@ export default function ProjectsClient() {
               {/* Steps */}
               {showSteps && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, animation: 'fadeUp 0.5s ease both' }}>
-                  <p style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4 }}>Suggested Plan — {DEMO_STEPS.length} steps, {DEMO_STEPS.reduce(function (a, s) { return a + s.tasks.length; }, 0)} tasks</p>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4 }}>Suggested Plan — {generatedSteps.length} steps, {generatedSteps.reduce(function (a, s) { return a + s.tasks.length; }, 0)} tasks</p>
 
-                  {DEMO_STEPS.map(function (step, si) {
+                  {generatedSteps.map(function (step, si) {
                     var expanded = expandedStep === step.id;
                     var approved = approvedSteps[step.id];
                     return (
@@ -895,19 +972,23 @@ export default function ProjectsClient() {
                       <span style={{ fontSize: 12, fontWeight: 600, color: T.accentText, letterSpacing: 0.3 }}>{'\uD83D\uDCC5'} CALENDAR PREVIEW</span>
                       <span style={{ fontSize: 10, color: T.inkMuted, transform: showCalendar ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }}>{'\u25BC'}</span>
                     </button>
-                    {showCalendar && (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, animation: 'fadeUp 0.4s ease both' }}>
-                        {CALENDAR_PREVIEW.map(function (day) {
+                    {showCalendar && generatedCalendar.length > 0 && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(' + Math.min(generatedCalendar.length, 5) + ', 1fr)', gap: 8, animation: 'fadeUp 0.4s ease both' }}>
+                        {generatedCalendar.map(function (day) {
+                          var dayLabel = day.day;
+                          var slots = day.slots || [];
                           return (
-                            <div key={day.day} style={{ background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(12px)', borderRadius: 14, border: '1px solid ' + T.border, padding: 12, minHeight: 140 }}>
-                              <p style={{ fontSize: 11, fontWeight: 700, color: T.ink, marginBottom: 8, textAlign: 'center' }}>{day.day}</p>
+                            <div key={dayLabel} style={{ background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(12px)', borderRadius: 14, border: '1px solid ' + T.border, padding: 12, minHeight: 140 }}>
+                              <p style={{ fontSize: 11, fontWeight: 700, color: T.ink, marginBottom: 8, textAlign: 'center' }}>{dayLabel}</p>
                               <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                {day.slots.map(function (slot, si) {
-                                  var isNew = slot.type === 'new';
+                                {slots.map(function (slot, si) {
+                                  var isNew = slot.type ? slot.type === 'new' : true;
+                                  var timeLabel = slot.time || slot.start || '';
+                                  var titleLabel = slot.title || slot.task || '';
                                   return (
                                     <div key={si} style={{ padding: '6px 8px', borderRadius: 8, background: isNew ? 'linear-gradient(135deg, ' + T.accentSoft + ', ' + T.roseSoft + ')' : 'rgba(0,0,0,0.03)', border: isNew ? '1px solid ' + T.accentBorder : '1px solid transparent' }}>
-                                      <p style={{ fontSize: 9, color: isNew ? T.accentText : T.inkMuted, fontWeight: 600 }}>{slot.time}</p>
-                                      <p style={{ fontSize: 10, color: isNew ? T.ink : T.inkMuted, fontWeight: isNew ? 500 : 400, lineHeight: 1.3 }}>{slot.title}</p>
+                                      <p style={{ fontSize: 9, color: isNew ? T.accentText : T.inkMuted, fontWeight: 600 }}>{timeLabel}</p>
+                                      <p style={{ fontSize: 10, color: isNew ? T.ink : T.inkMuted, fontWeight: isNew ? 500 : 400, lineHeight: 1.3 }}>{titleLabel}</p>
                                     </div>
                                   );
                                 })}
@@ -923,13 +1004,13 @@ export default function ProjectsClient() {
                   <div style={{ marginTop: 20, display: 'flex', gap: 10, animation: 'fadeUp 0.4s ease 0.5s both' }}>
                     <button onClick={function () {
                       var all = {};
-                      DEMO_STEPS.forEach(function (s) { all[s.id] = true; });
+                      generatedSteps.forEach(function (s) { all[s.id] = true; });
                       setApprovedSteps(all);
                     }} style={{ padding: '14px 24px', borderRadius: 14, background: allApproved ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.5)', border: '1px solid ' + T.border, color: T.inkSoft, fontSize: 13, fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(8px)' }}>
                       {allApproved ? '\u2713 All approved' : 'Approve all steps'}
                     </button>
-                    <button onClick={function () { setView('list'); }} style={{ flex: 1, padding: '14px 24px', borderRadius: 14, background: allApproved ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : T.accentSoft, color: allApproved ? '#FFF' : T.accentText, border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: allApproved ? '0 4px 24px rgba(155,126,200,0.35)' : 'none', transition: 'all 0.3s' }}>
-                      Create project & schedule tasks
+                    <button onClick={handleCreateAndSave} disabled={saving} style={{ flex: 1, padding: '14px 24px', borderRadius: 14, background: allApproved ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : T.accentSoft, color: allApproved ? '#FFF' : T.accentText, border: 'none', fontSize: 14, fontWeight: 700, cursor: saving ? 'wait' : 'pointer', boxShadow: allApproved ? '0 4px 24px rgba(155,126,200,0.35)' : 'none', transition: 'all 0.3s', opacity: saving ? 0.6 : 1 }}>
+                      {saving ? 'Creating project...' : 'Create project & schedule tasks'}
                     </button>
                   </div>
                 </div>
