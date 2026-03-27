@@ -1,0 +1,944 @@
+'use client';
+
+import { useState, useEffect, useRef, useCallback } from 'react';
+
+var FONT_URL =
+  'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300&display=swap';
+
+var T = {
+  ink: '#2D2A26',
+  inkSoft: '#5C5650',
+  inkMuted: '#9E958B',
+  inkFaint: '#C9C1B8',
+  accent: '#9B7EC8',
+  accentSoft: 'rgba(155,126,200,0.10)',
+  accentMid: 'rgba(155,126,200,0.18)',
+  accentBorder: 'rgba(155,126,200,0.25)',
+  accentText: '#7B5EA8',
+  accentGlow: 'rgba(155,126,200,0.15)',
+  rose: '#D4849A',
+  roseSoft: 'rgba(212,132,154,0.10)',
+  peach: '#D4A47A',
+  peachSoft: 'rgba(212,164,122,0.10)',
+  sky: '#7AABC8',
+  skySoft: 'rgba(122,171,200,0.10)',
+  sage: '#7EB89B',
+  sageSoft: 'rgba(126,184,155,0.10)',
+  urgent: '#D4727A',
+  urgentSoft: 'rgba(212,114,122,0.10)',
+  normal: '#7AABC8',
+  normalSoft: 'rgba(122,171,200,0.10)',
+  low: '#B5ADA5',
+  lowSoft: 'rgba(181,173,165,0.10)',
+  border: 'rgba(0,0,0,0.05)',
+  borderHover: 'rgba(0,0,0,0.08)',
+  borderGlow: 'rgba(155,126,200,0.18)',
+  divider: 'rgba(0,0,0,0.04)',
+  shadow:
+    '0 1px 2px rgba(0,0,0,0.02), 0 4px 16px rgba(0,0,0,0.03)',
+  shadowHover:
+    '0 2px 8px rgba(0,0,0,0.03), 0 12px 32px rgba(0,0,0,0.05)',
+  shadowGlow:
+    '0 0 24px rgba(155,126,200,0.08), 0 4px 16px rgba(0,0,0,0.03)',
+};
+
+var MOODS = {
+  projects: {
+    a: [30, 40, 91],
+    b: [280, 35, 90],
+    c: [50, 35, 93],
+    d: [10, 30, 94],
+  },
+};
+
+/* ═══ GANZFELD LIGHT ═══ */
+function GanzfeldLight() {
+  var phaseRef = useRef(0);
+  var [colors, setColors] = useState({
+    a: [30, 40, 91],
+    b: [280, 35, 90],
+    c: [50, 35, 93],
+    d: [10, 30, 94],
+  });
+  var currentRef = useRef({
+    a: [30, 40, 91],
+    b: [280, 35, 90],
+    c: [50, 35, 93],
+    d: [10, 30, 94],
+  });
+  var frameRef = useRef(null);
+
+  useEffect(function () {
+    function tick() {
+      phaseRef.current += 0.002;
+      var t = phaseRef.current;
+      var drift = Math.sin(t) * 4;
+      var drift2 = Math.cos(t * 0.7) * 3;
+      var c = currentRef.current;
+      setColors({
+        a: [c.a[0] + drift, c.a[1], c.a[2]],
+        b: [c.b[0] + drift2, c.b[1], c.b[2]],
+        c: [c.c[0] - drift, c.c[1], c.c[2]],
+        d: [c.d[0] + drift2, c.d[1], c.d[2]],
+      });
+      frameRef.current = requestAnimationFrame(tick);
+    }
+    tick();
+    return function () {
+      cancelAnimationFrame(frameRef.current);
+    };
+  }, []);
+
+  function hsl(arr, alpha) {
+    return (
+      'hsla(' +
+      Math.round(arr[0]) +
+      ',' +
+      Math.round(arr[1]) +
+      '%,' +
+      Math.round(arr[2]) +
+      '%,' +
+      alpha +
+      ')'
+    );
+  }
+
+  return (
+    <div
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 0,
+        pointerEvents: 'none',
+        overflow: 'hidden',
+      }}
+    >
+      <div style={{ position: 'absolute', inset: 0, background: '#F0EBE6' }} />
+      <div
+        style={{
+          position: 'absolute',
+          inset: '-20%',
+          background:
+            'radial-gradient(ellipse 120% 100% at 15% 10%, ' +
+            hsl(colors.a, 0.35) +
+            ' 0%, ' +
+            hsl(colors.a, 0.12) +
+            ' 40%, transparent 70%)',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          inset: '-20%',
+          background:
+            'radial-gradient(ellipse 100% 120% at 75% 25%, ' +
+            hsl(colors.b, 0.3) +
+            ' 0%, ' +
+            hsl(colors.b, 0.1) +
+            ' 35%, transparent 65%)',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          inset: '-20%',
+          background:
+            'radial-gradient(ellipse 140% 80% at 50% 95%, ' +
+            hsl(colors.c, 0.25) +
+            ' 0%, ' +
+            hsl(colors.c, 0.08) +
+            ' 40%, transparent 65%)',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          inset: '-30%',
+          background:
+            'radial-gradient(ellipse 60% 50% at 55% 35%, ' +
+            hsl(colors.d, 0.18) +
+            ' 0%, transparent 60%)',
+        }}
+      />
+      <div
+        style={{
+          position: 'absolute',
+          top: '-40%',
+          left: '-20%',
+          right: '-20%',
+          height: '80%',
+          background:
+            'linear-gradient(180deg, ' +
+            hsl(
+              [colors.a[0], colors.a[1] - 10, colors.a[2] + 3],
+              0.2,
+            ) +
+            ' 0%, transparent 100%)',
+        }}
+      />
+    </div>
+  );
+}
+
+/* ═══ ORB ═══ */
+function Orb({ size }) {
+  var s = size || 24;
+  return (
+    <div
+      style={{
+        width: s,
+        height: s,
+        borderRadius: '50%',
+        background:
+          'radial-gradient(circle at 40% 40%, rgba(212,168,200,0.7), rgba(155,126,200,0.4), rgba(155,126,200,0))',
+        boxShadow: '0 0 12px rgba(155,126,200,0.25)',
+        flexShrink: 0,
+      }}
+    />
+  );
+}
+
+/* ═══ TYPING ANIMATION ═══ */
+function TypeWriter({ text, speed, onDone }) {
+  var [shown, setShown] = useState('');
+  var idx = useRef(0);
+  useEffect(
+    function () {
+      idx.current = 0;
+      setShown('');
+      var iv = setInterval(function () {
+        if (idx.current < text.length) {
+          setShown(text.slice(0, idx.current + 1));
+          idx.current++;
+        } else {
+          clearInterval(iv);
+          if (onDone) onDone();
+        }
+      }, speed || 25);
+      return function () {
+        clearInterval(iv);
+      };
+    },
+    [text],
+  );
+  return (
+    <>
+      {shown}
+      <span
+        style={{
+          opacity: shown.length < text.length ? 1 : 0,
+          transition: 'opacity 0.3s',
+          color: T.accent,
+        }}
+      >
+        |
+      </span>
+    </>
+  );
+}
+
+/* ═══ MOCK DATA ═══ */
+var EXISTING_PROJECTS = [
+  {
+    id: 'p1', name: 'Learn French', color: T.sage, status: 'active', progress: 25,
+    currentStep: 'Step 2: Basic Grammar', nextTask: 'Lesson 5 — Verb conjugation',
+    totalSteps: 8, completedSteps: 2, tasksTotal: 24, tasksDone: 6,
+    sparkline: [2, 3, 1, 4, 2, 3, 5],
+    startDate: 'Jan 15', targetDate: 'Sep 15',
+    aiStatus: "On track — 12-day lesson streak. You're ahead of pace on vocabulary but behind on speaking practice.",
+    people: ['Tutor — Marie'],
+    goal: 'Career Growth (Paris transfer)',
+  },
+  {
+    id: 'p2', name: 'Bathroom Renovation', color: T.sky, status: 'active', progress: 45,
+    currentStep: 'Step 3: Demolition', nextTask: 'Remove old tiles',
+    totalSteps: 6, completedSteps: 2, tasksTotal: 18, tasksDone: 8,
+    sparkline: [5, 4, 6, 3, 2, 4, 5],
+    startDate: 'Feb 1', targetDate: 'Apr 30',
+    aiStatus: "Slightly behind — tile removal was delayed 3 days. I've shifted Steps 4-6 forward. Still on track for April if demolition finishes this week.",
+    people: ['Contractor — Mike', 'Amir (helping weekends)'],
+    goal: null,
+  },
+  {
+    id: 'p3', name: 'Q1 Budget Presentation', color: T.accent, status: 'active', progress: 70,
+    currentStep: 'Step 4: Final Review', nextTask: "Incorporate James's feedback",
+    totalSteps: 5, completedSteps: 3, tasksTotal: 12, tasksDone: 8,
+    sparkline: [4, 6, 5, 7, 3, 2, 6],
+    startDate: 'Feb 20', targetDate: 'Apr 2',
+    aiStatus: "Almost there! James sent feedback yesterday — 2 tasks left. Presentation is April 2.",
+    people: ['James Wilson', 'Sarah Chen'],
+    goal: 'Career Growth',
+  },
+  {
+    id: 'p4', name: 'Vancouver Trip', color: T.peach, status: 'active', progress: 60,
+    currentStep: 'Step 3: Activities', nextTask: 'Book Stanley Park tour',
+    totalSteps: 5, completedSteps: 3, tasksTotal: 10, tasksDone: 6,
+    sparkline: [1, 0, 2, 1, 3, 2, 1],
+    startDate: 'Feb 10', targetDate: 'Mar 22',
+    aiStatus: 'Flight and hotel booked. Still need to plan 2 days of activities. Trip is in 4 days!',
+    people: ['Priya'],
+    goal: null,
+  },
+];
+
+var DEMO_STEPS = [
+  {
+    id: 's1', name: 'Research & Planning', status: 'suggested', duration: '3 days',
+    tasks: [
+      { id: 't1', title: 'Research waterproof flooring options', est: '45 min', scheduled: 'Mon Mar 18, 1:00 PM' },
+      { id: 't2', title: 'Get 3 contractor quotes', est: '1.5 hrs', scheduled: 'Mon Mar 18, 2:00 PM' },
+      { id: 't3', title: 'Create mood board & material list', est: '1 hr', scheduled: 'Tue Mar 19, 10:00 AM' },
+    ],
+  },
+  {
+    id: 's2', name: 'Design & Permits', status: 'suggested', duration: '5 days',
+    tasks: [
+      { id: 't4', title: 'Finalize bathroom layout with contractor', est: '2 hrs', scheduled: 'Thu Mar 21, 2:00 PM' },
+      { id: 't5', title: 'Select fixtures (sink, toilet, shower)', est: '1.5 hrs', scheduled: 'Fri Mar 22, 11:00 AM' },
+      { id: 't6', title: 'Submit permit application', est: '1 hr', scheduled: 'Fri Mar 22, 3:00 PM' },
+    ],
+  },
+  {
+    id: 's3', name: 'Demolition', status: 'suggested', duration: '4 days',
+    tasks: [
+      { id: 't7', title: 'Clear bathroom & protect adjacent rooms', est: '2 hrs', scheduled: 'Mon Mar 25, 9:00 AM' },
+      { id: 't8', title: 'Remove old fixtures', est: '3 hrs', scheduled: 'Mon Mar 25, 11:00 AM' },
+      { id: 't9', title: 'Remove old tiles & flooring', est: '4 hrs', scheduled: 'Tue Mar 26, 9:00 AM' },
+    ],
+  },
+  {
+    id: 's4', name: 'Plumbing & Electrical', status: 'suggested', duration: '5 days',
+    tasks: [
+      { id: 't10', title: 'Rough-in plumbing for new layout', est: '4 hrs', scheduled: 'Thu Mar 28, 9:00 AM' },
+      { id: 't11', title: 'Update electrical for new lighting', est: '3 hrs', scheduled: 'Fri Mar 29, 10:00 AM' },
+      { id: 't12', title: 'Inspection checkpoint', est: '1 hr', scheduled: 'Mon Mar 31, 2:00 PM' },
+    ],
+  },
+  {
+    id: 's5', name: 'Installation', status: 'suggested', duration: '7 days',
+    tasks: [
+      { id: 't13', title: 'Install waterproof membrane & tiles', est: '6 hrs', scheduled: 'Tue Apr 1, 9:00 AM' },
+      { id: 't14', title: 'Install vanity & sink', est: '3 hrs', scheduled: 'Thu Apr 3, 10:00 AM' },
+      { id: 't15', title: 'Install shower/tub', est: '4 hrs', scheduled: 'Fri Apr 4, 9:00 AM' },
+      { id: 't16', title: 'Install toilet & accessories', est: '2 hrs', scheduled: 'Mon Apr 7, 10:00 AM' },
+    ],
+  },
+  {
+    id: 's6', name: 'Finishing & Cleanup', status: 'suggested', duration: '3 days',
+    tasks: [
+      { id: 't17', title: 'Paint walls & ceiling', est: '3 hrs', scheduled: 'Tue Apr 8, 9:00 AM' },
+      { id: 't18', title: 'Install lighting & mirror', est: '2 hrs', scheduled: 'Wed Apr 9, 10:00 AM' },
+      { id: 't19', title: 'Final cleanup & walkthrough', est: '1.5 hrs', scheduled: 'Thu Apr 10, 2:00 PM' },
+    ],
+  },
+];
+
+var CALENDAR_PREVIEW = [
+  { day: 'Mon 18', slots: [{ time: '9:00 AM', title: 'Standup', type: 'existing' }, { time: '1:00 PM', title: 'Research flooring options', type: 'new', step: 1 }, { time: '2:00 PM', title: 'Get contractor quotes', type: 'new', step: 1 }] },
+  { day: 'Tue 19', slots: [{ time: '10:00 AM', title: 'Create mood board', type: 'new', step: 1 }, { time: '11:00 AM', title: 'Design Review', type: 'existing' }, { time: '2:00 PM', title: 'French Lesson', type: 'existing' }] },
+  { day: 'Wed 20', slots: [{ time: '9:00 AM', title: 'Standup', type: 'existing' }, { time: '3:00 PM', title: 'Gym', type: 'existing' }] },
+  { day: 'Thu 21', slots: [{ time: '2:00 PM', title: 'Finalize layout w/ contractor', type: 'new', step: 2 }] },
+  { day: 'Fri 22', slots: [{ time: '11:00 AM', title: 'Select fixtures', type: 'new', step: 2 }, { time: '3:00 PM', title: 'Submit permit', type: 'new', step: 2 }] },
+];
+
+var SCHED_PREFS = [
+  { id: 'spread', label: 'Spread it out', desc: "Don't cluster too many project tasks in one day", icon: '\u27F7' },
+  { id: 'morning', label: 'Mornings preferred', desc: 'Schedule project tasks before noon when possible', icon: '\u2600' },
+  { id: 'afternoon', label: 'Afternoons preferred', desc: 'Keep mornings free, schedule after lunch', icon: '\uD83C\uDF24' },
+  { id: 'packed', label: 'Packed days are fine', desc: "I don't mind full days if it means free days later", icon: '\uD83D\uDCE6' },
+  { id: 'noweekend', label: 'No weekends', desc: 'Never schedule project tasks on Saturday or Sunday', icon: '\uD83D\uDECB' },
+  { id: 'weekendok', label: 'Weekends OK for this project', desc: 'This project can use weekend time slots', icon: '\uD83D\uDCC5' },
+];
+
+/* ═══ SPARKLINE ═══ */
+function Sparkline({ data, color, width, height }) {
+  var w = width || 70,
+    h = height || 24;
+  var max = Math.max.apply(null, data.concat([1]));
+  var points = data
+    .map(function (v, i) {
+      return (i / (data.length - 1)) * w + ',' + (h - (v / max) * h);
+    })
+    .join(' ');
+  return (
+    <svg width={w} height={h} style={{ overflow: 'visible' }}>
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="2"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        opacity="0.6"
+      />
+      <circle
+        cx={((data.length - 1) / (data.length - 1)) * w}
+        cy={h - (data[data.length - 1] / max) * h}
+        r="3"
+        fill={color}
+        opacity="0.8"
+      />
+    </svg>
+  );
+}
+
+/* ═══ MAIN COMPONENT ═══ */
+export default function ProjectsClient() {
+  var [view, setView] = useState('list');
+  var [selectedProject, setSelectedProject] = useState(null);
+  var [createMode, setCreateMode] = useState('voice');
+  var [voiceState, setVoiceState] = useState('idle');
+  var [transcript, setTranscript] = useState('');
+  var [projectName, setProjectName] = useState('');
+  var [projectDesc, setProjectDesc] = useState('');
+  var [importedContext, setImportedContext] = useState('');
+  var [aiTyping, setAiTyping] = useState(false);
+  var [aiMessage, setAiMessage] = useState('');
+  var [showSteps, setShowSteps] = useState(false);
+  var [showCalendar, setShowCalendar] = useState(false);
+  var [selectedPrefs, setSelectedPrefs] = useState(['spread', 'afternoon', 'noweekend']);
+  var [showPrefs, setShowPrefs] = useState(false);
+  var [approvedSteps, setApprovedSteps] = useState({});
+  var [showAddInfo, setShowAddInfo] = useState(false);
+  var [addInfoText, setAddInfoText] = useState('');
+  var [showReplan, setShowReplan] = useState(false);
+  var [expandedStep, setExpandedStep] = useState(null);
+  var [reminderFreq, setReminderFreq] = useState('1h');
+
+  var typeWords = function (words, cb) {
+    var i = 0;
+    setTranscript('');
+    var iv = setInterval(function () {
+      if (i < words.length) {
+        setTranscript(function (t) {
+          return (t ? t + ' ' : '') + words[i];
+        });
+        i++;
+      } else {
+        clearInterval(iv);
+        cb(words.join(' '));
+      }
+    }, 90);
+  };
+
+  var startVoiceDemo = function () {
+    setVoiceState('listening');
+    typeWords(
+      "I want to renovate my bathroom it's a full gut renovation I need new tiles flooring vanity and shower the budget is around 15K and I'd like it done by end of April".split(
+        ' ',
+      ),
+      function (full) {
+        setTranscript(full);
+        setVoiceState('thinking');
+        setProjectName('Bathroom Renovation');
+        setTimeout(function () {
+          setVoiceState('idle');
+          setView('creating');
+          setAiTyping(true);
+          setAiMessage('');
+          setTimeout(function () {
+            setAiTyping(false);
+            setAiMessage(
+              "Got it — a full bathroom renovation with a $15K budget, targeting end of April. I've broken this into 6 steps with 19 tasks. Based on your schedule (you prefer afternoons, no weekends, spread out), here's what I'm suggesting:",
+            );
+            setTimeout(function () {
+              setShowSteps(true);
+            }, 600);
+          }, 2500);
+        }, 1500);
+      },
+    );
+  };
+
+  var startManualDemo = function () {
+    setView('creating');
+    setAiTyping(true);
+    setTimeout(function () {
+      setAiTyping(false);
+      setAiMessage(
+        "I've analyzed your project details" +
+          (importedContext ? ' and the context you imported' : '') +
+          ". Here's a 6-step plan with 19 tasks. Based on your scheduling preferences, I've placed each task on your calendar where there's availability:",
+      );
+      setTimeout(function () {
+        setShowSteps(true);
+      }, 600);
+    }, 2000);
+  };
+
+  var togglePref = function (id) {
+    setSelectedPrefs(function (prev) {
+      return prev.indexOf(id) >= 0
+        ? prev.filter(function (x) { return x !== id; })
+        : prev.concat([id]);
+    });
+  };
+
+  var toggleStepApproval = function (stepId) {
+    setApprovedSteps(function (prev) {
+      var next = Object.assign({}, prev);
+      next[stepId] = !next[stepId];
+      return next;
+    });
+  };
+
+  var allApproved = DEMO_STEPS.every(function (s) {
+    return approvedSteps[s.id];
+  });
+
+  var openProject = function (p) {
+    setSelectedProject(p);
+    setView('detail');
+  };
+
+  return (
+    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'Outfit', sans-serif", color: T.ink }}>
+      <link href={FONT_URL} rel="stylesheet" />
+      <style>{
+        '* { box-sizing: border-box; margin: 0; padding: 0; }' +
+        '::selection { background: ' + T.accentMid + '; color: ' + T.accentText + '; }' +
+        '::-webkit-scrollbar { width: 4px; }' +
+        '::-webkit-scrollbar-thumb { background: ' + T.inkFaint + '; border-radius: 2px; }' +
+        '@keyframes fadeUp { from { opacity: 0; transform: translateY(16px); } to { opacity: 1; transform: translateY(0); } }' +
+        '@keyframes slideR { from { opacity: 0; transform: translateX(24px); } to { opacity: 1; transform: translateX(0); } }' +
+        '@keyframes glowPulse { 0%,100% { opacity: 0.35; } 50% { opacity: 0.9; } }' +
+        '@keyframes pulse { 0%,100% { opacity: 0.3; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1.1); } }' +
+        "button { font-family: 'Outfit', sans-serif; } button:active { transform: scale(0.97); }" +
+        'input:focus, textarea:focus { outline: none; }'
+      }</style>
+
+      <GanzfeldLight />
+
+      {/* SIDEBAR */}
+      <aside style={{ width: 230, flexShrink: 0, background: 'rgba(255,255,255,0.35)', backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)', borderRight: '1px solid rgba(255,255,255,0.3)', display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 20 }}>
+        <div style={{ padding: '32px 24px 24px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
+          <Orb size={28} />
+          <span style={{ fontFamily: "'Fraunces', serif", fontSize: 22, fontWeight: 400, letterSpacing: -0.5 }}>Pulse</span>
+        </div>
+        <nav style={{ flex: 1, padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+          {[{ id: 'home', label: 'Home' }, { id: 'tasks', label: 'Tasks' }, { id: 'goals', label: 'Goals' }, { id: 'people', label: 'People' }, { id: 'reminders', label: 'Reminders' }, { id: 'projects', label: 'Projects' }].map(function (n) {
+            var active = n.id === 'projects';
+            return (
+              <button key={n.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', borderRadius: 12, background: active ? 'rgba(155,126,200,0.08)' : 'transparent', border: active ? '1px solid rgba(155,126,200,0.12)' : '1px solid transparent', cursor: 'pointer', width: '100%', transition: 'all 0.4s' }}>
+                <div style={{ width: 6, height: 6, borderRadius: '50%', background: active ? T.accent : T.inkFaint, boxShadow: active ? '0 0 10px rgba(155,126,200,0.5)' : 'none' }} />
+                <span style={{ fontSize: 14.5, fontWeight: active ? 600 : 400, color: active ? T.accentText : T.inkSoft }}>{n.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+        <div style={{ padding: '18px 20px', borderTop: '1px solid rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(155,126,200,0.12), rgba(212,132,154,0.08))', border: '1.5px solid rgba(155,126,200,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: T.accent }}>S</div>
+          <span style={{ fontSize: 13, fontWeight: 500, color: T.inkSoft }}>Sakina</span>
+        </div>
+      </aside>
+
+      {/* MAIN */}
+      <main style={{ flex: 1, marginLeft: 230, padding: '0 0 120px', position: 'relative', zIndex: 1 }}>
+        <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 36px' }}>
+
+          {/* ═══ PROJECT LIST VIEW ═══ */}
+          {view === 'list' && <>
+            <div style={{ paddingTop: 60, paddingBottom: 32, animation: 'fadeUp 0.6s ease both' }}>
+              <p style={{ fontSize: 12, color: T.inkMuted, marginBottom: 10, letterSpacing: 0.5, fontWeight: 500 }}>Projects</p>
+              <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 36, fontWeight: 400, letterSpacing: -0.5, margin: '0 0 8px', lineHeight: 1.15 }}>Your missions.</h1>
+              <p style={{ fontSize: 14, color: T.inkMuted }}>{EXISTING_PROJECTS.length} active projects</p>
+            </div>
+
+            {/* New Project Button */}
+            <button onClick={function () { setView('create'); }} style={{
+              width: '100%', padding: '20px 24px', borderRadius: 20,
+              background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+              border: '1.5px dashed ' + T.accentBorder, cursor: 'pointer',
+              display: 'flex', alignItems: 'center', gap: 14,
+              boxShadow: T.shadow, transition: 'all 0.4s cubic-bezier(0.4,0,0.2,1)',
+              marginBottom: 28, animation: 'fadeUp 0.6s ease 0.1s both',
+            }}>
+              <div style={{ width: 44, height: 44, borderRadius: 14, background: 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 4px 16px rgba(155,126,200,0.3)' }}>
+                <span style={{ color: '#FFF', fontSize: 22, fontWeight: 300 }}>+</span>
+              </div>
+              <div style={{ textAlign: 'left' }}>
+                <p style={{ fontSize: 15, fontWeight: 600, color: T.ink }}>New project</p>
+                <p style={{ fontSize: 12, color: T.inkMuted }}>Tell Pulse what you{"'"}re working on — voice or text</p>
+              </div>
+              <span style={{ marginLeft: 'auto', fontSize: 18, color: T.accent, opacity: 0.5, animation: 'glowPulse 3.5s ease infinite' }}>{'\u2726'}</span>
+            </button>
+
+            {/* Project Cards */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+              {EXISTING_PROJECTS.map(function (p, i) {
+                return (
+                  <button key={p.id} onClick={function () { openProject(p); }} style={{
+                    width: '100%', textAlign: 'left', padding: '20px 22px', borderRadius: 18,
+                    background: 'rgba(255,255,255,0.52)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
+                    border: '1px solid ' + T.border, cursor: 'pointer',
+                    boxShadow: T.shadow, transition: 'all 0.4s cubic-bezier(0.4,0,0.2,1)',
+                    animation: 'fadeUp 0.5s ease ' + (0.15 + i * 0.08) + 's both',
+                  }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                      <div style={{ width: 10, height: 10, borderRadius: 4, background: p.color, boxShadow: '0 0 8px ' + p.color + '40', flexShrink: 0 }} />
+                      <div style={{ flex: 1 }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                          <span style={{ fontSize: 16, fontWeight: 600 }}>{p.name}</span>
+                          <span style={{ fontSize: 11, color: T.inkMuted }}>{p.completedSteps}/{p.totalSteps} steps</span>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                          <span style={{ fontSize: 12, color: T.inkMuted }}>{p.currentStep}</span>
+                          <span style={{ fontSize: 11, color: p.color, fontWeight: 500 }}>{p.progress}%</span>
+                        </div>
+                      </div>
+                      <Sparkline data={p.sparkline} color={p.color} />
+                    </div>
+                    {/* Progress bar */}
+                    <div style={{ height: 3, background: 'rgba(0,0,0,0.04)', borderRadius: 2, marginTop: 14 }}>
+                      <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, ' + p.color + ', ' + p.color + '80)', width: p.progress + '%', transition: 'width 0.6s', boxShadow: '0 0 8px ' + p.color + '30' }} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </>}
+
+          {/* ═══ PROJECT DETAIL VIEW ═══ */}
+          {view === 'detail' && selectedProject && <>
+            <div style={{ paddingTop: 50, animation: 'fadeUp 0.5s ease both' }}>
+              <button onClick={function () { setView('list'); setSelectedProject(null); }} style={{ background: 'none', border: 'none', color: T.inkMuted, cursor: 'pointer', fontSize: 13, marginBottom: 20, padding: 0 }}>{'\u2190'} All projects</button>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 8 }}>
+                <div style={{ width: 14, height: 14, borderRadius: 5, background: selectedProject.color, boxShadow: '0 0 10px ' + selectedProject.color + '50' }} />
+                <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 400, letterSpacing: -0.5 }}>{selectedProject.name}</h1>
+              </div>
+              <p style={{ fontSize: 13, color: T.inkMuted, marginBottom: 28 }}>{selectedProject.startDate} {'\u2192'} {selectedProject.targetDate} {'\u00B7'} {selectedProject.tasksDone}/{selectedProject.tasksTotal} tasks {'\u00B7'} {selectedProject.completedSteps}/{selectedProject.totalSteps} steps</p>
+
+              {/* AI Status Card */}
+              <div style={{ padding: 1.5, borderRadius: 22, background: 'linear-gradient(135deg, ' + selectedProject.color + '40, rgba(212,132,154,0.15), transparent 70%)', marginBottom: 20, animation: 'fadeUp 0.5s ease 0.1s both' }}>
+                <div style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)', borderRadius: 21, padding: '18px 20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <Orb size={20} />
+                    <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.5, color: T.accentText, textTransform: 'uppercase' }}>Pulse Status</span>
+                  </div>
+                  <p style={{ fontSize: 14, color: T.ink, lineHeight: 1.65 }}>{selectedProject.aiStatus}</p>
+                </div>
+              </div>
+
+              {/* Add Info Button */}
+              <div style={{ marginBottom: 20, animation: 'fadeUp 0.5s ease 0.15s both' }}>
+                {!showAddInfo ? (
+                  <button onClick={function () { setShowAddInfo(true); }} style={{ padding: '12px 20px', borderRadius: 14, background: 'rgba(255,255,255,0.4)', border: '1px solid ' + T.border, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 10, backdropFilter: 'blur(12px)', width: '100%', transition: 'all 0.3s' }}>
+                    <span style={{ fontSize: 16, color: T.accent }}>{'\u2726'}</span>
+                    <span style={{ fontSize: 13, color: T.inkSoft }}>Add new information to this project (voice or text)</span>
+                  </button>
+                ) : (
+                  <div style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(24px)', borderRadius: 18, border: '1px solid ' + T.borderGlow, padding: 20, boxShadow: T.shadowGlow }}>
+                    <p style={{ fontSize: 12, fontWeight: 600, color: T.accentText, marginBottom: 10 }}>Update project</p>
+                    <textarea value={addInfoText} onChange={function (e) { setAddInfoText(e.target.value); }} placeholder={'Tell Pulse anything new — "the contractor said tiles will take an extra week" or "I found cheaper fixtures at Home Depot"'} rows={3} style={{ width: '100%', padding: 14, borderRadius: 12, border: '1px solid ' + T.border, background: 'rgba(255,255,255,0.5)', fontSize: 14, color: T.ink, fontFamily: "'Outfit', sans-serif", resize: 'none', lineHeight: 1.6 }} />
+                    <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+                      <button onClick={function () { setShowAddInfo(false); setShowReplan(true); }} style={{ padding: '10px 20px', borderRadius: 12, background: 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')', color: '#FFF', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 16px rgba(155,126,200,0.25)' }}>Analyze & adapt plan</button>
+                      <button onClick={function () { setShowAddInfo(false); setAddInfoText(''); }} style={{ padding: '10px 16px', borderRadius: 12, background: 'transparent', border: '1px solid ' + T.border, color: T.inkMuted, fontSize: 13, cursor: 'pointer' }}>Cancel</button>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Replan Suggestion */}
+              {showReplan && (
+                <div style={{ background: 'rgba(255,255,255,0.6)', backdropFilter: 'blur(24px)', borderRadius: 18, border: '1px solid ' + T.accentBorder, padding: 20, marginBottom: 20, animation: 'fadeUp 0.4s ease both', boxShadow: T.shadowGlow }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                    <Orb size={18} />
+                    <span style={{ fontSize: 12, fontWeight: 600, color: T.accentText }}>Pulse suggests changes</span>
+                  </div>
+                  <p style={{ fontSize: 14, color: T.ink, lineHeight: 1.65, marginBottom: 14 }}>Based on the new info, I{"'"}d recommend adjusting the plan:</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 16 }}>
+                    <div style={{ padding: '10px 14px', borderRadius: 12, background: T.peachSoft, border: '1px solid ' + T.peach + '30' }}>
+                      <p style={{ fontSize: 13, color: T.ink }}><strong style={{ color: T.peach }}>Step 3:</strong> Extend demolition by 2 days — tile removal will take longer than expected</p>
+                    </div>
+                    <div style={{ padding: '10px 14px', borderRadius: 12, background: T.skySoft, border: '1px solid ' + T.sky + '30' }}>
+                      <p style={{ fontSize: 13, color: T.ink }}><strong style={{ color: T.sky }}>Step 5:</strong> Swap fixture supplier — new option saves $800 and ships faster</p>
+                    </div>
+                    <div style={{ padding: '10px 14px', borderRadius: 12, background: 'rgba(0,0,0,0.02)', border: '1px solid ' + T.border }}>
+                      <p style={{ fontSize: 13, color: T.ink }}><strong>Steps 4-6:</strong> Shifted forward 2 days to accommodate. Still on track for April 30.</p>
+                    </div>
+                  </div>
+                  <div style={{ display: 'flex', gap: 8 }}>
+                    <button onClick={function () { setShowReplan(false); }} style={{ padding: '10px 20px', borderRadius: 12, background: T.accent, color: '#FFF', border: 'none', fontSize: 13, fontWeight: 600, cursor: 'pointer' }}>Approve changes</button>
+                    <button onClick={function () { setShowReplan(false); }} style={{ padding: '10px 16px', borderRadius: 12, background: 'transparent', border: '1px solid ' + T.border, color: T.inkMuted, fontSize: 13, cursor: 'pointer' }}>Keep original plan</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Steps Timeline */}
+              <div style={{ animation: 'fadeUp 0.5s ease 0.2s both' }}>
+                <p style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.5, marginBottom: 14, textTransform: 'uppercase' }}>Project Steps</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                  {Array.from({ length: selectedProject.totalSteps }).map(function (_, i) {
+                    var done = i < selectedProject.completedSteps;
+                    var current = i === selectedProject.completedSteps;
+                    var future = i > selectedProject.completedSteps;
+                    return (
+                      <div key={i} style={{ display: 'flex', gap: 14 }}>
+                        {/* Timeline line */}
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 20 }}>
+                          <div style={{ width: done ? 12 : current ? 14 : 10, height: done ? 12 : current ? 14 : 10, borderRadius: '50%', background: done ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : current ? selectedProject.color : 'rgba(0,0,0,0.06)', border: current ? '2px solid ' + selectedProject.color : 'none', boxShadow: current ? '0 0 12px ' + selectedProject.color + '40' : done ? '0 0 8px ' + T.accentGlow : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                            {done && <span style={{ color: '#FFF', fontSize: 8, fontWeight: 700 }}>{'\u2713'}</span>}
+                          </div>
+                          {i < selectedProject.totalSteps - 1 && <div style={{ width: 2, flex: 1, minHeight: 40, background: done ? 'linear-gradient(180deg, ' + T.accent + '40, ' + T.accent + '20)' : 'rgba(0,0,0,0.04)' }} />}
+                        </div>
+                        {/* Step content */}
+                        <div style={{ flex: 1, paddingBottom: 20 }}>
+                          <p style={{ fontSize: 14, fontWeight: current ? 600 : 500, color: future ? T.inkMuted : T.ink, marginBottom: 2 }}>Step {i + 1}{current ? ' — ' + selectedProject.currentStep.replace('Step ' + (i + 1) + ': ', '') : done ? ' — Completed' : ''}</p>
+                          {current && <p style={{ fontSize: 12, color: selectedProject.color, fontWeight: 500, marginTop: 4 }}>Next: {selectedProject.nextTask}</p>}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+
+              {/* Connected People & Goals */}
+              <div style={{ display: 'flex', gap: 12, marginTop: 10, animation: 'fadeUp 0.5s ease 0.3s both' }}>
+                {selectedProject.people && selectedProject.people.length > 0 && (
+                  <div style={{ flex: 1, padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.45)', backdropFilter: 'blur(12px)', border: '1px solid ' + T.border }}>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.3, marginBottom: 8, textTransform: 'uppercase' }}>People</p>
+                    {selectedProject.people.map(function (p) { return <p key={p} style={{ fontSize: 13, color: T.ink, marginBottom: 3 }}>{p}</p>; })}
+                  </div>
+                )}
+                {selectedProject.goal && (
+                  <div style={{ flex: 1, padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.45)', backdropFilter: 'blur(12px)', border: '1px solid ' + T.border }}>
+                    <p style={{ fontSize: 11, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.3, marginBottom: 8, textTransform: 'uppercase' }}>Connected Goal</p>
+                    <p style={{ fontSize: 13, color: T.accent, fontWeight: 500 }}>{selectedProject.goal}</p>
+                  </div>
+                )}
+              </div>
+
+              {/* Reminder frequency */}
+              <div style={{ marginTop: 20, padding: '14px 16px', borderRadius: 14, background: 'rgba(255,255,255,0.45)', backdropFilter: 'blur(12px)', border: '1px solid ' + T.border, animation: 'fadeUp 0.5s ease 0.35s both' }}>
+                <p style={{ fontSize: 11, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.3, marginBottom: 10, textTransform: 'uppercase' }}>Task Reminders</p>
+                <div style={{ display: 'flex', gap: 6 }}>
+                  {[{ id: '30m', label: '30 min before' }, { id: '1h', label: '1 hour' }, { id: '3h', label: '3 hours' }, { id: '1d', label: '1 day' }].map(function (r) {
+                    var sel = reminderFreq === r.id;
+                    return <button key={r.id} onClick={function () { setReminderFreq(r.id); }} style={{ padding: '7px 14px', borderRadius: 10, background: sel ? T.accent : 'rgba(255,255,255,0.4)', border: '1px solid ' + (sel ? T.accent : T.border), color: sel ? '#FFF' : T.inkSoft, fontSize: 12, fontWeight: 500, cursor: 'pointer', transition: 'all 0.2s' }}>{r.label}</button>;
+                  })}
+                </div>
+              </div>
+            </div>
+          </>}
+
+          {/* ═══ CREATE PROJECT VIEW ═══ */}
+          {view === 'create' && <>
+            <div style={{ paddingTop: 50, animation: 'fadeUp 0.5s ease both' }}>
+              <button onClick={function () { setView('list'); setProjectName(''); setProjectDesc(''); setImportedContext(''); }} style={{ background: 'none', border: 'none', color: T.inkMuted, cursor: 'pointer', fontSize: 13, marginBottom: 20, padding: 0 }}>{'\u2190'} Back</button>
+
+              <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 400, letterSpacing: -0.5, marginBottom: 6 }}>New project.</h1>
+              <p style={{ fontSize: 14, color: T.inkMuted, marginBottom: 32 }}>Tell Pulse about your project — it{"'"}ll build the plan</p>
+
+              {/* Mode Toggle */}
+              <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 14, background: 'rgba(255,255,255,0.4)', backdropFilter: 'blur(12px)', border: '1px solid ' + T.border, marginBottom: 24, width: 'fit-content' }}>
+                {[{ id: 'voice', label: '\uD83C\uDFA4 Voice', desc: 'Speak naturally' }, { id: 'manual', label: '\u270E Manual', desc: 'Type it out' }].map(function (m) {
+                  var sel = createMode === m.id;
+                  return (
+                    <button key={m.id} onClick={function () { setCreateMode(m.id); }} style={{ padding: '10px 20px', borderRadius: 11, background: sel ? '#FFF' : 'transparent', border: 'none', cursor: 'pointer', boxShadow: sel ? T.shadow : 'none', transition: 'all 0.3s' }}>
+                      <span style={{ fontSize: 13, fontWeight: sel ? 600 : 400, color: sel ? T.ink : T.inkMuted }}>{m.label}</span>
+                    </button>
+                  );
+                })}
+              </div>
+
+              {/* Voice Mode */}
+              {createMode === 'voice' && (
+                <div style={{ animation: 'fadeUp 0.4s ease both' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(24px)', borderRadius: 22, border: '1px solid ' + T.border, padding: '32px 28px', textAlign: 'center', boxShadow: T.shadow }}>
+                    {voiceState === 'idle' && <>
+                      <Orb size={64} />
+                      <p style={{ fontSize: 15, color: T.inkSoft, marginTop: 16, marginBottom: 20 }}>Tell Pulse about your project</p>
+                      <button onClick={startVoiceDemo} style={{ padding: '14px 32px', borderRadius: 16, background: 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')', color: '#FFF', border: 'none', fontSize: 15, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 24px rgba(155,126,200,0.35)' }}>{'\uD83C\uDFA4'} Start speaking</button>
+                    </>}
+                    {voiceState === 'listening' && <>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: 3, marginBottom: 14, height: 32, alignItems: 'center' }}>
+                        {Array.from({ length: 16 }).map(function (_, i) {
+                          return <div key={i} style={{ width: 3, borderRadius: 2, height: 6 + Math.random() * 22, background: T.accent, opacity: 0.6, animation: 'pulse 0.6s ease ' + (i * 0.05) + 's infinite' }} />;
+                        })}
+                      </div>
+                      <p style={{ fontSize: 12, color: T.accent, fontWeight: 600, marginBottom: 12 }}>Listening...</p>
+                      {transcript && <p style={{ fontSize: 15, color: T.ink, lineHeight: 1.6, fontStyle: 'italic', maxWidth: 440, margin: '0 auto' }}>"{transcript}"</p>}
+                    </>}
+                    {voiceState === 'thinking' && <>
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: 6, marginBottom: 14 }}>
+                        {[0, 1, 2].map(function (i) { return <div key={i} style={{ width: 8, height: 8, borderRadius: '50%', background: T.accent, animation: 'pulse 1s ease ' + (i * 0.2) + 's infinite' }} />; })}
+                      </div>
+                      <p style={{ fontSize: 14, color: T.accentText, fontWeight: 500 }}>Pulse is building your project plan...</p>
+                    </>}
+                  </div>
+                </div>
+              )}
+
+              {/* Manual Mode */}
+              {createMode === 'manual' && (
+                <div style={{ animation: 'fadeUp 0.4s ease both' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(24px)', borderRadius: 22, border: '1px solid ' + T.border, padding: 24, boxShadow: T.shadow }}>
+                    <div style={{ marginBottom: 18 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.3, marginBottom: 6, display: 'block' }}>PROJECT NAME</label>
+                      <input value={projectName} onChange={function (e) { setProjectName(e.target.value); }} placeholder="e.g. Bathroom Renovation" style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: '1px solid ' + (projectName ? T.accentBorder : T.border), background: 'rgba(255,255,255,0.5)', fontSize: 16, fontWeight: 500, color: T.ink, fontFamily: "'Outfit', sans-serif", transition: 'border 0.2s' }} />
+                    </div>
+                    <div style={{ marginBottom: 18 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.3, marginBottom: 6, display: 'block' }}>DESCRIBE YOUR PROJECT</label>
+                      <textarea value={projectDesc} onChange={function (e) { setProjectDesc(e.target.value); }} placeholder="Tell Pulse everything — the more detail, the better the plan. What's the scope? Any deadlines? Budget? Who's involved?" rows={4} style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: '1px solid ' + T.border, background: 'rgba(255,255,255,0.5)', fontSize: 14, color: T.ink, fontFamily: "'Outfit', sans-serif", resize: 'none', lineHeight: 1.6 }} />
+                    </div>
+                    <div style={{ marginBottom: 20 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.3, marginBottom: 6, display: 'block' }}>IMPORT CONTEXT <span style={{ fontWeight: 400, color: T.inkFaint }}>(optional)</span></label>
+                      <textarea value={importedContext} onChange={function (e) { setImportedContext(e.target.value); }} placeholder="Paste any project plans, ChatGPT conversations, notes, or research you've already done — Pulse will use it to build a smarter plan" rows={3} style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: '1px dashed ' + T.border, background: 'rgba(155,126,200,0.03)', fontSize: 13, color: T.ink, fontFamily: "'Outfit', sans-serif", resize: 'none', lineHeight: 1.6 }} />
+                    </div>
+                    <button onClick={function () { if (!projectName) setProjectName('Bathroom Renovation'); startManualDemo(); }} style={{ padding: '14px 28px', borderRadius: 14, background: 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')', color: '#FFF', border: 'none', fontSize: 14, fontWeight: 600, cursor: 'pointer', boxShadow: '0 4px 20px rgba(155,126,200,0.3)', width: '100%' }}>{'\u2726'} Generate project plan</button>
+                  </div>
+                </div>
+              )}
+
+              {/* Scheduling Preferences */}
+              <div style={{ marginTop: 20 }}>
+                <button onClick={function () { setShowPrefs(!showPrefs); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.3 }}>SCHEDULING PREFERENCES</span>
+                  <span style={{ fontSize: 10, color: T.inkMuted, transform: showPrefs ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }}>{'\u25BC'}</span>
+                </button>
+                {showPrefs && (
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 8, marginTop: 12, animation: 'fadeUp 0.3s ease both' }}>
+                    {SCHED_PREFS.map(function (pref) {
+                      var sel = selectedPrefs.indexOf(pref.id) >= 0;
+                      return (
+                        <button key={pref.id} onClick={function () { togglePref(pref.id); }} style={{ textAlign: 'left', padding: '12px 14px', borderRadius: 14, background: sel ? T.accentSoft : 'rgba(255,255,255,0.4)', border: '1px solid ' + (sel ? T.accentBorder : T.border), cursor: 'pointer', backdropFilter: 'blur(8px)', transition: 'all 0.3s' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 3 }}>
+                            <span style={{ fontSize: 14 }}>{pref.icon}</span>
+                            <span style={{ fontSize: 13, fontWeight: sel ? 600 : 500, color: sel ? T.accentText : T.ink }}>{pref.label}</span>
+                          </div>
+                          <p style={{ fontSize: 11, color: T.inkMuted, lineHeight: 1.4 }}>{pref.desc}</p>
+                        </button>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            </div>
+          </>}
+
+          {/* ═══ AI GENERATING VIEW ═══ */}
+          {view === 'creating' && <>
+            <div style={{ paddingTop: 50, animation: 'fadeUp 0.5s ease both' }}>
+              <button onClick={function () { setView('list'); setShowSteps(false); setShowCalendar(false); setAiMessage(''); setApprovedSteps({}); }} style={{ background: 'none', border: 'none', color: T.inkMuted, cursor: 'pointer', fontSize: 13, marginBottom: 20, padding: 0 }}>{'\u2190'} Cancel</button>
+
+              <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
+                <div style={{ width: 14, height: 14, borderRadius: 5, background: T.sky, boxShadow: '0 0 10px ' + T.sky + '50' }} />
+                <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 28, fontWeight: 400 }}>{projectName || 'New Project'}</h1>
+              </div>
+
+              {/* AI Message */}
+              <div style={{ padding: 1.5, borderRadius: 22, background: 'linear-gradient(135deg, rgba(155,126,200,0.25), rgba(212,132,154,0.1), transparent 70%)', marginBottom: 24 }}>
+                <div style={{ background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(24px)', borderRadius: 21, padding: '18px 20px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                    <Orb size={20} />
+                    <span style={{ fontSize: 11, fontWeight: 600, letterSpacing: 0.5, color: T.accentText, textTransform: 'uppercase' }}>Pulse Project Brain</span>
+                  </div>
+                  {aiTyping ? (
+                    <div style={{ display: 'flex', gap: 5 }}>
+                      {[0, 1, 2].map(function (i) { return <div key={i} style={{ width: 6, height: 6, borderRadius: '50%', background: T.accent, animation: 'pulse 1s ease ' + (i * 0.2) + 's infinite' }} />; })}
+                    </div>
+                  ) : (
+                    <p style={{ fontSize: 14, color: T.ink, lineHeight: 1.65 }}>{aiMessage}</p>
+                  )}
+                </div>
+              </div>
+
+              {/* Steps */}
+              {showSteps && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10, animation: 'fadeUp 0.5s ease both' }}>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4 }}>Suggested Plan — {DEMO_STEPS.length} steps, {DEMO_STEPS.reduce(function (a, s) { return a + s.tasks.length; }, 0)} tasks</p>
+
+                  {DEMO_STEPS.map(function (step, si) {
+                    var expanded = expandedStep === step.id;
+                    var approved = approvedSteps[step.id];
+                    return (
+                      <div key={step.id} style={{ background: approved ? 'rgba(155,126,200,0.05)' : 'rgba(255,255,255,0.52)', backdropFilter: 'blur(16px)', borderRadius: 16, border: '1px solid ' + (approved ? T.accentBorder : T.border), overflow: 'hidden', transition: 'all 0.4s', animation: 'fadeUp 0.4s ease ' + (si * 0.08) + 's both' }}>
+                        <button onClick={function () { setExpandedStep(expanded ? null : step.id); }} style={{ width: '100%', textAlign: 'left', padding: '16px 18px', background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 14 }}>
+                          <div style={{ width: 28, height: 28, borderRadius: 9, background: approved ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.3s' }}>
+                            {approved ? <span style={{ color: '#FFF', fontSize: 12, fontWeight: 700 }}>{'\u2713'}</span> : <span style={{ fontSize: 12, fontWeight: 700, color: T.inkMuted }}>{si + 1}</span>}
+                          </div>
+                          <div style={{ flex: 1 }}>
+                            <p style={{ fontSize: 14.5, fontWeight: 600, color: T.ink }}>{step.name}</p>
+                            <p style={{ fontSize: 12, color: T.inkMuted }}>{step.tasks.length} tasks {'\u00B7'} {step.duration}</p>
+                          </div>
+                          <span style={{ fontSize: 10, color: T.inkMuted, transform: expanded ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }}>{'\u25BC'}</span>
+                        </button>
+
+                        {expanded && (
+                          <div style={{ padding: '0 18px 16px', animation: 'fadeUp 0.3s ease both' }}>
+                            <div style={{ borderTop: '1px solid ' + T.divider, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                              {step.tasks.map(function (task) {
+                                return (
+                                  <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.4)', border: '1px solid ' + T.border }}>
+                                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: T.sky, flexShrink: 0 }} />
+                                    <div style={{ flex: 1 }}>
+                                      <p style={{ fontSize: 13, fontWeight: 500, color: T.ink }}>{task.title}</p>
+                                      <p style={{ fontSize: 11, color: T.inkMuted }}>{task.scheduled} {'\u00B7'} {task.est}</p>
+                                    </div>
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <button onClick={function () { toggleStepApproval(step.id); }} style={{ marginTop: 12, padding: '8px 16px', borderRadius: 10, background: approved ? 'rgba(0,0,0,0.03)' : T.accentSoft, border: '1px solid ' + (approved ? T.border : T.accentBorder), color: approved ? T.inkMuted : T.accentText, fontSize: 12, fontWeight: 600, cursor: 'pointer', transition: 'all 0.2s' }}>
+                              {approved ? 'Undo approval' : '\u2713 Approve this step'}
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+
+                  {/* Calendar Preview */}
+                  <div style={{ marginTop: 16 }}>
+                    <button onClick={function () { setShowCalendar(!showCalendar); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
+                      <span style={{ fontSize: 12, fontWeight: 600, color: T.accentText, letterSpacing: 0.3 }}>{'\uD83D\uDCC5'} CALENDAR PREVIEW</span>
+                      <span style={{ fontSize: 10, color: T.inkMuted, transform: showCalendar ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }}>{'\u25BC'}</span>
+                    </button>
+                    {showCalendar && (
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, animation: 'fadeUp 0.4s ease both' }}>
+                        {CALENDAR_PREVIEW.map(function (day) {
+                          return (
+                            <div key={day.day} style={{ background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(12px)', borderRadius: 14, border: '1px solid ' + T.border, padding: 12, minHeight: 140 }}>
+                              <p style={{ fontSize: 11, fontWeight: 700, color: T.ink, marginBottom: 8, textAlign: 'center' }}>{day.day}</p>
+                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                                {day.slots.map(function (slot, si) {
+                                  var isNew = slot.type === 'new';
+                                  return (
+                                    <div key={si} style={{ padding: '6px 8px', borderRadius: 8, background: isNew ? 'linear-gradient(135deg, ' + T.accentSoft + ', ' + T.roseSoft + ')' : 'rgba(0,0,0,0.03)', border: isNew ? '1px solid ' + T.accentBorder : '1px solid transparent' }}>
+                                      <p style={{ fontSize: 9, color: isNew ? T.accentText : T.inkMuted, fontWeight: 600 }}>{slot.time}</p>
+                                      <p style={{ fontSize: 10, color: isNew ? T.ink : T.inkMuted, fontWeight: isNew ? 500 : 400, lineHeight: 1.3 }}>{slot.title}</p>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Approve All + Create */}
+                  <div style={{ marginTop: 20, display: 'flex', gap: 10, animation: 'fadeUp 0.4s ease 0.5s both' }}>
+                    <button onClick={function () {
+                      var all = {};
+                      DEMO_STEPS.forEach(function (s) { all[s.id] = true; });
+                      setApprovedSteps(all);
+                    }} style={{ padding: '14px 24px', borderRadius: 14, background: allApproved ? 'rgba(0,0,0,0.03)' : 'rgba(255,255,255,0.5)', border: '1px solid ' + T.border, color: T.inkSoft, fontSize: 13, fontWeight: 600, cursor: 'pointer', backdropFilter: 'blur(8px)' }}>
+                      {allApproved ? '\u2713 All approved' : 'Approve all steps'}
+                    </button>
+                    <button onClick={function () { setView('list'); }} style={{ flex: 1, padding: '14px 24px', borderRadius: 14, background: allApproved ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : T.accentSoft, color: allApproved ? '#FFF' : T.accentText, border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: allApproved ? '0 4px 24px rgba(155,126,200,0.35)' : 'none', transition: 'all 0.3s' }}>
+                      Create project & schedule tasks
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
+          </>}
+
+        </div>
+      </main>
+    </div>
+  );
+}
