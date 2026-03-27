@@ -1,8 +1,8 @@
-import Anthropic from '@anthropic-ai/sdk'
+import OpenAI from 'openai'
 import { createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-const anthropic = new Anthropic()
+const openai = new OpenAI()
 
 export async function POST(req: Request) {
   const supabase = await createServerClient()
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
       ).join('\n')
     : '  No existing steps.'
 
-  const system = `You are a project update analyst for Pulse, a personal AI lifestyle app.
+  const systemPrompt = `You are a project update analyst for Pulse, a personal AI lifestyle app.
 
 Project: "${project.name}"
 Project ID: ${project.id}
@@ -81,29 +81,25 @@ Return ONLY valid JSON matching this exact schema — no markdown, no explanatio
 }`
 
   try {
-    const response = await anthropic.messages.create({
-      model: 'claude-sonnet-4-20250514',
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
       max_tokens: 3000,
-      system,
       messages: [
+        { role: 'system', content: systemPrompt },
         {
           role: 'user',
           content: `New information about the project:\n\n"${new_info.replace(/"/g, "'")}"`,
         },
       ],
+      response_format: { type: 'json_object' },
     })
 
-    const raw = response.content[0]
-    if (raw.type !== 'text') {
-      return NextResponse.json({ error: 'AI did not return text' }, { status: 500 })
+    const raw = response.choices[0]?.message?.content
+    if (!raw) {
+      return NextResponse.json({ error: 'AI did not return a response' }, { status: 500 })
     }
 
-    const jsonMatch = raw.text.match(/\{[\s\S]*\}/)
-    if (!jsonMatch) {
-      return NextResponse.json({ error: 'No JSON found in AI response' }, { status: 500 })
-    }
-
-    const parsed = JSON.parse(jsonMatch[0])
+    const parsed = JSON.parse(raw)
 
     // Validate and sanitise
     const validStepIds = new Set(
