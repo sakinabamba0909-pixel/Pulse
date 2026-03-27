@@ -34,6 +34,7 @@ export async function POST(req: Request) {
     const { data: savedStep, error: stepErr } = await supabase
       .from('project_steps')
       .insert({
+        user_id: user.id,
         project_id,
         step_number: i + 1,
         name: step.name,

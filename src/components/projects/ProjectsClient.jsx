@@ -482,12 +482,14 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
         name: projectName,
         category: 'general',
         scheduling_preferences: buildSchedPrefs(),
-        description: projectDesc,
+        description: projectDesc || projectName,
       }),
     })
       .then(function (res) { return res.json(); })
       .then(function (proj) {
-        if (!proj || !proj.id) throw new Error('Failed to create project');
+        if (!proj || proj.error || !proj.id) {
+          throw new Error(proj.error || 'Failed to create project');
+        }
         return fetch('/api/projects/plan/save', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -509,16 +511,18 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
               };
             }),
           }),
-        });
+        }).then(function (res) { return res.json(); });
       })
-      .then(function (res) { return res.json(); })
-      .then(function () {
+      .then(function (result) {
+        if (result && result.error) {
+          throw new Error(result.error);
+        }
         setSaving(false);
         window.location.reload();
       })
-      .catch(function () {
+      .catch(function (err) {
         setSaving(false);
-        setAiMessage('Failed to save project. Please try again.');
+        setAiMessage('Error: ' + (err.message || 'Failed to save project. Please try again.'));
       });
   };
 
