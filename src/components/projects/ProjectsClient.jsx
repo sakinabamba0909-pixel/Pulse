@@ -563,6 +563,16 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
     setView('detail');
   };
 
+  var completeTask = function (taskId) {
+    fetch('/api/tasks/' + taskId + '/complete', { method: 'POST' })
+      .then(function () { window.location.reload(); });
+  };
+
+  var completeStep = function (stepId) {
+    fetch('/api/projects/steps/' + stepId + '/complete', { method: 'POST' })
+      .then(function () { window.location.reload(); });
+  };
+
   return (
     <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'Outfit', sans-serif", color: T.ink }}>
       <link href={FONT_URL} rel="stylesheet" />
@@ -753,23 +763,52 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
               <div style={{ animation: 'fadeUp 0.5s ease 0.2s both' }}>
                 <p style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.5, marginBottom: 14, textTransform: 'uppercase' }}>Project Steps</p>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-                  {Array.from({ length: selectedProject.totalSteps }).map(function (_, i) {
-                    var done = i < selectedProject.completedSteps;
-                    var current = i === selectedProject.completedSteps;
-                    var future = i > selectedProject.completedSteps;
+                  {(selectedProject.rawSteps || []).map(function (step, i) {
+                    var done = step.status === 'done';
+                    var firstPending = (selectedProject.rawSteps || []).find(function (s) { return s.status !== 'done'; });
+                    var current = firstPending && firstPending.id === step.id;
+                    var future = !done && !current;
+                    var stepTasks = (selectedProject.rawTasks || []).filter(function (t) { return t.step_id === step.id; });
+                    var doneTasks = stepTasks.filter(function (t) { return t.status === 'done'; });
+                    var allTasksDone = stepTasks.length > 0 && doneTasks.length === stepTasks.length;
                     return (
-                      <div key={i} style={{ display: 'flex', gap: 14 }}>
+                      <div key={step.id} style={{ display: 'flex', gap: 14 }}>
                         {/* Timeline line */}
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: 20 }}>
-                          <div style={{ width: done ? 12 : current ? 14 : 10, height: done ? 12 : current ? 14 : 10, borderRadius: '50%', background: done ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : current ? selectedProject.color : 'rgba(0,0,0,0.06)', border: current ? '2px solid ' + selectedProject.color : 'none', boxShadow: current ? '0 0 12px ' + selectedProject.color + '40' : done ? '0 0 8px ' + T.accentGlow : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                          <button onClick={function () { if (!done) completeStep(step.id); }} disabled={done} style={{ width: done ? 12 : current ? 14 : 10, height: done ? 12 : current ? 14 : 10, borderRadius: '50%', background: done ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : current ? selectedProject.color : 'rgba(0,0,0,0.06)', border: current ? '2px solid ' + selectedProject.color : 'none', boxShadow: current ? '0 0 12px ' + selectedProject.color + '40' : done ? '0 0 8px ' + T.accentGlow : 'none', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, cursor: done ? 'default' : 'pointer', padding: 0, transition: 'all 0.3s' }}>
                             {done && <span style={{ color: '#FFF', fontSize: 8, fontWeight: 700 }}>{'\u2713'}</span>}
-                          </div>
-                          {i < selectedProject.totalSteps - 1 && <div style={{ width: 2, flex: 1, minHeight: 40, background: done ? 'linear-gradient(180deg, ' + T.accent + '40, ' + T.accent + '20)' : 'rgba(0,0,0,0.04)' }} />}
+                          </button>
+                          {i < (selectedProject.rawSteps || []).length - 1 && <div style={{ width: 2, flex: 1, minHeight: 40, background: done ? 'linear-gradient(180deg, ' + T.accent + '40, ' + T.accent + '20)' : 'rgba(0,0,0,0.04)' }} />}
                         </div>
                         {/* Step content */}
                         <div style={{ flex: 1, paddingBottom: 20 }}>
-                          <p style={{ fontSize: 14, fontWeight: current ? 600 : 500, color: future ? T.inkMuted : T.ink, marginBottom: 2 }}>Step {i + 1}{current ? ' — ' + selectedProject.currentStep.replace('Step ' + (i + 1) + ': ', '') : done ? ' — Completed' : ''}</p>
-                          {current && <p style={{ fontSize: 12, color: selectedProject.color, fontWeight: 500, marginTop: 4 }}>Next: {selectedProject.nextTask}</p>}
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 2 }}>
+                            <p style={{ fontSize: 14, fontWeight: current ? 600 : 500, color: done ? T.inkMuted : future ? T.inkFaint : T.ink, textDecoration: done ? 'line-through' : 'none' }}>Step {step.step_number}: {step.name}</p>
+                            {!done && (
+                              <button onClick={function () { completeStep(step.id); }} style={{ padding: '3px 10px', borderRadius: 8, background: 'rgba(0,0,0,0.03)', border: '1px solid ' + T.border, color: T.inkMuted, fontSize: 11, cursor: 'pointer', transition: 'all 0.2s', whiteSpace: 'nowrap' }}>Complete step</button>
+                            )}
+                          </div>
+                          {stepTasks.length > 0 && <p style={{ fontSize: 11, color: T.inkMuted, marginBottom: 8 }}>{doneTasks.length}/{stepTasks.length} tasks done</p>}
+                          {/* Tasks within step */}
+                          {stepTasks.length > 0 && (
+                            <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+                              {stepTasks.map(function (task) {
+                                var taskDone = task.status === 'done';
+                                return (
+                                  <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, background: taskDone ? 'rgba(155,126,200,0.04)' : 'rgba(255,255,255,0.4)', border: '1px solid ' + (taskDone ? 'rgba(155,126,200,0.1)' : T.border), transition: 'all 0.2s' }}>
+                                    <button onClick={function () { if (!taskDone) completeTask(task.id); }} disabled={taskDone} style={{ width: 18, height: 18, borderRadius: 6, border: taskDone ? 'none' : '1.5px solid ' + T.inkFaint, background: taskDone ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: taskDone ? 'default' : 'pointer', flexShrink: 0, padding: 0, transition: 'all 0.2s' }}>
+                                      {taskDone && <span style={{ color: '#FFF', fontSize: 10, fontWeight: 700 }}>{'\u2713'}</span>}
+                                    </button>
+                                    <div style={{ flex: 1 }}>
+                                      <p style={{ fontSize: 13, fontWeight: 500, color: taskDone ? T.inkMuted : T.ink, textDecoration: taskDone ? 'line-through' : 'none' }}>{task.title}</p>
+                                      {task.due_at && <p style={{ fontSize: 10, color: T.inkMuted }}>{new Date(task.due_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>}
+                                    </div>
+                                    {task.duration_minutes && <span style={{ fontSize: 10, color: T.inkFaint }}>{task.duration_minutes >= 60 ? Math.round(task.duration_minutes / 60 * 10) / 10 + 'h' : task.duration_minutes + 'm'}</span>}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
