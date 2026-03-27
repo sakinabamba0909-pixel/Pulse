@@ -368,6 +368,82 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
   var [replanChanges, setReplanChanges] = useState([]);
   var [replanSpeech, setReplanSpeech] = useState('');
   var [saving, setSaving] = useState(false);
+  var [rescheduleTask, setRescheduleTask] = useState(null);
+  var [rescheduleDate, setRescheduleDate] = useState('');
+  var [rescheduleTime, setRescheduleTime] = useState('');
+  var [suggestedSlots, setSuggestedSlots] = useState([]);
+  var [loadingSlots, setLoadingSlots] = useState(false);
+  var [calendarConnected, setCalendarConnected] = useState(null);
+  var [calendarChecked, setCalendarChecked] = useState(false);
+  var [calendarChoice, setCalendarChoice] = useState(null); // 'pulse' | 'connect' | null
+
+  // Check calendar connection on mount
+  useEffect(function () {
+    fetch('/api/calendar/check?start=' + new Date().toISOString() + '&end=' + new Date(Date.now() + 3600000).toISOString())
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        setCalendarConnected(data.connected || false);
+        setCalendarChecked(true);
+      })
+      .catch(function () {
+        setCalendarConnected(false);
+        setCalendarChecked(true);
+      });
+  }, []);
+
+  var openReschedule = function (task) {
+    setRescheduleTask(task);
+    setSuggestedSlots([]);
+    if (task.due_at) {
+      var d = new Date(task.due_at);
+      setRescheduleDate(d.toISOString().split('T')[0]);
+      setRescheduleTime(d.toTimeString().slice(0, 5));
+    } else {
+      setRescheduleDate('');
+      setRescheduleTime('');
+    }
+  };
+
+  var saveReschedule = function () {
+    if (!rescheduleTask || !rescheduleDate) return;
+    var dt = rescheduleTime ? rescheduleDate + 'T' + rescheduleTime + ':00' : rescheduleDate + 'T09:00:00';
+    var iso = new Date(dt).toISOString();
+    fetch('/api/tasks/' + rescheduleTask.id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ due_at: iso, scheduled_start: iso }),
+    })
+      .then(function () {
+        setRescheduleTask(null);
+        router.refresh();
+      });
+  };
+
+  var pickSlot = function (slot) {
+    var d = new Date(slot.start);
+    setRescheduleDate(d.toISOString().split('T')[0]);
+    setRescheduleTime(d.toTimeString().slice(0, 5));
+  };
+
+  var fetchSuggestedSlots = function () {
+    if (!rescheduleTask) return;
+    setLoadingSlots(true);
+    var dur = rescheduleTask.duration_minutes || 60;
+    fetch('/api/calendar/slots?duration=' + dur)
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        setLoadingSlots(false);
+        if (data.slots) {
+          setSuggestedSlots(data.slots);
+        } else {
+          setSuggestedSlots([]);
+        }
+      })
+      .catch(function () {
+        setLoadingSlots(false);
+        setSuggestedSlots([]);
+      });
+  };
 
   var buildSchedPrefs = function () {
     var prefs = {};
@@ -816,16 +892,62 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
                             <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
                               {stepTasks.map(function (task) {
                                 var taskDone = task.status === 'done';
+                                var isRescheduling = rescheduleTask && rescheduleTask.id === task.id;
                                 return (
-                                  <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, background: taskDone ? 'rgba(155,126,200,0.04)' : 'rgba(255,255,255,0.4)', border: '1px solid ' + (taskDone ? 'rgba(155,126,200,0.1)' : T.border), transition: 'all 0.2s' }}>
-                                    <button onClick={function () { if (!taskDone) completeTask(task.id); }} disabled={taskDone} style={{ width: 18, height: 18, borderRadius: 6, border: taskDone ? 'none' : '1.5px solid ' + T.inkFaint, background: taskDone ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: taskDone ? 'default' : 'pointer', flexShrink: 0, padding: 0, transition: 'all 0.2s' }}>
-                                      {taskDone && <span style={{ color: '#FFF', fontSize: 10, fontWeight: 700 }}>{'\u2713'}</span>}
-                                    </button>
-                                    <div style={{ flex: 1 }}>
-                                      <p style={{ fontSize: 13, fontWeight: 500, color: taskDone ? T.inkMuted : T.ink, textDecoration: taskDone ? 'line-through' : 'none' }}>{task.title}</p>
-                                      {task.due_at && <p style={{ fontSize: 10, color: T.inkMuted }}>{new Date(task.due_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>}
+                                  <div key={task.id} style={{ position: 'relative' }}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, background: taskDone ? 'rgba(155,126,200,0.04)' : 'rgba(255,255,255,0.4)', border: '1px solid ' + (isRescheduling ? T.accentBorder : taskDone ? 'rgba(155,126,200,0.1)' : T.border), transition: 'all 0.2s' }}>
+                                      <button onClick={function () { if (!taskDone) completeTask(task.id); }} disabled={taskDone} style={{ width: 18, height: 18, borderRadius: 6, border: taskDone ? 'none' : '1.5px solid ' + T.inkFaint, background: taskDone ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : 'rgba(255,255,255,0.6)', display: 'flex', alignItems: 'center', justifyContent: 'center', cursor: taskDone ? 'default' : 'pointer', flexShrink: 0, padding: 0, transition: 'all 0.2s' }}>
+                                        {taskDone && <span style={{ color: '#FFF', fontSize: 10, fontWeight: 700 }}>{'\u2713'}</span>}
+                                      </button>
+                                      <div style={{ flex: 1 }}>
+                                        <p style={{ fontSize: 13, fontWeight: 500, color: taskDone ? T.inkMuted : T.ink, textDecoration: taskDone ? 'line-through' : 'none' }}>{task.title}</p>
+                                        <button onClick={function () { if (!taskDone) openReschedule(task); }} disabled={taskDone} style={{ background: 'none', border: 'none', padding: 0, cursor: taskDone ? 'default' : 'pointer', textAlign: 'left' }}>
+                                          <p style={{ fontSize: 10, color: isRescheduling ? T.accentText : T.inkMuted, fontWeight: isRescheduling ? 600 : 400, textDecoration: !taskDone ? 'underline dotted' : 'none', textUnderlineOffset: 2 }}>
+                                            {task.due_at ? new Date(task.due_at).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' }) : 'No date — click to schedule'}
+                                          </p>
+                                        </button>
+                                      </div>
+                                      {task.duration_minutes && <span style={{ fontSize: 10, color: T.inkFaint }}>{task.duration_minutes >= 60 ? Math.round(task.duration_minutes / 60 * 10) / 10 + 'h' : task.duration_minutes + 'm'}</span>}
                                     </div>
-                                    {task.duration_minutes && <span style={{ fontSize: 10, color: T.inkFaint }}>{task.duration_minutes >= 60 ? Math.round(task.duration_minutes / 60 * 10) / 10 + 'h' : task.duration_minutes + 'm'}</span>}
+
+                                    {/* Reschedule popover */}
+                                    {isRescheduling && (
+                                      <div style={{ marginTop: 6, padding: 16, borderRadius: 14, background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(20px)', border: '1px solid ' + T.accentBorder, boxShadow: T.shadowGlow, animation: 'fadeUp 0.25s ease both' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                                          <p style={{ fontSize: 12, fontWeight: 600, color: T.accentText }}>Reschedule task</p>
+                                          <button onClick={function () { setRescheduleTask(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 14, color: T.inkMuted, padding: 0 }}>{'\u2715'}</button>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 8, marginBottom: 12 }}>
+                                          <input type="date" value={rescheduleDate} onChange={function (e) { setRescheduleDate(e.target.value); }} style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1px solid ' + T.border, background: 'rgba(255,255,255,0.5)', fontSize: 12, color: T.ink, fontFamily: "'Outfit', sans-serif" }} />
+                                          <input type="time" value={rescheduleTime} onChange={function (e) { setRescheduleTime(e.target.value); }} style={{ width: 100, padding: '8px 10px', borderRadius: 10, border: '1px solid ' + T.border, background: 'rgba(255,255,255,0.5)', fontSize: 12, color: T.ink, fontFamily: "'Outfit', sans-serif" }} />
+                                        </div>
+
+                                        {/* Suggested slots */}
+                                        {calendarConnected && (
+                                          <div style={{ marginBottom: 12 }}>
+                                            <button onClick={fetchSuggestedSlots} disabled={loadingSlots} style={{ padding: '6px 14px', borderRadius: 8, background: T.accentSoft, border: '1px solid ' + T.accentBorder, color: T.accentText, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                                              {loadingSlots ? 'Finding slots...' : '\uD83D\uDCC5 Suggest free times'}
+                                            </button>
+                                            {suggestedSlots.length > 0 && (
+                                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 8 }}>
+                                                {suggestedSlots.map(function (slot, si) {
+                                                  return (
+                                                    <button key={si} onClick={function () { pickSlot(slot); }} style={{ textAlign: 'left', padding: '8px 12px', borderRadius: 10, background: 'rgba(255,255,255,0.5)', border: '1px solid ' + T.border, cursor: 'pointer', transition: 'all 0.2s' }}>
+                                                      <p style={{ fontSize: 12, fontWeight: 500, color: T.ink }}>{slot.label}</p>
+                                                    </button>
+                                                  );
+                                                })}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+
+                                        <div style={{ display: 'flex', gap: 8 }}>
+                                          <button onClick={saveReschedule} disabled={!rescheduleDate} style={{ padding: '8px 18px', borderRadius: 10, background: rescheduleDate ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : 'rgba(155,126,200,0.2)', color: '#FFF', border: 'none', fontSize: 12, fontWeight: 600, cursor: rescheduleDate ? 'pointer' : 'not-allowed' }}>Save new time</button>
+                                          <button onClick={function () { setRescheduleTask(null); }} style={{ padding: '8px 14px', borderRadius: 10, background: 'transparent', border: '1px solid ' + T.border, color: T.inkMuted, fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -873,7 +995,40 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
               <button onClick={function () { setView('list'); setProjectName(''); setProjectDesc(''); setImportedContext(''); }} style={{ background: 'none', border: 'none', color: T.inkMuted, cursor: 'pointer', fontSize: 13, marginBottom: 20, padding: 0 }}>{'\u2190'} Back</button>
 
               <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 400, letterSpacing: -0.5, marginBottom: 6 }}>New project.</h1>
-              <p style={{ fontSize: 14, color: T.inkMuted, marginBottom: 32 }}>Tell Pulse about your project — it{"'"}ll build the plan</p>
+              <p style={{ fontSize: 14, color: T.inkMuted, marginBottom: 24 }}>Tell Pulse about your project — it{"'"}ll build the plan</p>
+
+              {/* Calendar awareness banner */}
+              {calendarChecked && !calendarChoice && (
+                <div style={{ padding: 16, borderRadius: 16, background: calendarConnected ? 'rgba(126,184,155,0.08)' : 'rgba(255,255,255,0.55)', backdropFilter: 'blur(16px)', border: '1px solid ' + (calendarConnected ? T.sage + '30' : T.accentBorder), marginBottom: 20, animation: 'fadeUp 0.4s ease both' }}>
+                  {calendarConnected ? (
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <span style={{ fontSize: 16 }}>{'\u2713'}</span>
+                      <div>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: T.sage }}>Calendar connected</p>
+                        <p style={{ fontSize: 11, color: T.inkMuted }}>Pulse will schedule around your existing events</p>
+                      </div>
+                    </div>
+                  ) : (
+                    <div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+                        <span style={{ fontSize: 16 }}>{'\uD83D\uDCC5'}</span>
+                        <p style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>How should Pulse schedule your tasks?</p>
+                      </div>
+                      <p style={{ fontSize: 12, color: T.inkMuted, marginBottom: 12, lineHeight: 1.5 }}>Connect your Google Calendar so Pulse avoids conflicts, or use Pulse as your standalone calendar.</p>
+                      <div style={{ display: 'flex', gap: 8 }}>
+                        <button onClick={function () { window.open('/api/calendar/connect', '_blank'); }} style={{ padding: '8px 16px', borderRadius: 10, background: T.accentSoft, border: '1px solid ' + T.accentBorder, color: T.accentText, fontSize: 12, fontWeight: 600, cursor: 'pointer' }}>Connect Google Calendar</button>
+                        <button onClick={function () { setCalendarChoice('pulse'); }} style={{ padding: '8px 16px', borderRadius: 10, background: 'rgba(255,255,255,0.4)', border: '1px solid ' + T.border, color: T.inkSoft, fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>Use Pulse as my calendar</button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+              {calendarChoice === 'pulse' && (
+                <div style={{ padding: '10px 16px', borderRadius: 12, background: 'rgba(126,184,155,0.08)', border: '1px solid ' + T.sage + '30', marginBottom: 20, display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <span style={{ fontSize: 13 }}>{'\u2713'}</span>
+                  <p style={{ fontSize: 12, color: T.sage, fontWeight: 500 }}>Using Pulse as your calendar — tasks will be scheduled freely</p>
+                </div>
+              )}
 
               {/* Mode Toggle */}
               <div style={{ display: 'flex', gap: 4, padding: 4, borderRadius: 14, background: 'rgba(255,255,255,0.4)', backdropFilter: 'blur(12px)', border: '1px solid ' + T.border, marginBottom: 24, width: 'fit-content' }}>
