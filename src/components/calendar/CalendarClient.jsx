@@ -431,6 +431,126 @@ function EventDetailPanel({ event, projects, onClose, onRefresh }) {
   );
 }
 
+/* ═══ PULSE BAR ═══ */
+function PulseBar({ tasks, gcalEvents, onDismiss }) {
+  // Compute real insights from task data
+  var now = new Date();
+  var todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
+  var weekEnd = addDays(todayStart, 7);
+
+  // Overdue tasks
+  var overdue = tasks.filter(function (t) {
+    return t.status !== 'done' && t.due_at && new Date(t.due_at) < now;
+  });
+
+  // Tasks due this week
+  var thisWeek = tasks.filter(function (t) {
+    if (t.status === 'done') return false;
+    var d = t.due_at ? new Date(t.due_at) : null;
+    return d && d >= todayStart && d <= weekEnd;
+  });
+
+  // Tasks scheduled today
+  var todayTasks = tasks.filter(function (t) {
+    var s = t.scheduled_start ? new Date(t.scheduled_start) : null;
+    return s && sameDay(s, todayStart);
+  });
+
+  // Total scheduled hours today (Pulse + Gcal)
+  var todayMinutes = 0;
+  todayTasks.forEach(function (t) { todayMinutes += (t.duration_minutes || 60); });
+  gcalEvents.forEach(function (ev) {
+    if (sameDay(ev.start, todayStart)) {
+      todayMinutes += Math.round((ev.end - ev.start) / 60000);
+    }
+  });
+  var todayHours = Math.round(todayMinutes / 60 * 10) / 10;
+
+  // Busiest day this week
+  var dayCounts = {};
+  thisWeek.forEach(function (t) {
+    var d = t.due_at ? new Date(t.due_at).toDateString() : null;
+    if (d) dayCounts[d] = (dayCounts[d] || 0) + 1;
+  });
+  var busiestDay = null;
+  var busiestCount = 0;
+  Object.keys(dayCounts).forEach(function (k) {
+    if (dayCounts[k] > busiestCount) { busiestDay = k; busiestCount = dayCounts[k]; }
+  });
+
+  // Done today
+  var doneToday = tasks.filter(function (t) {
+    return t.status === 'done' && t.updated_at && sameDay(new Date(t.updated_at), todayStart);
+  }).length;
+
+  // Build insight chips
+  var chips = [];
+
+  if (overdue.length > 0) {
+    chips.push({ icon: '!', text: overdue.length + ' overdue', color: T.urgent, bg: T.urgentSoft });
+  }
+
+  if (todayTasks.length > 0) {
+    chips.push({ icon: '◷', text: todayHours + 'h scheduled today', color: T.sky, bg: T.skySoft });
+  }
+
+  if (thisWeek.length > 0) {
+    chips.push({ icon: '◻', text: thisWeek.length + ' due this week', color: T.accent, bg: T.accentSoft });
+  }
+
+  if (doneToday > 0) {
+    chips.push({ icon: '✓', text: doneToday + ' completed today', color: T.sage, bg: T.sageSoft });
+  }
+
+  if (busiestDay && busiestCount > 1) {
+    var bDate = new Date(busiestDay);
+    var bLabel = DAYS_SHORT[(bDate.getDay() + 6) % 7];
+    chips.push({ icon: '▦', text: bLabel + ' is busiest (' + busiestCount + ')', color: T.peach, bg: T.peachSoft });
+  }
+
+  if (todayTasks.length === 0 && overdue.length === 0 && thisWeek.length === 0) {
+    chips.push({ icon: '\u2726', text: 'Your week looks clear — time to plan!', color: T.accent, bg: T.accentSoft });
+  }
+
+  return (
+    <div style={{
+      position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20,
+      padding: '10px 28px',
+      background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+      borderTop: '1px solid ' + T.border,
+      display: 'flex', alignItems: 'center', gap: 10,
+      animation: 'fadeUp 0.4s cubic-bezier(0.4,0,0.2,1)',
+    }}>
+      <Orb size={18} />
+      <span style={{ fontSize: 11, fontWeight: 600, color: T.accentText, letterSpacing: 0.3, flexShrink: 0 }}>PULSE</span>
+      <div style={{ width: 1, height: 16, background: T.divider, flexShrink: 0 }} />
+
+      <div style={{ flex: 1, display: 'flex', gap: 8, overflowX: 'auto', alignItems: 'center' }}>
+        {chips.map(function (chip, i) {
+          return (
+            <div key={i} style={{
+              display: 'flex', alignItems: 'center', gap: 5,
+              padding: '5px 12px', borderRadius: 10, flexShrink: 0,
+              background: chip.bg, border: '1px solid ' + chip.color + '25',
+              animation: 'fadeUp 0.4s cubic-bezier(0.4,0,0.2,1) ' + (i * 0.06) + 's both',
+            }}>
+              <span style={{ fontSize: 11, color: chip.color }}>{chip.icon}</span>
+              <span style={{ fontSize: 11, fontWeight: 600, color: chip.color, whiteSpace: 'nowrap' }}>{chip.text}</span>
+            </div>
+          );
+        })}
+      </div>
+
+      <button onClick={onDismiss} style={{
+        width: 24, height: 24, borderRadius: '50%',
+        background: 'rgba(0,0,0,0.04)', border: 'none',
+        fontSize: 11, color: T.inkFaint, cursor: 'pointer',
+        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+      }}>{'\u2715'}</button>
+    </div>
+  );
+}
+
 /* ═══ ADD EVENT MODAL ═══ */
 function AddEventModal({ slotContext, projects, calendarConnected, onClose, onRefresh }) {
   var [tab, setTab] = useState('voice'); // 'voice' | 'form'
@@ -1269,7 +1389,14 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
           onRefresh={function () { closeModal(); router.refresh(); }}
         />
       )}
-      {/* Pulse bar placeholder — step 6 */}
+      {/* ═══ PULSE BAR ═══ */}
+      {showPulseBar && !showAddModal && !selectedEvent && (
+        <PulseBar
+          tasks={tasks}
+          gcalEvents={gcalEvents}
+          onDismiss={function () { setShowPulseBar(false); }}
+        />
+      )}
     </div>
   );
 }
