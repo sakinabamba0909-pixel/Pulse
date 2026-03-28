@@ -7,8 +7,6 @@ import Orb from './Orb';
 const NAV = [
   { href: '/app',               icon: '◉', label: 'Home'        },
   { href: '/app/tasks',         icon: '◻', label: 'Tasks'       },
-  { href: '/app/goals',         icon: '◎', label: 'Goals'       },
-  { href: '/app/relationships', icon: '◑', label: 'People'      },
   { href: '/app/reminders',     icon: '◷', label: 'Reminders'   },
   { href: '/app/projects',      icon: '▦', label: 'Projects'    },
 ];

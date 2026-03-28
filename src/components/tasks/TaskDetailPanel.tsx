@@ -400,25 +400,6 @@ export default function TaskDetailPanel({
             </select>
           </div>
 
-          {/* Person / commitment */}
-          <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#8890A0', letterSpacing: 0.8, display: 'block', marginBottom: 6 }}>
-              WHO IS THIS FOR?
-            </label>
-            <select
-              value={relationshipId}
-              onChange={e => { setRelationshipId(e.target.value); save({ relationship_id: e.target.value || undefined }) }}
-              style={{
-                border: '1px solid rgba(139,126,200,0.15)', borderRadius: 10, padding: '8px 12px',
-                fontSize: 13, ...s, color: '#2A2D35', background: 'rgba(255,255,255,0.45)', outline: 'none',
-                width: '100%',
-              }}
-            >
-              <option value="">Just me</option>
-              {relationships.map(r => <option key={r.id} value={r.id}>{r.person_name}</option>)}
-            </select>
-          </div>
-
           {/* Subtasks */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
