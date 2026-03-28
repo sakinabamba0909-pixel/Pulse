@@ -2,7 +2,11 @@ import OpenAI from 'openai'
 import { createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-const openai = new OpenAI()
+let _openai: OpenAI | null = null
+function getOpenAI() {
+  if (!_openai) _openai = new OpenAI()
+  return _openai
+}
 
 export async function POST(req: Request) {
   const supabase = await createServerClient()
@@ -81,7 +85,7 @@ Return ONLY valid JSON matching this exact schema — no markdown, no explanatio
 }`
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: 'gpt-4o',
       max_tokens: 3000,
       messages: [

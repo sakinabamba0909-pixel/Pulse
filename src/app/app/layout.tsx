@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import Sidebar from '@/components/Sidebar';
 import AppShell from '@/components/AppShell';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const supabase = await createServerClient();
   const { data: { user } } = await supabase.auth.getUser();

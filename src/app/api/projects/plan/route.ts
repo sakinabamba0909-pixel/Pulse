@@ -2,7 +2,11 @@ import OpenAI from 'openai'
 import { createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-const openai = new OpenAI()
+let _openai: OpenAI | null = null
+function getOpenAI() {
+  if (!_openai) _openai = new OpenAI()
+  return _openai
+}
 
 const GOOGLE_CLIENT_ID     = process.env.GOOGLE_CLIENT_ID     || ''
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || ''
@@ -237,7 +241,7 @@ Return ONLY valid JSON matching this exact schema — no markdown, no explanatio
 }`
 
   try {
-    const response = await openai.chat.completions.create({
+    const response = await getOpenAI().chat.completions.create({
       model: 'gpt-4o',
       max_tokens: 4000,
       messages: [
