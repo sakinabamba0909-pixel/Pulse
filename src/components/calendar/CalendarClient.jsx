@@ -151,6 +151,73 @@ function buildCalendarEvents(tasks) {
     });
 }
 
+/* Compute side-by-side layout columns for overlapping events */
+function layoutOverlaps(events) {
+  if (events.length === 0) return [];
+  // Sort by start time, then by duration (longer first)
+  var sorted = events.slice().sort(function (a, b) {
+    if (a.startHour !== b.startHour) return a.startHour - b.startHour;
+    return (b.endHour - b.startHour) - (a.endHour - a.startHour);
+  });
+  // Assign columns using a greedy approach
+  var columns = []; // each column is an array of events
+  var eventMeta = new Map(); // eventId -> { col, totalCols }
+
+  sorted.forEach(function (ev) {
+    var placed = false;
+    for (var c = 0; c < columns.length; c++) {
+      // Check if this event overlaps with the last event in this column
+      var lastInCol = columns[c][columns[c].length - 1];
+      if (ev.startHour >= lastInCol.endHour) {
+        columns[c].push(ev);
+        eventMeta.set(ev.id, { col: c, totalCols: 0 });
+        placed = true;
+        break;
+      }
+    }
+    if (!placed) {
+      columns.push([ev]);
+      eventMeta.set(ev.id, { col: columns.length - 1, totalCols: 0 });
+    }
+  });
+
+  // Now determine the max overlapping columns for each group
+  // For each event, find all events it overlaps with and compute the max column count
+  sorted.forEach(function (ev) {
+    var meta = eventMeta.get(ev.id);
+    // Find all events that overlap with this one
+    var maxCol = meta.col;
+    sorted.forEach(function (other) {
+      if (other.id === ev.id) return;
+      // Check if they overlap
+      if (ev.startHour < other.endHour && ev.endHour > other.startHour) {
+        var otherMeta = eventMeta.get(other.id);
+        if (otherMeta.col > maxCol) maxCol = otherMeta.col;
+      }
+    });
+    meta.totalCols = maxCol + 1;
+  });
+
+  // Second pass: ensure all overlapping events share the same totalCols
+  sorted.forEach(function (ev) {
+    var meta = eventMeta.get(ev.id);
+    sorted.forEach(function (other) {
+      if (other.id === ev.id) return;
+      if (ev.startHour < other.endHour && ev.endHour > other.startHour) {
+        var otherMeta = eventMeta.get(other.id);
+        var maxTotal = Math.max(meta.totalCols, otherMeta.totalCols);
+        meta.totalCols = maxTotal;
+        otherMeta.totalCols = maxTotal;
+      }
+    });
+  });
+
+  return sorted.map(function (ev) {
+    var meta = eventMeta.get(ev.id);
+    return { event: ev, col: meta.col, totalCols: meta.totalCols };
+  });
+}
+
 /* ═══ EVENT DETAIL PANEL ═══ */
 function EventDetailPanel({ event, projects, onClose, onRefresh }) {
   var isGcal = event.type === 'gcal';
@@ -433,6 +500,8 @@ function EventDetailPanel({ event, projects, onClose, onRefresh }) {
 
 /* ═══ PULSE BAR ═══ */
 function PulseBar({ tasks, gcalEvents, onDismiss }) {
+  var [expanded, setExpanded] = useState(null); // chip index or null
+
   // Compute real insights from task data
   var now = new Date();
   var todayStart = new Date(now); todayStart.setHours(0, 0, 0, 0);
@@ -477,76 +546,129 @@ function PulseBar({ tasks, gcalEvents, onDismiss }) {
   Object.keys(dayCounts).forEach(function (k) {
     if (dayCounts[k] > busiestCount) { busiestDay = k; busiestCount = dayCounts[k]; }
   });
+  var busiestTasks = busiestDay ? thisWeek.filter(function (t) {
+    return t.due_at && new Date(t.due_at).toDateString() === busiestDay;
+  }) : [];
 
   // Done today
-  var doneToday = tasks.filter(function (t) {
+  var doneTodayTasks = tasks.filter(function (t) {
     return t.status === 'done' && t.updated_at && sameDay(new Date(t.updated_at), todayStart);
-  }).length;
+  });
 
-  // Build insight chips
+  // Build insight chips with associated task lists
   var chips = [];
 
   if (overdue.length > 0) {
-    chips.push({ icon: '!', text: overdue.length + ' overdue', color: T.urgent, bg: T.urgentSoft });
+    chips.push({ icon: '!', text: overdue.length + ' overdue', color: T.urgent, bg: T.urgentSoft, tasks: overdue });
   }
 
   if (todayTasks.length > 0) {
-    chips.push({ icon: '◷', text: todayHours + 'h scheduled today', color: T.sky, bg: T.skySoft });
+    chips.push({ icon: '◷', text: todayHours + 'h scheduled today', color: T.sky, bg: T.skySoft, tasks: todayTasks });
   }
 
   if (thisWeek.length > 0) {
-    chips.push({ icon: '◻', text: thisWeek.length + ' due this week', color: T.accent, bg: T.accentSoft });
+    chips.push({ icon: '◻', text: thisWeek.length + ' due this week', color: T.accent, bg: T.accentSoft, tasks: thisWeek });
   }
 
-  if (doneToday > 0) {
-    chips.push({ icon: '✓', text: doneToday + ' completed today', color: T.sage, bg: T.sageSoft });
+  if (doneTodayTasks.length > 0) {
+    chips.push({ icon: '✓', text: doneTodayTasks.length + ' completed today', color: T.sage, bg: T.sageSoft, tasks: doneTodayTasks });
   }
 
   if (busiestDay && busiestCount > 1) {
     var bDate = new Date(busiestDay);
     var bLabel = DAYS_SHORT[(bDate.getDay() + 6) % 7];
-    chips.push({ icon: '▦', text: bLabel + ' is busiest (' + busiestCount + ')', color: T.peach, bg: T.peachSoft });
+    chips.push({ icon: '▦', text: bLabel + ' is busiest (' + busiestCount + ')', color: T.peach, bg: T.peachSoft, tasks: busiestTasks });
   }
 
   if (todayTasks.length === 0 && overdue.length === 0 && thisWeek.length === 0) {
-    chips.push({ icon: '\u2726', text: 'Your week looks clear — time to plan!', color: T.accent, bg: T.accentSoft });
+    chips.push({ icon: '\u2726', text: 'Your week looks clear — time to plan!', color: T.accent, bg: T.accentSoft, tasks: [] });
   }
+
+  var expandedChip = expanded !== null && chips[expanded] ? chips[expanded] : null;
 
   return (
     <div style={{
       position: 'fixed', bottom: 0, left: 0, right: 0, zIndex: 20,
-      padding: '10px 28px',
-      background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
-      borderTop: '1px solid ' + T.border,
-      display: 'flex', alignItems: 'center', gap: 10,
+      display: 'flex', flexDirection: 'column',
       animation: 'fadeUp 0.4s cubic-bezier(0.4,0,0.2,1)',
     }}>
-      <Orb size={18} />
-      <span style={{ fontSize: 11, fontWeight: 600, color: T.accentText, letterSpacing: 0.3, flexShrink: 0 }}>PULSE</span>
-      <div style={{ width: 1, height: 16, background: T.divider, flexShrink: 0 }} />
+      {/* Expanded event list */}
+      {expandedChip && expandedChip.tasks.length > 0 && (
+        <div style={{
+          padding: '10px 28px 6px', maxHeight: 180, overflowY: 'auto',
+          background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+          borderTop: '1px solid ' + T.border,
+          animation: 'fadeUp 0.2s cubic-bezier(0.4,0,0.2,1)',
+        }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
+            {expandedChip.tasks.map(function (t) {
+              var proj = t.project;
+              var color = proj && proj.color ? proj.color : T.accent;
+              var dueDate = t.due_at ? new Date(t.due_at) : null;
+              return (
+                <div key={t.id} style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '6px 10px', borderRadius: 8,
+                  background: 'rgba(255,255,255,0.5)', border: '1px solid ' + T.divider,
+                }}>
+                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: color, flexShrink: 0 }} />
+                  <span style={{ fontSize: 12, fontWeight: 500, color: T.ink, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</span>
+                  {proj && proj.name && (
+                    <span style={{ fontSize: 10, color: color, fontWeight: 600, flexShrink: 0 }}>{proj.name}</span>
+                  )}
+                  {dueDate && (
+                    <span style={{ fontSize: 10, color: T.inkMuted, flexShrink: 0 }}>
+                      {dueDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
-      <div style={{ flex: 1, display: 'flex', gap: 8, overflowX: 'auto', alignItems: 'center' }}>
-        {chips.map(function (chip, i) {
-          return (
-            <div key={i} style={{
-              display: 'flex', alignItems: 'center', gap: 5,
-              padding: '5px 12px', borderRadius: 10, flexShrink: 0,
-              background: chip.bg, border: '1px solid ' + chip.color + '25',
-              animation: 'fadeUp 0.4s cubic-bezier(0.4,0,0.2,1) ' + (i * 0.06) + 's both',
-            }}>
-              <span style={{ fontSize: 11, color: chip.color }}>{chip.icon}</span>
-              <span style={{ fontSize: 11, fontWeight: 600, color: chip.color, whiteSpace: 'nowrap' }}>{chip.text}</span>
-            </div>
-          );
-        })}
+      {/* Bar */}
+      <div style={{
+        padding: '10px 28px',
+        background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
+        borderTop: '1px solid ' + T.border,
+        display: 'flex', alignItems: 'center', gap: 10,
+      }}>
+        <Orb size={18} />
+        <span style={{ fontSize: 11, fontWeight: 600, color: T.accentText, letterSpacing: 0.3, flexShrink: 0 }}>PULSE</span>
+        <div style={{ width: 1, height: 16, background: T.divider, flexShrink: 0 }} />
+
+        <div style={{ flex: 1, display: 'flex', gap: 8, overflowX: 'auto', alignItems: 'center' }}>
+          {chips.map(function (chip, i) {
+            var isActive = expanded === i;
+            return (
+              <button key={i} onClick={function () { setExpanded(isActive ? null : i); }} style={{
+                display: 'flex', alignItems: 'center', gap: 5,
+                padding: '5px 12px', borderRadius: 10, flexShrink: 0,
+                background: isActive ? chip.color + '20' : chip.bg,
+                border: '1px solid ' + chip.color + (isActive ? '45' : '25'),
+                cursor: chip.tasks.length > 0 ? 'pointer' : 'default',
+                animation: 'fadeUp 0.4s cubic-bezier(0.4,0,0.2,1) ' + (i * 0.06) + 's both',
+                transition: 'all 0.2s',
+              }}>
+                <span style={{ fontSize: 11, color: chip.color }}>{chip.icon}</span>
+                <span style={{ fontSize: 11, fontWeight: 600, color: chip.color, whiteSpace: 'nowrap' }}>{chip.text}</span>
+                {chip.tasks.length > 0 && (
+                  <span style={{ fontSize: 9, color: chip.color, opacity: 0.6, marginLeft: 2 }}>{isActive ? '▾' : '▸'}</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+
+        <button onClick={onDismiss} style={{
+          width: 24, height: 24, borderRadius: '50%',
+          background: 'rgba(0,0,0,0.04)', border: 'none',
+          fontSize: 11, color: T.inkFaint, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
+        }}>{'\u2715'}</button>
       </div>
-
-      <button onClick={onDismiss} style={{
-        width: 24, height: 24, borderRadius: '50%',
-        background: 'rgba(0,0,0,0.04)', border: 'none',
-        fontSize: 11, color: T.inkFaint, cursor: 'pointer',
-        display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0,
-      }}>{'\u2715'}</button>
     </div>
   );
 }
@@ -960,8 +1082,6 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
   var [showAddModal, setShowAddModal] = useState(false);
   var [showPulseBar, setShowPulseBar] = useState(true);
   var [slotContext, setSlotContext] = useState(null); // { date, hour } for grid clicks
-  var [floatHovered, setFloatHovered] = useState(false);
-  var [hoverSlot, setHoverSlot] = useState(null); // { colIdx, hour }
   var scrollRef = useRef(null);
 
   // Scroll to current hour on mount
@@ -1183,15 +1303,12 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
                 {columns.map(function (col, ci) {
                   var isToday = sameDay(col, today);
                   var isWeekend = col.getDay() === 0 || col.getDay() === 6;
-                  var colStr = col.toISOString().split('T')[0];
 
-                  // Filter events for this column
+                  // Filter events for this column and compute overlap layout
                   var dayEvents = allEvents.filter(function (ev) {
                     return sameDay(ev.start, col);
                   });
-
-                  var showGhost = hoverSlot && hoverSlot.colIdx === ci;
-                  var ghostTop = showGhost ? (hoverSlot.hour - 8) * PX_PER_HOUR : 0;
+                  var laid = layoutOverlaps(dayEvents);
 
                   function snapToSlot(yPx) {
                     var rawHour = yPx / PX_PER_HOUR + 8;
@@ -1201,15 +1318,6 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
                   return (
                     <div
                       key={ci}
-                      onMouseMove={function (e) {
-                        var rect = e.currentTarget.getBoundingClientRect();
-                        var y = e.clientY - rect.top + (scrollRef.current ? scrollRef.current.scrollTop : 0);
-                        var snapped = snapToSlot(y);
-                        if (snapped < 8) snapped = 8;
-                        if (snapped > 19.5) snapped = 19.5;
-                        setHoverSlot({ colIdx: ci, hour: snapped });
-                      }}
-                      onMouseLeave={function () { setHoverSlot(null); }}
                       onClick={function (e) {
                         if (e.target !== e.currentTarget && e.target.closest('[data-event]')) return;
                         var rect = e.currentTarget.getBoundingClientRect();
@@ -1223,7 +1331,7 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
                         position: 'relative',
                         borderRight: ci < columns.length - 1 ? '1px solid ' + T.divider : 'none',
                         background: isWeekend ? 'rgba(0,0,0,0.012)' : isToday ? 'rgba(155,126,200,0.018)' : 'transparent',
-                        cursor: 'crosshair',
+                        cursor: 'pointer',
                       }}
                     >
                       {/* Hour grid lines */}
@@ -1241,22 +1349,6 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
                         }} />;
                       })}
 
-                      {/* Ghost slot preview on hover */}
-                      {showGhost && (
-                        <div style={{
-                          position: 'absolute', left: 3, right: 3,
-                          top: ghostTop, height: PX_PER_HOUR - 2,
-                          borderRadius: 8, zIndex: 3, pointerEvents: 'none',
-                          background: 'linear-gradient(135deg, rgba(155,126,200,0.10), rgba(212,132,154,0.06))',
-                          border: '1.5px dashed rgba(155,126,200,0.35)',
-                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
-                          transition: 'top 0.08s ease',
-                        }}>
-                          <span style={{ fontSize: 14, color: T.accent, opacity: 0.8, fontWeight: 300, lineHeight: 1 }}>+</span>
-                          <span style={{ fontSize: 10, color: T.accentText, fontWeight: 600 }}>{fmtSlotLabel(hoverSlot.hour)}</span>
-                        </div>
-                      )}
-
                       {/* Now line */}
                       {isToday && (
                         <div style={{
@@ -1271,14 +1363,23 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
                         </div>
                       )}
 
-                      {/* Events */}
-                      {dayEvents.map(function (ev) {
+                      {/* Events — side by side for overlaps */}
+                      {laid.map(function (item) {
+                        var ev = item.event;
+                        var col_ = item.col;
+                        var totalCols = item.totalCols;
                         var top = (ev.startHour - 8) * PX_PER_HOUR;
                         var height = Math.max((ev.endHour - ev.startHour) * PX_PER_HOUR - 3, 18);
                         var isGcal = ev.type === 'gcal';
                         var isProject = ev.type === 'project';
                         var bgColor = isGcal ? 'rgba(0,0,0,0.04)' : ev.color + '18';
-                        var borderLeft = (isProject || ev.type === 'task') ? '2.5px solid ' + ev.color : 'none';
+                        var borderLeftStyle = (isProject || ev.type === 'task') ? '2.5px solid ' + ev.color : 'none';
+
+                        // Compute horizontal position for side-by-side
+                        var pad = 3;
+                        var colWidth = (100 / totalCols);
+                        var leftPct = col_ * colWidth;
+                        var widthPct = colWidth;
 
                         return (
                           <div
@@ -1286,15 +1387,18 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
                             key={ev.id}
                             onClick={function (e) { e.stopPropagation(); setSelectedEvent(ev); }}
                             style={{
-                              position: 'absolute', left: 3, right: 3,
+                              position: 'absolute',
+                              left: 'calc(' + leftPct + '% + ' + pad + 'px)',
+                              width: 'calc(' + widthPct + '% - ' + (pad * 2) + 'px)',
                               top: top, height: height,
                               borderRadius: 8,
                               background: bgColor,
                               border: '1px solid ' + (isGcal ? T.border : ev.color + '35'),
-                              borderLeft: borderLeft,
+                              borderLeft: borderLeftStyle,
                               padding: '4px 7px',
                               cursor: 'pointer', overflow: 'hidden',
                               transition: 'all 0.18s', zIndex: 4,
+                              boxSizing: 'border-box',
                             }}
                             onMouseEnter={function (e) {
                               e.currentTarget.style.transform = 'scale(1.015)';
@@ -1458,40 +1562,6 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
           );
         })()}
       </div>
-
-      {/* ═══ FLOATING PILL BUTTON ═══ */}
-      {!showAddModal && !selectedEvent && (
-        <button
-          onClick={function () { setSlotContext(null); setShowAddModal(true); }}
-          onMouseEnter={function () { setFloatHovered(true); }}
-          onMouseLeave={function () { setFloatHovered(false); }}
-          style={{
-            position: 'fixed', bottom: showPulseBar ? 100 : 32, right: 36, zIndex: 25,
-            display: 'flex', alignItems: 'center', gap: 10,
-            padding: floatHovered ? '13px 24px' : '13px 20px',
-            borderRadius: 28,
-            background: 'linear-gradient(135deg,' + T.accent + ',' + T.rose + ')',
-            color: '#FFF', border: 'none',
-            fontSize: 14, fontWeight: 600,
-            boxShadow: floatHovered
-              ? '0 8px 32px rgba(155,126,200,0.45), 0 2px 8px rgba(0,0,0,0.12)'
-              : '0 4px 20px rgba(155,126,200,0.38), 0 2px 8px rgba(0,0,0,0.08)',
-            cursor: 'pointer',
-            transition: 'all 0.25s cubic-bezier(0.4,0,0.2,1)',
-            transform: floatHovered ? 'translateY(-3px)' : 'translateY(0)',
-            animation: 'floatBob 4s ease infinite',
-          }}
-        >
-          <span style={{
-            width: 26, height: 26, borderRadius: '50%',
-            background: 'rgba(255,255,255,0.22)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 18, fontWeight: 300, lineHeight: 1, flexShrink: 0,
-          }}>+</span>
-          New event
-          <span style={{ fontSize: 16, opacity: 0.75, animation: 'glowPulse 3s ease infinite' }}>{'\u2726'}</span>
-        </button>
-      )}
 
       {/* ═══ EVENT DETAIL PANEL ═══ */}
       {selectedEvent && (
