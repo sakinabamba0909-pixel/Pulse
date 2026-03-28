@@ -143,14 +143,14 @@ export default async function AppPage() {
     bg:          '#C5CDDA',
     card:        'rgba(255,255,255,0.55)',
     cardBorder:  'rgba(255,255,255,0.30)',
-    text:        '#2A2D35',
-    muted:       '#8890A0',
+    text:        '#2D2A26',
+    muted:       '#9E958B',
     faint:       'rgba(255,255,255,0.18)',
     divider:     'rgba(255,255,255,0.20)',
-    accent:      '#8B7EC8',
-    accentDim:   'rgba(139,126,200,0.12)',
-    accentBorder:'rgba(139,126,200,0.25)',
-    amber:       '#C8A088',
+    accent:      '#9B7EC8',
+    accentDim:   'rgba(155,126,200,0.12)',
+    accentBorder:'rgba(155,126,200,0.25)',
+    amber:       '#D4A47A',
     amberDim:    'rgba(200,160,136,0.10)',
     amberBorder: 'rgba(200,160,136,0.25)',
   };
@@ -175,8 +175,8 @@ export default async function AppPage() {
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes pulseGlow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(139,126,200,0); }
-          50%       { box-shadow: 0 0 16px 4px rgba(139,126,200,0.1); }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(155,126,200,0); }
+          50%       { box-shadow: 0 0 16px 4px rgba(155,126,200,0.1); }
         }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { height: 0; width: 0; }

@@ -194,7 +194,7 @@ export default function TaskDetailPanel({
       <div style={{
         position: 'fixed', top: 0, right: 0, bottom: 0, zIndex: 50,
         width: 440, background: 'rgba(255,255,255,0.58)',
-        boxShadow: '-8px 0 40px rgba(139,126,200,0.15)',
+        boxShadow: '-8px 0 40px rgba(155,126,200,0.15)',
         display: 'flex', flexDirection: 'column',
         transform: mounted ? 'translateX(0)' : 'translateX(100%)',
         transition: 'transform 0.3s cubic-bezier(0.4,0,0.2,1)',
@@ -203,21 +203,21 @@ export default function TaskDetailPanel({
         {/* Header */}
         <div style={{ padding: '20px 24px 0', display: 'flex', alignItems: 'center', gap: 10 }}>
           <button onClick={onClose} style={{
-            background: 'none', border: 'none', cursor: 'pointer', color: '#8890A0',
+            background: 'none', border: 'none', cursor: 'pointer', color: '#9E958B',
             fontSize: 20, lineHeight: 1, padding: '2px 6px', borderRadius: 6,
           }}>←</button>
           <div style={{ flex: 1 }} />
           {task.status !== 'done' && (
             <button onClick={() => onComplete(task.id)} style={{
               padding: '6px 16px', borderRadius: 20,
-              background: 'rgba(139,126,200,0.10)', border: '1px solid rgba(139,126,200,0.25)', boxShadow: '0 0 12px rgba(139,126,200,0.15)',
-              color: '#8B7EC8', fontSize: 13, fontWeight: 600, cursor: 'pointer', ...s,
+              background: 'rgba(155,126,200,0.10)', border: '1px solid rgba(155,126,200,0.25)', boxShadow: '0 0 12px rgba(155,126,200,0.15)',
+              color: '#9B7EC8', fontSize: 13, fontWeight: 600, cursor: 'pointer', ...s,
             }}>
               Mark complete ✓
             </button>
           )}
           {task.status === 'done' && (
-            <span style={{ fontSize: 13, color: '#8B7EC8', fontWeight: 600 }}>✓ Done</span>
+            <span style={{ fontSize: 13, color: '#9B7EC8', fontWeight: 600 }}>✓ Done</span>
           )}
         </div>
 
@@ -231,13 +231,13 @@ export default function TaskDetailPanel({
               fontSize: 20, fontWeight: 600, background: 'transparent',
               padding: '4px 0', ...s,
               textDecoration: task.status === 'done' ? 'line-through' : 'none',
-              color: task.status === 'done' ? '#8890A0' : '#2A2D35',
+              color: task.status === 'done' ? '#9E958B' : '#2D2A26',
             }}
           />
 
           {/* Description */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#8890A0', letterSpacing: 0.8, display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#9E958B', letterSpacing: 0.8, display: 'block', marginBottom: 6 }}>
               NOTES
             </label>
             <textarea
@@ -248,14 +248,14 @@ export default function TaskDetailPanel({
               style={{
                 width: '100%', resize: 'none', border: '1px solid rgba(255,255,255,0.30)',
                 borderRadius: 10, padding: '10px 12px', fontSize: 13, ...s,
-                color: '#2A2D35', background: 'rgba(255,255,255,0.45)', outline: 'none', lineHeight: 1.6,
+                color: '#2D2A26', background: 'rgba(255,255,255,0.45)', outline: 'none', lineHeight: 1.6,
               }}
             />
           </div>
 
           {/* Due date */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#8890A0', letterSpacing: 0.8, display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#9E958B', letterSpacing: 0.8, display: 'block', marginBottom: 6 }}>
               DUE DATE & TIME
             </label>
             <input
@@ -263,12 +263,12 @@ export default function TaskDetailPanel({
               value={dueAt}
               onChange={e => { setDueAt(e.target.value); setIsDirty(true) }}
               style={{
-                border: '1px solid rgba(139,126,200,0.15)', borderRadius: 10, padding: '8px 12px',
-                fontSize: 13, ...s, color: '#2A2D35', background: 'rgba(255,255,255,0.45)', outline: 'none',
+                border: '1px solid rgba(155,126,200,0.15)', borderRadius: 10, padding: '8px 12px',
+                fontSize: 13, ...s, color: '#2D2A26', background: 'rgba(255,255,255,0.45)', outline: 'none',
               }}
             />
             {smartDate && (
-              <p style={{ fontSize: 12, color: '#8890A0', marginTop: 6, ...s }}>
+              <p style={{ fontSize: 12, color: '#9E958B', marginTop: 6, ...s }}>
                 💡 You look free {smartDate} — how about then?
                 <button onClick={() => {
                   const d = new Date()
@@ -283,7 +283,7 @@ export default function TaskDetailPanel({
                   }
                 }} style={{
                   marginLeft: 6, background: 'none', border: 'none', cursor: 'pointer',
-                  color: '#8B7EC8', fontSize: 12, fontWeight: 600, ...s,
+                  color: '#9B7EC8', fontSize: 12, fontWeight: 600, ...s,
                 }}>Set it</button>
               </p>
             )}
@@ -291,7 +291,7 @@ export default function TaskDetailPanel({
 
           {/* Priority */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#8890A0', letterSpacing: 0.8, display: 'block', marginBottom: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#9E958B', letterSpacing: 0.8, display: 'block', marginBottom: 8 }}>
               PRIORITY
             </label>
             <div style={{ display: 'flex', gap: 8 }}>
@@ -299,9 +299,9 @@ export default function TaskDetailPanel({
                 const cfg = PRIORITY_CONFIG[p]
                 return (
                   <button key={p} onClick={() => { setPriority(p); save({ priority: p }) }} style={{
-                    padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${priority === p ? cfg.color : 'rgba(139,126,200,0.15)'}`,
+                    padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${priority === p ? cfg.color : 'rgba(155,126,200,0.15)'}`,
                     background: priority === p ? cfg.bg : 'transparent',
-                    color: priority === p ? cfg.color : '#4A4E5A',
+                    color: priority === p ? cfg.color : '#5C5650',
                     fontSize: 12, fontWeight: 600, cursor: 'pointer', ...s, transition: 'all 0.15s',
                   }}>
                     <span style={{ display: 'inline-block', width: 7, height: 7, borderRadius: '50%', background: cfg.color, marginRight: 5, verticalAlign: 'middle' }} />
@@ -314,7 +314,7 @@ export default function TaskDetailPanel({
 
           {/* Duration */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#8890A0', letterSpacing: 0.8, display: 'block', marginBottom: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#9E958B', letterSpacing: 0.8, display: 'block', marginBottom: 8 }}>
               ESTIMATED TIME
             </label>
             <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap', alignItems: 'center' }}>
@@ -338,9 +338,9 @@ export default function TaskDetailPanel({
                   save(updates)
                 }} style={{
                   padding: '5px 12px', borderRadius: 20, border: '1px solid',
-                  borderColor: durationMinutes === o.minutes ? '#8B7EC8' : 'rgba(139,126,200,0.15)',
-                  background: durationMinutes === o.minutes ? 'rgba(139,126,200,0.10)' : 'transparent',
-                  color: durationMinutes === o.minutes ? '#8B7EC8' : '#4A4E5A',
+                  borderColor: durationMinutes === o.minutes ? '#9B7EC8' : 'rgba(155,126,200,0.15)',
+                  background: durationMinutes === o.minutes ? 'rgba(155,126,200,0.10)' : 'transparent',
+                  color: durationMinutes === o.minutes ? '#9B7EC8' : '#5C5650',
                   fontSize: 12, cursor: 'pointer', ...s,
                 }}>{o.label}</button>
               ))}
@@ -355,8 +355,8 @@ export default function TaskDetailPanel({
                 }}
                 onKeyDown={e => { if (e.key === 'Enter') (e.target as HTMLInputElement).blur() }}
                 style={{
-                  width: 72, border: '1px solid rgba(139,126,200,0.15)', borderRadius: 20,
-                  padding: '5px 10px', fontSize: 12, ...s, color: '#4A4E5A',
+                  width: 72, border: '1px solid rgba(155,126,200,0.15)', borderRadius: 20,
+                  padding: '5px 10px', fontSize: 12, ...s, color: '#5C5650',
                   background: 'rgba(255,255,255,0.45)', outline: 'none', textAlign: 'center',
                 }}
               />
@@ -383,15 +383,15 @@ export default function TaskDetailPanel({
 
           {/* Project */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#8890A0', letterSpacing: 0.8, display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#9E958B', letterSpacing: 0.8, display: 'block', marginBottom: 6 }}>
               PROJECT
             </label>
             <select
               value={projectId}
               onChange={e => { setProjectId(e.target.value); save({ project_id: e.target.value || undefined }) }}
               style={{
-                border: '1px solid rgba(139,126,200,0.15)', borderRadius: 10, padding: '8px 12px',
-                fontSize: 13, ...s, color: '#2A2D35', background: 'rgba(255,255,255,0.45)', outline: 'none',
+                border: '1px solid rgba(155,126,200,0.15)', borderRadius: 10, padding: '8px 12px',
+                fontSize: 13, ...s, color: '#2D2A26', background: 'rgba(255,255,255,0.45)', outline: 'none',
                 width: '100%',
               }}
             >
@@ -403,30 +403,30 @@ export default function TaskDetailPanel({
           {/* Subtasks */}
           <div>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-              <label style={{ fontSize: 11, fontWeight: 700, color: '#8890A0', letterSpacing: 0.8 }}>
+              <label style={{ fontSize: 11, fontWeight: 700, color: '#9E958B', letterSpacing: 0.8 }}>
                 SUBTASKS {subtasks.length > 0 && `(${completedSubtasks.length}/${subtasks.length})`}
               </label>
             </div>
 
             {subtasks.length > 0 && (
               <>
-                <div style={{ height: 3, background: 'rgba(255,255,255,0.25)', borderRadius: 3, marginBottom: 10 }}>
-                  <div style={{ height: '100%', background: 'linear-gradient(90deg, #8B7EC8, #C8889E)', boxShadow: '0 0 8px rgba(139,126,200,0.15)', borderRadius: 3, width: `${subtaskProgress * 100}%`, transition: 'width 0.4s' }} />
+                <div style={{ height: 3, background: 'rgba(0,0,0,0.05)', borderRadius: 3, marginBottom: 10 }}>
+                  <div style={{ height: '100%', background: 'linear-gradient(90deg, #9B7EC8, #D4849A)', boxShadow: '0 0 8px rgba(155,126,200,0.15)', borderRadius: 3, width: `${subtaskProgress * 100}%`, transition: 'width 0.4s' }} />
                 </div>
                 {subtasks.map(st => (
                   <div key={st.id} style={{
                     display: 'flex', alignItems: 'center', gap: 10, padding: '7px 0',
-                    borderBottom: '1px solid rgba(255,255,255,0.25)',
+                    borderBottom: '1px solid rgba(0,0,0,0.05)',
                   }}>
                     <button onClick={() => st.status === 'done' ? onUpdate(st.id, { status: 'pending' }) : onComplete(st.id)} style={{
                       width: 18, height: 18, borderRadius: 5,
-                      border: `1.5px solid ${st.status === 'done' ? '#8B7EC8' : 'rgba(139,126,200,0.25)'}`,
-                      background: st.status === 'done' ? '#8B7EC8' : 'transparent',
+                      border: `1.5px solid ${st.status === 'done' ? '#9B7EC8' : 'rgba(155,126,200,0.25)'}`,
+                      background: st.status === 'done' ? '#9B7EC8' : 'transparent',
                       cursor: 'pointer', flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center',
                     }}>
                       {st.status === 'done' && <span style={{ color: '#FFF', fontSize: 11, fontWeight: 700 }}>✓</span>}
                     </button>
-                    <span style={{ fontSize: 13, color: '#2A2D35', textDecoration: st.status === 'done' ? 'line-through' : 'none', ...s }}>
+                    <span style={{ fontSize: 13, color: '#2D2A26', textDecoration: st.status === 'done' ? 'line-through' : 'none', ...s }}>
                       {st.title}
                     </span>
                   </div>
@@ -442,23 +442,23 @@ export default function TaskDetailPanel({
                 placeholder="Add subtask…"
                 style={{
                   flex: 1, border: '1px solid rgba(255,255,255,0.30)', borderRadius: 8, padding: '6px 10px',
-                  fontSize: 13, ...s, color: '#2A2D35', outline: 'none', background: 'rgba(255,255,255,0.45)',
+                  fontSize: 13, ...s, color: '#2D2A26', outline: 'none', background: 'rgba(255,255,255,0.45)',
                 }}
               />
               <button onClick={handleAddSubtask} disabled={!newSubtaskTitle.trim()} style={{
-                padding: '6px 12px', borderRadius: 8, background: '#2A2D35', color: '#FFF',
+                padding: '6px 12px', borderRadius: 8, background: '#2D2A26', color: '#FFF',
                 border: 'none', cursor: 'pointer', fontSize: 12, ...s,
               }}>Add</button>
             </div>
           </div>
 
           {/* Delegation */}
-          <div style={{ padding: '14px 16px', borderRadius: 14, background: isDelegated ? 'rgba(200,160,136,0.06)' : 'rgba(255,255,255,0.12)', border: `1px solid ${isDelegated ? 'rgba(200,160,136,0.2)' : 'rgba(139,126,200,0.12)'}` }}>
+          <div style={{ padding: '14px 16px', borderRadius: 14, background: isDelegated ? 'rgba(200,160,136,0.06)' : 'rgba(255,255,255,0.12)', border: `1px solid ${isDelegated ? 'rgba(200,160,136,0.2)' : 'rgba(155,126,200,0.12)'}` }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div>
-                <p style={{ fontSize: 13, fontWeight: 600, color: '#2A2D35', ...s }}>Waiting on someone?</p>
+                <p style={{ fontSize: 13, fontWeight: 600, color: '#2D2A26', ...s }}>Waiting on someone?</p>
                 {isDelegated && task.delegated_at && (
-                  <p style={{ fontSize: 11, color: daysSince(task.delegated_at) >= 5 ? '#C8A088' : '#8890A0', ...s, marginTop: 2 }}>
+                  <p style={{ fontSize: 11, color: daysSince(task.delegated_at) >= 5 ? '#D4A47A' : '#9E958B', ...s, marginTop: 2 }}>
                     {daysSince(task.delegated_at) >= 5
                       ? `${daysSince(task.delegated_at)} days — consider following up`
                       : `Assigned ${daysSince(task.delegated_at)}d ago`}
@@ -467,7 +467,7 @@ export default function TaskDetailPanel({
               </div>
               <button onClick={() => { setIsDelegated(!isDelegated); save({ is_delegated: !isDelegated }) }} style={{
                 width: 40, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer',
-                background: isDelegated ? '#C8A088' : 'rgba(139,126,200,0.20)',
+                background: isDelegated ? '#D4A47A' : 'rgba(155,126,200,0.20)',
                 position: 'relative', transition: 'background 0.2s',
               }}>
                 <span style={{
@@ -485,7 +485,7 @@ export default function TaskDetailPanel({
                   style={{
                     marginTop: 10, width: '100%', border: '1px solid rgba(200,160,136,0.3)',
                     borderRadius: 8, padding: '6px 10px', fontSize: 13, ...s,
-                    color: '#2A2D35', outline: 'none', background: 'rgba(255,255,255,0.45)',
+                    color: '#2D2A26', outline: 'none', background: 'rgba(255,255,255,0.45)',
                   }}
                 />
                 {task.delegated_at && daysSince(task.delegated_at) >= 5 && (
@@ -497,7 +497,7 @@ export default function TaskDetailPanel({
                     style={{
                       marginTop: 8, padding: '5px 12px', borderRadius: 8, fontSize: 12, ...s,
                       background: 'rgba(200,160,136,0.08)', border: '1px solid rgba(200,160,136,0.25)',
-                      color: '#C8A088', cursor: 'pointer', fontWeight: 500,
+                      color: '#D4A47A', cursor: 'pointer', fontWeight: 500,
                     }}
                   >
                     Copy follow-up message
@@ -508,12 +508,12 @@ export default function TaskDetailPanel({
           </div>
 
           {/* Recurring */}
-          <div style={{ padding: '14px 16px', borderRadius: 14, background: isRecurring ? 'rgba(139,126,200,0.08)' : 'rgba(255,255,255,0.12)', border: `1px solid ${isRecurring ? 'rgba(139,126,200,0.2)' : 'rgba(139,126,200,0.12)'}` }}>
+          <div style={{ padding: '14px 16px', borderRadius: 14, background: isRecurring ? 'rgba(155,126,200,0.08)' : 'rgba(255,255,255,0.12)', border: `1px solid ${isRecurring ? 'rgba(155,126,200,0.2)' : 'rgba(155,126,200,0.12)'}` }}>
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <p style={{ fontSize: 13, fontWeight: 600, color: '#2A2D35', ...s }}>Recurring task</p>
+              <p style={{ fontSize: 13, fontWeight: 600, color: '#2D2A26', ...s }}>Recurring task</p>
               <button onClick={() => { setIsRecurring(!isRecurring); save({ is_recurring: !isRecurring }) }} style={{
                 width: 40, height: 22, borderRadius: 11, border: 'none', cursor: 'pointer',
-                background: isRecurring ? '#8B7EC8' : 'rgba(139,126,200,0.20)',
+                background: isRecurring ? '#9B7EC8' : 'rgba(155,126,200,0.20)',
                 position: 'relative', transition: 'background 0.2s',
               }}>
                 <span style={{
@@ -527,16 +527,16 @@ export default function TaskDetailPanel({
                 {RECURRENCE_OPTIONS.map(o => (
                   <button key={o.value} onClick={() => { setRecurrenceType(o.value as RecurrenceRule['type']); save({ recurrence_rule: { type: o.value as RecurrenceRule['type'] } }) }} style={{
                     padding: '4px 12px', borderRadius: 20, border: '1px solid',
-                    borderColor: recurrenceType === o.value ? '#8B7EC8' : 'rgba(139,126,200,0.15)',
-                    background: recurrenceType === o.value ? 'rgba(139,126,200,0.10)' : 'transparent',
-                    color: recurrenceType === o.value ? '#8B7EC8' : '#4A4E5A',
+                    borderColor: recurrenceType === o.value ? '#9B7EC8' : 'rgba(155,126,200,0.15)',
+                    background: recurrenceType === o.value ? 'rgba(155,126,200,0.10)' : 'transparent',
+                    color: recurrenceType === o.value ? '#9B7EC8' : '#5C5650',
                     fontSize: 12, cursor: 'pointer', ...s,
                   }}>{o.label}</button>
                 ))}
               </div>
             )}
             {task.streak_count > 0 && (
-              <p style={{ fontSize: 12, color: '#8B7EC8', marginTop: 8, fontWeight: 600, ...s }}>
+              <p style={{ fontSize: 12, color: '#9B7EC8', marginTop: 8, fontWeight: 600, ...s }}>
                 🔥 {task.streak_count}-day streak
               </p>
             )}
@@ -544,15 +544,15 @@ export default function TaskDetailPanel({
 
           {/* Blocked by */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#8890A0', letterSpacing: 0.8, display: 'block', marginBottom: 6 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#9E958B', letterSpacing: 0.8, display: 'block', marginBottom: 6 }}>
               BLOCKED BY
             </label>
             <select
               value={blockedByTaskId}
               onChange={e => { setBlockedByTaskId(e.target.value); save({ blocked_by_task_id: e.target.value || undefined }) }}
               style={{
-                border: '1px solid rgba(139,126,200,0.15)', borderRadius: 10, padding: '8px 12px',
-                fontSize: 13, ...s, color: '#2A2D35', background: 'rgba(255,255,255,0.45)', outline: 'none', width: '100%',
+                border: '1px solid rgba(155,126,200,0.15)', borderRadius: 10, padding: '8px 12px',
+                fontSize: 13, ...s, color: '#2D2A26', background: 'rgba(255,255,255,0.45)', outline: 'none', width: '100%',
               }}
             >
               <option value="">Not blocked</option>
@@ -562,7 +562,7 @@ export default function TaskDetailPanel({
 
           {/* Reminders */}
           <div>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#8890A0', letterSpacing: 0.8, display: 'block', marginBottom: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#9E958B', letterSpacing: 0.8, display: 'block', marginBottom: 8 }}>
               REMINDERS
             </label>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -575,9 +575,9 @@ export default function TaskDetailPanel({
                     setIsDirty(true)
                   }} style={{
                     padding: '5px 12px', borderRadius: 20, border: '1px solid',
-                    borderColor: on ? '#7AABC8' : 'rgba(139,126,200,0.15)',
+                    borderColor: on ? '#7AABC8' : 'rgba(155,126,200,0.15)',
                     background: on ? 'rgba(122,171,200,0.08)' : 'transparent',
-                    color: on ? '#7AABC8' : '#4A4E5A',
+                    color: on ? '#7AABC8' : '#5C5650',
                     fontSize: 12, cursor: 'pointer', ...s,
                   }}>{r.label}</button>
                 )
@@ -587,15 +587,15 @@ export default function TaskDetailPanel({
 
           {/* Activity log */}
           <div style={{ paddingTop: 8, borderTop: '1px solid rgba(255,255,255,0.20)' }}>
-            <label style={{ fontSize: 11, fontWeight: 700, color: '#8890A0', letterSpacing: 0.8, display: 'block', marginBottom: 8 }}>
+            <label style={{ fontSize: 11, fontWeight: 700, color: '#9E958B', letterSpacing: 0.8, display: 'block', marginBottom: 8 }}>
               ACTIVITY
             </label>
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
-              <p style={{ fontSize: 12, color: '#8890A0', ...s }}>
+              <p style={{ fontSize: 12, color: '#9E958B', ...s }}>
                 Created {new Date(task.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
               </p>
               {task.completed_at && (
-                <p style={{ fontSize: 12, color: '#8B7EC8', ...s }}>
+                <p style={{ fontSize: 12, color: '#9B7EC8', ...s }}>
                   ✓ Completed {new Date(task.completed_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                 </p>
               )}
@@ -609,10 +609,10 @@ export default function TaskDetailPanel({
               disabled={isSaving}
               style={{
                 width: '100%', padding: '12px 0', borderRadius: 14,
-                background: isSaving ? 'rgba(139,126,200,0.4)' : savedFeedback ? 'rgba(139,126,200,0.18)' : 'linear-gradient(135deg, #8B7EC8, #C8889E)',
-                boxShadow: savedFeedback || isSaving ? 'none' : '0 4px 20px rgba(139,126,200,0.25)',
-                color: savedFeedback ? '#8B7EC8' : '#FFF',
-                border: savedFeedback ? '1px solid rgba(139,126,200,0.35)' : 'none',
+                background: isSaving ? 'rgba(155,126,200,0.4)' : savedFeedback ? 'rgba(155,126,200,0.18)' : 'linear-gradient(135deg, #9B7EC8, #D4849A)',
+                boxShadow: savedFeedback || isSaving ? 'none' : '0 4px 20px rgba(155,126,200,0.25)',
+                color: savedFeedback ? '#9B7EC8' : '#FFF',
+                border: savedFeedback ? '1px solid rgba(155,126,200,0.35)' : 'none',
                 fontSize: 14, fontWeight: 600, cursor: isSaving ? 'default' : 'pointer',
                 transition: 'all 0.2s', ...s,
               }}
@@ -626,18 +626,18 @@ export default function TaskDetailPanel({
             {!showDeleteConfirm ? (
               <button onClick={() => setShowDeleteConfirm(true)} style={{
                 background: 'none', border: 'none', cursor: 'pointer',
-                color: '#8890A0', fontSize: 13, ...s,
+                color: '#9E958B', fontSize: 13, ...s,
               }}>Delete task</button>
             ) : (
               <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                <span style={{ fontSize: 13, color: '#2A2D35', ...s }}>Delete this task?</span>
+                <span style={{ fontSize: 13, color: '#2D2A26', ...s }}>Delete this task?</span>
                 <button onClick={() => onDelete(task.id)} style={{
-                  padding: '5px 14px', borderRadius: 10, background: '#C87882',
+                  padding: '5px 14px', borderRadius: 10, background: '#D4727A',
                   color: '#FFF', border: 'none', cursor: 'pointer', fontSize: 12, fontWeight: 600, ...s,
                 }}>Delete</button>
                 <button onClick={() => setShowDeleteConfirm(false)} style={{
                   padding: '5px 14px', borderRadius: 10, background: 'transparent',
-                  color: '#4A4E5A', border: '1px solid rgba(139,126,200,0.15)', cursor: 'pointer', fontSize: 12, ...s,
+                  color: '#5C5650', border: '1px solid rgba(155,126,200,0.15)', cursor: 'pointer', fontSize: 12, ...s,
                 }}>Cancel</button>
               </div>
             )}

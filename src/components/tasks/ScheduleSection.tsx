@@ -84,17 +84,17 @@ export default function ScheduleSection({
   return (
     <div>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 8 }}>
-        <label style={{ fontSize: 11, fontWeight: 700, color: '#8890A0', letterSpacing: 0.8, ...s }}>
+        <label style={{ fontSize: 11, fontWeight: 700, color: '#9E958B', letterSpacing: 0.8, ...s }}>
           SCHEDULE IT
         </label>
         <div style={{ display: 'flex', gap: 10, alignItems: 'center' }}>
-          <button onClick={findSlots} disabled={loadingSlots} style={{ fontSize: 11, color: '#8B7EC8', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, ...s }}>
+          <button onClick={findSlots} disabled={loadingSlots} style={{ fontSize: 11, color: '#9B7EC8', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, ...s }}>
             {loadingSlots ? 'Checking...' : '✦ Find free slot'}
           </button>
           {!scheduledStart && (
             <button
               onClick={() => { setShowCustom(v => !v); setShowSlots(false); setConflictMsg(null) }}
-              style={{ fontSize: 11, color: showCustom ? '#8B7EC8' : '#8890A0', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, ...s }}
+              style={{ fontSize: 11, color: showCustom ? '#9B7EC8' : '#9E958B', background: 'none', border: 'none', cursor: 'pointer', fontWeight: 600, ...s }}
             >
               {showCustom ? '✕ Cancel' : '+ Custom time'}
             </button>
@@ -107,31 +107,31 @@ export default function ScheduleSection({
         <div style={{ marginBottom: 10 }}>
           {calConnected === false && (
             <div style={{ padding: '10px 12px', borderRadius: 10, background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(255,255,255,0.30)', marginBottom: 8 }}>
-              <p style={{ fontSize: 12, color: '#4A4E5A', margin: '0 0 8px', ...s }}>Connect Google Calendar to see your real free slots.</p>
-              <a href="/api/calendar/connect" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8, background: '#2A2D35', color: '#FFF', fontSize: 12, fontWeight: 600, textDecoration: 'none', ...s }}>
+              <p style={{ fontSize: 12, color: '#5C5650', margin: '0 0 8px', ...s }}>Connect Google Calendar to see your real free slots.</p>
+              <a href="/api/calendar/connect" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '5px 12px', borderRadius: 8, background: '#2D2A26', color: '#FFF', fontSize: 12, fontWeight: 600, textDecoration: 'none', ...s }}>
                 Connect Google Calendar →
               </a>
             </div>
           )}
-          {loadingSlots && <p style={{ fontSize: 12, color: '#8890A0', ...s }}>Looking at your calendar...</p>}
+          {loadingSlots && <p style={{ fontSize: 12, color: '#9E958B', ...s }}>Looking at your calendar...</p>}
           {!loadingSlots && slots.length > 0 && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: 6, marginBottom: 8 }}>
               {slots.map((slot, i) => (
                 <button key={i} onClick={() => { onSchedule(slot.start, slot.end); setShowSlots(false) }} style={{
-                  padding: '8px 12px', borderRadius: 10, border: '1px solid rgba(139,126,200,0.2)',
-                  background: 'rgba(139,126,200,0.05)', cursor: 'pointer', textAlign: 'left',
-                  fontSize: 12, color: '#2A2D35', ...s,
+                  padding: '8px 12px', borderRadius: 10, border: '1px solid rgba(155,126,200,0.2)',
+                  background: 'rgba(155,126,200,0.05)', cursor: 'pointer', textAlign: 'left',
+                  fontSize: 12, color: '#2D2A26', ...s,
                 }}>{slot.label}</button>
               ))}
               {!scheduledStart && (
-                <button onClick={() => { setShowCustom(v => !v); setShowSlots(false) }} style={{ fontSize: 11, color: '#8890A0', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '2px 0', ...s }}>
+                <button onClick={() => { setShowCustom(v => !v); setShowSlots(false) }} style={{ fontSize: 11, color: '#9E958B', background: 'none', border: 'none', cursor: 'pointer', textAlign: 'left', padding: '2px 0', ...s }}>
                   + Pick a custom time instead
                 </button>
               )}
             </div>
           )}
           {!loadingSlots && calConnected && slots.length === 0 && (
-            <p style={{ fontSize: 12, color: '#8890A0', marginBottom: 6, ...s }}>No free slots found before the due date.</p>
+            <p style={{ fontSize: 12, color: '#9E958B', marginBottom: 6, ...s }}>No free slots found before the due date.</p>
           )}
         </div>
       )}
@@ -141,25 +141,25 @@ export default function ScheduleSection({
         <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
           <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
             <input type="datetime-local" value={scheduledStart} onChange={e => handleStartChange(e.target.value)}
-              style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px', fontSize: 12, ...s, color: '#2A2D35', background: 'rgba(255,255,255,0.45)', outline: 'none' }} />
-            <span style={{ color: '#B0B6C4', fontSize: 12 }}>→</span>
+              style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px', fontSize: 12, ...s, color: '#2D2A26', background: 'rgba(255,255,255,0.52)', outline: 'none' }} />
+            <span style={{ color: '#C9C1B8', fontSize: 12 }}>→</span>
             <input type="datetime-local" value={scheduledEnd} onChange={e => { setConflictMsg(null); onChange(scheduledStart, e.target.value) }}
-              style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px', fontSize: 12, ...s, color: '#2A2D35', background: 'rgba(255,255,255,0.45)', outline: 'none' }} />
+              style={{ flex: 1, border: '1px solid rgba(0,0,0,0.1)', borderRadius: 10, padding: '7px 10px', fontSize: 12, ...s, color: '#2D2A26', background: 'rgba(255,255,255,0.52)', outline: 'none' }} />
             {scheduledStart && (
-              <button onClick={onClear} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#B0B6C4', fontSize: 16 }}>×</button>
+              <button onClick={onClear} style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#C9C1B8', fontSize: 16 }}>×</button>
             )}
           </div>
           {scheduledStart && scheduledEnd && (
             <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
               <button onClick={handleSchedule} disabled={checkingConflict} style={{
                 padding: '6px 14px', borderRadius: 20,
-                background: 'rgba(139,126,200,0.10)', border: '1px solid rgba(139,126,200,0.25)',
-                color: '#8B7EC8', fontSize: 12, fontWeight: 600,
+                background: 'rgba(155,126,200,0.10)', border: '1px solid rgba(155,126,200,0.25)',
+                color: '#9B7EC8', fontSize: 12, fontWeight: 600,
                 cursor: checkingConflict ? 'default' : 'pointer', ...s,
               }}>
                 {checkingConflict ? 'Checking...' : 'Schedule ✓'}
               </button>
-              {conflictMsg && <span style={{ fontSize: 11, color: '#C87882', ...s }}>⚠ {conflictMsg}</span>}
+              {conflictMsg && <span style={{ fontSize: 11, color: '#D4727A', ...s }}>⚠ {conflictMsg}</span>}
             </div>
           )}
         </div>

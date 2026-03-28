@@ -5,42 +5,42 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300&display=swap');
 
 :root {
-  /* Cool blue-lavender-pink Ganzfeld Theme */
-  --bg: #C5CDDA;
-  --surface: rgba(255,255,255,0.55);
-  --surface-hover: rgba(255,255,255,0.68);
+  /* Warm Ganzfeld Theme — matches Projects */
+  --bg: #F0EBE6;
+  --surface: rgba(255,255,255,0.52);
+  --surface-hover: rgba(255,255,255,0.65);
   --elevated: rgba(255,255,255,0.78);
-  --ink: #2A2D35;
-  --ink-soft: #4A4E5A;
-  --ink-muted: #8890A0;
-  --ink-faint: #B0B6C4;
-  --accent: #8B7EC8;
-  --accent-soft: rgba(139,126,200,0.10);
-  --accent-mid: rgba(139,126,200,0.18);
-  --accent-border: rgba(139,126,200,0.25);
-  --accent-text: #6B5EA8;
-  --accent-glow: rgba(139,126,200,0.15);
-  --rose: #C8889E;
-  --rose-soft: rgba(200,136,158,0.12);
-  --peach: #C8A088;
-  --peach-soft: rgba(200,160,136,0.10);
+  --ink: #2D2A26;
+  --ink-soft: #5C5650;
+  --ink-muted: #9E958B;
+  --ink-faint: #C9C1B8;
+  --accent: #9B7EC8;
+  --accent-soft: rgba(155,126,200,0.10);
+  --accent-mid: rgba(155,126,200,0.18);
+  --accent-border: rgba(155,126,200,0.25);
+  --accent-text: #7B5EA8;
+  --accent-glow: rgba(155,126,200,0.15);
+  --rose: #D4849A;
+  --rose-soft: rgba(212,132,154,0.12);
+  --peach: #D4A47A;
+  --peach-soft: rgba(212,164,122,0.10);
   --sky: #7AABC8;
   --sky-soft: rgba(122,171,200,0.12);
   --sage: #7EB89B;
   --sage-soft: rgba(126,184,155,0.10);
-  --urgent: #C87882;
-  --urgent-soft: rgba(200,120,130,0.10);
+  --urgent: #D4727A;
+  --urgent-soft: rgba(212,114,122,0.10);
   --normal: #7AABC8;
   --normal-soft: rgba(122,171,200,0.10);
-  --low: #A8ADB8;
-  --low-soft: rgba(168,173,184,0.10);
-  --border: rgba(255,255,255,0.25);
-  --border-hover: rgba(255,255,255,0.35);
-  --border-glow: rgba(139,126,200,0.22);
-  --divider: rgba(255,255,255,0.15);
-  --shadow: 0 1px 3px rgba(0,0,0,0.04), 0 4px 16px rgba(0,0,0,0.05);
-  --shadow-hover: 0 2px 8px rgba(0,0,0,0.05), 0 12px 32px rgba(0,0,0,0.08);
-  --shadow-glow: 0 0 24px rgba(139,126,200,0.12), 0 4px 16px rgba(0,0,0,0.05);
+  --low: #C9C1B8;
+  --low-soft: rgba(201,193,184,0.10);
+  --border: rgba(0,0,0,0.05);
+  --border-hover: rgba(0,0,0,0.08);
+  --border-glow: rgba(155,126,200,0.22);
+  --divider: rgba(0,0,0,0.04);
+  --shadow: 0 1px 2px rgba(0,0,0,0.02), 0 4px 16px rgba(0,0,0,0.03);
+  --shadow-hover: 0 2px 8px rgba(0,0,0,0.03), 0 12px 32px rgba(0,0,0,0.05);
+  --shadow-glow: 0 0 24px rgba(155,126,200,0.08), 0 4px 16px rgba(0,0,0,0.03);
 }
 
 * {
