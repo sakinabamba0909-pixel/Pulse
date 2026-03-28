@@ -165,6 +165,17 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
   var [showPulseBar, setShowPulseBar] = useState(true);
   var [slotContext, setSlotContext] = useState(null); // { date, hour } for grid clicks
   var [floatHovered, setFloatHovered] = useState(false);
+  var [hoverSlot, setHoverSlot] = useState(null); // { colIdx, hour }
+  var scrollRef = useRef(null);
+
+  // Scroll to current hour on mount
+  useEffect(function () {
+    if (scrollRef.current) {
+      var now = new Date();
+      var scrollTo = (now.getHours() - 8 - 1) * PX_PER_HOUR;
+      scrollRef.current.scrollTop = Math.max(0, scrollTo);
+    }
+  }, [calView]);
 
   // Google calendar events (fetched client-side)
   var [gcalEvents, setGcalEvents] = useState([]);
@@ -318,11 +329,204 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
       {/* ═══ CALENDAR BODY ═══ */}
       <div style={{ flex: 1, display: 'flex', minHeight: 0, position: 'relative', zIndex: 1 }}>
 
-        {/* Week / Day view placeholder — step 3 fills this */}
+        {/* ═══ WEEK / DAY VIEW ═══ */}
         {(calView === 'week' || calView === 'day') && (
           <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, minHeight: 0 }}>
-            <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-              <p style={{ fontSize: 14, color: T.inkMuted }}>Week view loading... ({allEvents.length} events)</p>
+
+            {/* Day headers */}
+            <div style={{
+              display: 'grid', gridTemplateColumns: '56px repeat(' + columns.length + ', 1fr)',
+              borderBottom: '1px solid ' + T.border,
+              background: 'rgba(255,255,255,0.32)', backdropFilter: 'blur(20px)',
+              flexShrink: 0, zIndex: 10,
+            }}>
+              <div style={{ borderRight: '1px solid ' + T.divider }} />
+              {columns.map(function (col, ci) {
+                var isToday = sameDay(col, today);
+                var isWeekend = col.getDay() === 0 || col.getDay() === 6;
+                var dayLabel = DAYS_SHORT[(col.getDay() + 6) % 7];
+                return (
+                  <div key={ci} style={{
+                    padding: '10px 6px 12px', textAlign: 'center',
+                    borderRight: ci < columns.length - 1 ? '1px solid ' + T.divider : 'none',
+                    background: isToday ? 'rgba(155,126,200,0.04)' : 'transparent',
+                  }}>
+                    <p style={{ fontSize: 10, fontWeight: 600, color: isWeekend ? T.inkFaint : T.inkMuted, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4 }}>{dayLabel}</p>
+                    <div style={{
+                      width: 30, height: 30, borderRadius: '50%', margin: '0 auto',
+                      background: isToday ? 'linear-gradient(135deg,' + T.accent + ',' + T.rose + ')' : 'transparent',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    }}>
+                      <p style={{ fontSize: 14, fontWeight: isToday ? 700 : 500, color: isToday ? '#FFF' : isWeekend ? T.inkFaint : T.ink }}>{col.getDate()}</p>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
+            {/* Scrollable time grid */}
+            <div ref={scrollRef} style={{ flex: 1, overflowY: 'auto', position: 'relative' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: '56px repeat(' + columns.length + ', 1fr)', minHeight: HOURS.length * PX_PER_HOUR }}>
+
+                {/* Hour labels */}
+                <div style={{ borderRight: '1px solid ' + T.divider }}>
+                  {HOURS.map(function (h) {
+                    return (
+                      <div key={h} style={{ height: PX_PER_HOUR, borderBottom: '1px solid ' + T.divider, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end', padding: '4px 8px 0' }}>
+                        <span style={{ fontSize: 10, color: T.inkFaint, fontWeight: 500, whiteSpace: 'nowrap' }}>{fmtHour(h)}</span>
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {/* Day columns */}
+                {columns.map(function (col, ci) {
+                  var isToday = sameDay(col, today);
+                  var isWeekend = col.getDay() === 0 || col.getDay() === 6;
+                  var colStr = col.toISOString().split('T')[0];
+
+                  // Filter events for this column
+                  var dayEvents = allEvents.filter(function (ev) {
+                    return sameDay(ev.start, col);
+                  });
+
+                  var showGhost = hoverSlot && hoverSlot.colIdx === ci;
+                  var ghostTop = showGhost ? (hoverSlot.hour - 8) * PX_PER_HOUR : 0;
+
+                  function snapToSlot(yPx) {
+                    var rawHour = yPx / PX_PER_HOUR + 8;
+                    return Math.floor(rawHour * 2) / 2;
+                  }
+
+                  return (
+                    <div
+                      key={ci}
+                      onMouseMove={function (e) {
+                        var rect = e.currentTarget.getBoundingClientRect();
+                        var y = e.clientY - rect.top + (scrollRef.current ? scrollRef.current.scrollTop : 0);
+                        var snapped = snapToSlot(y);
+                        if (snapped < 8) snapped = 8;
+                        if (snapped > 19.5) snapped = 19.5;
+                        setHoverSlot({ colIdx: ci, hour: snapped });
+                      }}
+                      onMouseLeave={function () { setHoverSlot(null); }}
+                      onClick={function (e) {
+                        if (e.target !== e.currentTarget && e.target.closest('[data-event]')) return;
+                        var rect = e.currentTarget.getBoundingClientRect();
+                        var y = e.clientY - rect.top + (scrollRef.current ? scrollRef.current.scrollTop : 0);
+                        var snapped = snapToSlot(y);
+                        if (snapped < 8) snapped = 8;
+                        if (snapped > 19.5) snapped = 19.5;
+                        openModalFromSlot({ date: col, hour: snapped });
+                      }}
+                      style={{
+                        position: 'relative',
+                        borderRight: ci < columns.length - 1 ? '1px solid ' + T.divider : 'none',
+                        background: isWeekend ? 'rgba(0,0,0,0.012)' : isToday ? 'rgba(155,126,200,0.018)' : 'transparent',
+                        cursor: 'crosshair',
+                      }}
+                    >
+                      {/* Hour grid lines */}
+                      {HOURS.map(function (h) {
+                        return <div key={h} style={{ height: PX_PER_HOUR, borderBottom: '1px solid ' + T.divider, pointerEvents: 'none' }} />;
+                      })}
+
+                      {/* Half-hour dashed lines */}
+                      {HOURS.map(function (h) {
+                        return <div key={'hh' + h} style={{
+                          position: 'absolute', left: 0, right: 0,
+                          top: (h - 8) * PX_PER_HOUR + PX_PER_HOUR / 2,
+                          borderBottom: '1px dashed rgba(0,0,0,0.03)',
+                          pointerEvents: 'none',
+                        }} />;
+                      })}
+
+                      {/* Ghost slot preview on hover */}
+                      {showGhost && (
+                        <div style={{
+                          position: 'absolute', left: 3, right: 3,
+                          top: ghostTop, height: PX_PER_HOUR - 2,
+                          borderRadius: 8, zIndex: 3, pointerEvents: 'none',
+                          background: 'linear-gradient(135deg, rgba(155,126,200,0.10), rgba(212,132,154,0.06))',
+                          border: '1.5px dashed rgba(155,126,200,0.35)',
+                          display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 5,
+                          transition: 'top 0.08s ease',
+                        }}>
+                          <span style={{ fontSize: 14, color: T.accent, opacity: 0.8, fontWeight: 300, lineHeight: 1 }}>+</span>
+                          <span style={{ fontSize: 10, color: T.accentText, fontWeight: 600 }}>{fmtSlotLabel(hoverSlot.hour)}</span>
+                        </div>
+                      )}
+
+                      {/* Now line */}
+                      {isToday && (
+                        <div style={{
+                          position: 'absolute', left: 0, right: 0,
+                          top: (nowHour - 8) * PX_PER_HOUR,
+                          zIndex: 5, pointerEvents: 'none',
+                        }}>
+                          <div style={{ display: 'flex', alignItems: 'center' }}>
+                            <div style={{ width: 9, height: 9, borderRadius: '50%', background: T.accent, boxShadow: '0 0 8px rgba(155,126,200,0.6)', flexShrink: 0 }} />
+                            <div style={{ flex: 1, height: 1.5, background: T.accent, opacity: 0.55 }} />
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Events */}
+                      {dayEvents.map(function (ev) {
+                        var top = (ev.startHour - 8) * PX_PER_HOUR;
+                        var height = Math.max((ev.endHour - ev.startHour) * PX_PER_HOUR - 3, 18);
+                        var isGcal = ev.type === 'gcal';
+                        var isProject = ev.type === 'project';
+                        var bgColor = isGcal ? 'rgba(0,0,0,0.04)' : ev.color + '18';
+                        var borderLeft = (isProject || ev.type === 'task') ? '2.5px solid ' + ev.color : 'none';
+
+                        return (
+                          <div
+                            data-event="true"
+                            key={ev.id}
+                            onClick={function (e) { e.stopPropagation(); setSelectedEvent(ev); }}
+                            style={{
+                              position: 'absolute', left: 3, right: 3,
+                              top: top, height: height,
+                              borderRadius: 8,
+                              background: bgColor,
+                              border: '1px solid ' + (isGcal ? T.border : ev.color + '35'),
+                              borderLeft: borderLeft,
+                              padding: '4px 7px',
+                              cursor: 'pointer', overflow: 'hidden',
+                              transition: 'all 0.18s', zIndex: 4,
+                            }}
+                            onMouseEnter={function (e) {
+                              e.currentTarget.style.transform = 'scale(1.015)';
+                              e.currentTarget.style.boxShadow = T.shadowHover;
+                              e.currentTarget.style.zIndex = '6';
+                            }}
+                            onMouseLeave={function (e) {
+                              e.currentTarget.style.transform = 'none';
+                              e.currentTarget.style.boxShadow = 'none';
+                              e.currentTarget.style.zIndex = '4';
+                            }}
+                          >
+                            <p style={{
+                              fontSize: height > 42 ? 11 : 9.5,
+                              fontWeight: 600,
+                              color: isGcal ? T.inkSoft : ev.color,
+                              whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                              lineHeight: 1.3,
+                            }}>{ev.title}</p>
+                            {height > 44 && ev.project && (
+                              <p style={{ fontSize: 9, color: ev.color, opacity: 0.75, marginTop: 1 }}>{ev.project}</p>
+                            )}
+                            {height > 58 && (
+                              <p style={{ fontSize: 9, color: T.inkMuted, marginTop: 2 }}>{fmtTime(ev.start)} – {fmtTime(ev.end)}</p>
+                            )}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         )}
