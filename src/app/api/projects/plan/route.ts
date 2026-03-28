@@ -106,11 +106,25 @@ export async function POST(req: Request) {
 
   const prefs = scheduling_preferences ?? {}
   const prefsLines = [
-    prefs.no_mornings ? '- No mornings (do not schedule before noon)' : null,
-    prefs.no_weekends ? '- No weekends (Saturday/Sunday unavailable)' : null,
+    prefs.preferred_time === 'morning'
+      ? '- MORNINGS PREFERRED: Schedule tasks before noon (8am–12pm) whenever possible'
+      : null,
+    prefs.preferred_time === 'afternoon'
+      ? '- AFTERNOONS PREFERRED: Keep mornings free, schedule tasks after noon (1pm–7pm)'
+      : null,
+    prefs.no_weekends === true
+      ? '- NO WEEKENDS: Never schedule tasks on Saturday or Sunday'
+      : null,
+    prefs.no_weekends === false
+      ? '- WEEKENDS OK: This project can use Saturday/Sunday time slots if needed'
+      : null,
+    prefs.style === 'spread'
+      ? '- SPREAD OUT: Do not cluster many tasks on the same day. Spread across multiple days, max 2-3 tasks per day'
+      : null,
+    prefs.style === 'packed'
+      ? '- PACKED DAYS OK: Full days of work are fine if it means having completely free days later'
+      : null,
     prefs.max_hours_per_day ? `- Max ${prefs.max_hours_per_day} hours of project work per day` : null,
-    prefs.preferred_time ? `- Preferred working time: ${prefs.preferred_time}` : null,
-    prefs.style ? `- Work style preference: ${prefs.style}` : null,
   ].filter(Boolean)
 
   const prefsCtx = prefsLines.length
