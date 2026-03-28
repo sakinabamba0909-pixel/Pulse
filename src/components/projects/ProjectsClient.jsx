@@ -239,10 +239,20 @@ function TypeWriter({ text, speed, onDone }) {
 }
 
 /* ═══ COLORS FOR PROJECTS ═══ */
-var PROJECT_COLORS = [T.sage, T.sky, T.accent, T.peach, T.rose];
-
+// Golden-angle hue spacing ensures infinite visually-distinct colors
+function hueToHSL(hue) {
+  return 'hsl(' + Math.round(hue % 360) + ', 52%, 58%)';
+}
+function hueToHSLSoft(hue) {
+  return 'hsla(' + Math.round(hue % 360) + ', 52%, 58%, 0.10)';
+}
+// 16 preset swatches covering the full hue wheel (evenly spaced)
+var COLOR_SWATCHES = Array.from({ length: 16 }, function (_, i) {
+  return hueToHSL(i * 22.5);
+});
+// Fallback: golden-angle offset per project index for auto-assign
 function pickColor(index) {
-  return PROJECT_COLORS[index % PROJECT_COLORS.length];
+  return hueToHSL(index * 137.5 + 150);
 }
 
 function formatDate(dateStr) {
@@ -349,6 +359,7 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
   var [voiceState, setVoiceState] = useState('idle');
   var [transcript, setTranscript] = useState('');
   var [projectName, setProjectName] = useState('');
+  var [projectColor, setProjectColor] = useState(hueToHSL(Math.random() * 360));
   var [projectDesc, setProjectDesc] = useState('');
   var [importedContext, setImportedContext] = useState('');
   var [aiTyping, setAiTyping] = useState(false);
@@ -578,6 +589,7 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
       body: JSON.stringify({
         name: projectName,
         category: 'general',
+        color: projectColor,
         scheduling_preferences: buildSchedPrefs(),
         description: projectDesc || projectName,
       }),
@@ -770,7 +782,7 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
             </div>
 
             {/* New Project Button */}
-            <button onClick={function () { setView('create'); }} style={{
+            <button onClick={function () { setView('create'); setProjectColor(hueToHSL(Math.random() * 360)); }} style={{
               width: '100%', padding: '20px 24px', borderRadius: 20,
               background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(24px)', WebkitBackdropFilter: 'blur(24px)',
               border: '1.5px dashed ' + T.accentBorder, cursor: 'pointer',
@@ -1132,7 +1144,23 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
                       <label style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.3, marginBottom: 6, display: 'block' }}>IMPORT CONTEXT <span style={{ fontWeight: 400, color: T.inkFaint }}>(optional)</span></label>
                       <textarea value={importedContext} onChange={function (e) { setImportedContext(e.target.value); }} placeholder="Paste any project plans, ChatGPT conversations, notes, or research you've already done — Pulse will use it to build a smarter plan" rows={3} style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: '1px dashed ' + T.border, background: 'rgba(155,126,200,0.03)', fontSize: 13, color: T.ink, fontFamily: "'Outfit', sans-serif", resize: 'none', lineHeight: 1.6 }} />
                     </div>
-                    <button onClick={function () { if (projectName.trim()) generatePlan(); }} disabled={!projectName.trim()} style={{ padding: '14px 28px', borderRadius: 14, background: projectName.trim() ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : 'rgba(155,126,200,0.2)', color: '#FFF', border: 'none', fontSize: 14, fontWeight: 600, cursor: projectName.trim() ? 'pointer' : 'not-allowed', boxShadow: projectName.trim() ? '0 4px 20px rgba(155,126,200,0.3)' : 'none', width: '100%' }}>{'\u2726'} Generate project plan</button>
+                    <div style={{ marginBottom: 20 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.3, marginBottom: 8, display: 'block' }}>PROJECT COLOR</label>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                        {COLOR_SWATCHES.map(function (c, i) {
+                          var sel = projectColor === c;
+                          return (
+                            <button key={i} onClick={function () { setProjectColor(c); }} style={{ width: 26, height: 26, borderRadius: '50%', background: c, border: sel ? '2.5px solid ' + T.ink : '2px solid transparent', cursor: 'pointer', padding: 0, boxShadow: sel ? '0 0 12px ' + c : 'none', transition: 'all 0.2s', transform: sel ? 'scale(1.15)' : 'scale(1)', outline: 'none' }} title={'Color ' + (i + 1)} />
+                          );
+                        })}
+                        <button onClick={function () { setProjectColor(hueToHSL(Math.random() * 360)); }} style={{ width: 26, height: 26, borderRadius: '50%', background: 'conic-gradient(from 0deg, hsl(0,52%,58%), hsl(60,52%,58%), hsl(120,52%,58%), hsl(180,52%,58%), hsl(240,52%,58%), hsl(300,52%,58%), hsl(360,52%,58%))', border: '2px solid ' + T.border, cursor: 'pointer', padding: 0, transition: 'all 0.2s', outline: 'none' }} title="Random color" />
+                      </div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8 }}>
+                        <div style={{ width: 12, height: 12, borderRadius: 4, background: projectColor, boxShadow: '0 0 8px ' + projectColor + '40' }} />
+                        <span style={{ fontSize: 12, color: T.inkSoft }}>Selected color preview</span>
+                      </div>
+                    </div>
+                    <button onClick={function () { if (projectName.trim()) generatePlan(); }} disabled={!projectName.trim()} style={{ padding: '14px 28px', borderRadius: 14, background: projectName.trim() ? 'linear-gradient(135deg, ' + projectColor + ', ' + T.rose + ')' : 'rgba(155,126,200,0.2)', color: '#FFF', border: 'none', fontSize: 14, fontWeight: 600, cursor: projectName.trim() ? 'pointer' : 'not-allowed', boxShadow: projectName.trim() ? '0 4px 20px ' + projectColor + '50' : 'none', width: '100%' }}>{'\u2726'} Generate project plan</button>
                   </div>
                 </div>
               )}
@@ -1169,7 +1197,7 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
               <button onClick={function () { setView('list'); setShowSteps(false); setShowCalendar(false); setAiMessage(''); setApprovedSteps({}); }} style={{ background: 'none', border: 'none', color: T.inkMuted, cursor: 'pointer', fontSize: 13, marginBottom: 20, padding: 0 }}>{'\u2190'} Cancel</button>
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 24 }}>
-                <div style={{ width: 14, height: 14, borderRadius: 5, background: T.sky, boxShadow: '0 0 10px ' + T.sky + '50' }} />
+                <div style={{ width: 14, height: 14, borderRadius: 5, background: projectColor, boxShadow: '0 0 10px ' + projectColor + '50' }} />
                 <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 28, fontWeight: 400 }}>{projectName || 'New Project'}</h1>
               </div>
 
