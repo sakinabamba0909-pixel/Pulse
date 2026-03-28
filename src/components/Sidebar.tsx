@@ -9,6 +9,7 @@ const NAV = [
   { href: '/app/tasks',         icon: '◻', label: 'Tasks'       },
   { href: '/app/reminders',     icon: '◷', label: 'Reminders'   },
   { href: '/app/projects',      icon: '▦', label: 'Projects'    },
+  { href: '/app/calendar',      icon: '◫', label: 'Calendar'    },
 ];
 
 export default function Sidebar({ name }: { name: string }) {
