@@ -408,11 +408,29 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
     if (!rescheduleTask || !rescheduleDate) return;
     var dt = rescheduleTime ? rescheduleDate + 'T' + rescheduleTime + ':00' : rescheduleDate + 'T09:00:00';
     var iso = new Date(dt).toISOString();
+    var dur = rescheduleTask.duration_minutes || 60;
+    var endIso = new Date(new Date(dt).getTime() + dur * 60000).toISOString();
     fetch('/api/tasks/' + rescheduleTask.id, {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ due_at: iso, scheduled_start: iso }),
+      body: JSON.stringify({ due_at: iso, scheduled_start: iso, scheduled_end: endIso }),
     })
+      .then(function () {
+        // Also create/update Google Calendar event if connected
+        if (calendarConnected) {
+          return fetch('/api/calendar/events/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              tasks: [{
+                title: rescheduleTask.title,
+                scheduled_start: iso,
+                scheduled_end: endIso,
+              }],
+            }),
+          });
+        }
+      })
       .then(function () {
         setRescheduleTask(null);
         router.refresh();
@@ -476,6 +494,7 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
         context: importedContext || undefined,
         scheduling_preferences: buildSchedPrefs(),
         existing_tasks: tasks.filter(function (t) { return t.status !== 'done'; }),
+        calendar_mode: calendarConnected ? 'google' : calendarChoice === 'pulse' ? 'pulse' : null,
       }),
     })
       .then(function (res) { return res.json(); })
@@ -594,6 +613,32 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
       .then(function (result) {
         if (result && result.error) {
           throw new Error(result.error);
+        }
+        // If Google Calendar is connected, create calendar events for scheduled tasks
+        if (calendarConnected) {
+          var scheduledTasks = [];
+          generatedSteps.forEach(function (s) {
+            s.tasks.forEach(function (t) {
+              if (t.scheduled_start && t.scheduled_end) {
+                scheduledTasks.push({
+                  title: t.title,
+                  scheduled_start: t.scheduled_start,
+                  scheduled_end: t.scheduled_end,
+                  description: 'Project: ' + projectName + ' — Step: ' + s.name,
+                });
+              }
+            });
+          });
+          if (scheduledTasks.length > 0) {
+            return fetch('/api/calendar/events/create', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ tasks: scheduledTasks }),
+            }).then(function () {
+              setSaving(false);
+              window.location.reload();
+            });
+          }
         }
         setSaving(false);
         window.location.reload();

@@ -4,6 +4,85 @@ import { NextResponse } from 'next/server'
 
 const openai = new OpenAI()
 
+const GOOGLE_CLIENT_ID     = process.env.GOOGLE_CLIENT_ID     || ''
+const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || ''
+
+interface CalendarEvent {
+  summary?: string
+  start: { dateTime?: string; date?: string }
+  end:   { dateTime?: string; date?: string }
+}
+
+async function refreshGoogleToken(refreshTokenVal: string): Promise<string | null> {
+  const res = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: new URLSearchParams({
+      client_id:     GOOGLE_CLIENT_ID,
+      client_secret: GOOGLE_CLIENT_SECRET,
+      refresh_token: refreshTokenVal,
+      grant_type:    'refresh_token',
+    }),
+  })
+  if (!res.ok) return null
+  const data = await res.json()
+  return data.access_token ?? null
+}
+
+async function fetchGoogleCalendarEvents(
+  accessToken: string,
+  timeMin: string,
+  timeMax: string,
+): Promise<CalendarEvent[]> {
+  const params = new URLSearchParams({
+    timeMin,
+    timeMax,
+    singleEvents: 'true',
+    orderBy:      'startTime',
+    maxResults:   '250',
+  })
+  const res = await fetch(
+    `https://www.googleapis.com/calendar/v3/calendars/primary/events?${params}`,
+    { headers: { Authorization: `Bearer ${accessToken}` } },
+  )
+  if (!res.ok) return []
+  const data = await res.json()
+  return (data.items ?? []) as CalendarEvent[]
+}
+
+async function getGoogleAccessToken(
+  supabase: Awaited<ReturnType<typeof createServerClient>>,
+  userId: string,
+): Promise<string | null> {
+  const { data: conn } = await supabase
+    .from('calendar_connections')
+    .select('*')
+    .eq('user_id', userId)
+    .eq('provider', 'google')
+    .eq('is_active', true)
+    .single()
+
+  if (!conn) return null
+
+  let accessToken = conn.access_token_encrypted
+
+  if (conn.token_expires_at && new Date(conn.token_expires_at) < new Date(Date.now() + 60000)) {
+    if (conn.refresh_token_encrypted) {
+      const newToken = await refreshGoogleToken(conn.refresh_token_encrypted)
+      if (newToken) {
+        accessToken = newToken
+        await supabase.from('calendar_connections').update({
+          access_token_encrypted: newToken,
+          token_expires_at: new Date(Date.now() + 3600 * 1000).toISOString(),
+          updated_at: new Date().toISOString(),
+        }).eq('id', conn.id)
+      }
+    }
+  }
+
+  return accessToken
+}
+
 export async function POST(req: Request) {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
@@ -15,6 +94,7 @@ export async function POST(req: Request) {
     context,
     scheduling_preferences,
     existing_tasks,
+    calendar_mode,        // 'google' | 'pulse' | null
   } = await req.json()
 
   if (!name?.trim() || !description?.trim()) {
@@ -43,6 +123,37 @@ export async function POST(req: Request) {
       ).join('\n')
     : '  No existing tasks.'
 
+  // Fetch real Google Calendar events if calendar_mode === 'google'
+  let calendarBusyCtx = '  No calendar connected — schedule freely.'
+  if (calendar_mode === 'google') {
+    const accessToken = await getGoogleAccessToken(supabase, user.id)
+    if (accessToken) {
+      const now = new Date()
+      // Look 30 days ahead for scheduling
+      const futureEnd = new Date(now.getTime() + 30 * 86400000)
+      const events = await fetchGoogleCalendarEvents(
+        accessToken,
+        now.toISOString(),
+        futureEnd.toISOString(),
+      )
+      if (events.length > 0) {
+        const busyLines = events.slice(0, 100).map((e) => {
+          const start = e.start.dateTime ?? e.start.date ?? ''
+          const end = e.end.dateTime ?? e.end.date ?? ''
+          const name = e.summary ?? 'Busy'
+          return `  - "${name}" from ${start} to ${end}`
+        })
+        calendarBusyCtx = `The user's Google Calendar has these existing events (AVOID scheduling conflicts with these):\n${busyLines.join('\n')}`
+      } else {
+        calendarBusyCtx = '  Google Calendar connected but no upcoming events — schedule freely.'
+      }
+    } else {
+      calendarBusyCtx = '  Google Calendar connection expired — schedule freely but note times may conflict.'
+    }
+  } else if (calendar_mode === 'pulse') {
+    calendarBusyCtx = '  User uses Pulse as their calendar (no external calendar). Schedule based on existing Pulse tasks only.'
+  }
+
   const systemPrompt = `You are a project planning assistant for Pulse, a personal AI lifestyle app.
 
 Your job is to take a project description and generate a structured, actionable plan broken into sequential steps, each with concrete tasks.
@@ -54,17 +165,22 @@ ${context ? `Additional context:\n${context}` : ''}
 Scheduling preferences:
 ${prefsCtx}
 
-Existing tasks (avoid scheduling conflicts with these):
+Existing Pulse tasks (avoid scheduling conflicts with these):
 ${existingTasksCtx}
 
-Current date: ${new Date().toISOString().split('T')[0]}
+Calendar availability:
+${calendarBusyCtx}
+
+Current date/time: ${new Date().toISOString()}
 
 Instructions:
 - Break the project into 2–8 logical steps (phases/milestones).
 - Each step should have 1–6 concrete tasks.
 - For each task, estimate realistic duration in minutes (minimum 15, maximum 480).
 - Suggest scheduled_start and scheduled_end as ISO 8601 datetimes, respecting the user's scheduling preferences.
+- CRITICAL: Do NOT schedule tasks during times that conflict with the user's calendar events listed above. Find free slots around existing events.
 - Space tasks out reasonably — do not cram everything into one day.
+- Schedule tasks during reasonable working hours (8am–7pm in the user's timezone) unless preferences say otherwise.
 - Avoid scheduling conflicts with existing tasks.
 - Each step should have a name, a brief description, and an estimated total duration in hours.
 - Include a speech_reply: a short, friendly 1–2 sentence summary of the plan you generated.
