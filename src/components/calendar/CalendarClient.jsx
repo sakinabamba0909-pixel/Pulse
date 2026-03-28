@@ -1016,16 +1016,20 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
   var allEvents = pulseEvents.concat(gcalEvents);
 
   // Navigation
-  var goToday = function () { setWeekStart(getMonday(new Date())); };
+  var goToday = function () {
+    if (calView === 'month') { var m = new Date(); m.setDate(1); setWeekStart(m); }
+    else if (calView === 'day') setWeekStart(new Date());
+    else setWeekStart(getMonday(new Date()));
+  };
   var goPrev = function () {
     if (calView === 'day') setWeekStart(addDays(weekStart, -1));
     else if (calView === 'week') setWeekStart(addDays(weekStart, -7));
-    else setWeekStart(addDays(weekStart, -28));
+    else { var pm = new Date(weekStart); pm.setMonth(pm.getMonth() - 1); pm.setDate(1); setWeekStart(pm); }
   };
   var goNext = function () {
     if (calView === 'day') setWeekStart(addDays(weekStart, 1));
     else if (calView === 'week') setWeekStart(addDays(weekStart, 7));
-    else setWeekStart(addDays(weekStart, 28));
+    else { var nm = new Date(weekStart); nm.setMonth(nm.getMonth() + 1); nm.setDate(1); setWeekStart(nm); }
   };
 
   // Columns for current view
@@ -1099,7 +1103,7 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
           {[{ id: 'day', label: 'Day' }, { id: 'week', label: 'Week' }, { id: 'month', label: 'Month' }].map(function (v) {
             var active = calView === v.id;
             return (
-              <button key={v.id} onClick={function () { setCalView(v.id); if (v.id === 'day') setWeekStart(new Date(today)); else if (v.id === 'week') setWeekStart(getMonday(today)); }} style={{
+              <button key={v.id} onClick={function () { setCalView(v.id); if (v.id === 'day') setWeekStart(new Date(today)); else if (v.id === 'week') setWeekStart(getMonday(today)); else if (v.id === 'month') { var m = new Date(today); m.setDate(1); setWeekStart(m); } }} style={{
                 padding: '6px 14px', borderRadius: 9,
                 background: active ? 'rgba(255,255,255,0.85)' : 'transparent',
                 border: active ? '1px solid ' + T.accentBorder : '1px solid transparent',
@@ -1327,12 +1331,132 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
           </div>
         )}
 
-        {/* Month view placeholder — step 7 fills this */}
-        {calView === 'month' && (
-          <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-            <p style={{ fontSize: 14, color: T.inkMuted }}>Month view coming soon</p>
-          </div>
-        )}
+        {/* ═══ MONTH VIEW ═══ */}
+        {calView === 'month' && (function () {
+          // Build 6-week grid starting from Monday of the week containing the 1st
+          var monthDate = new Date(weekStart);
+          var first = new Date(monthDate.getFullYear(), monthDate.getMonth(), 1);
+          var gridStart = getMonday(first);
+          var weeks = [];
+          for (var w = 0; w < 6; w++) {
+            var week = [];
+            for (var d = 0; d < 7; d++) {
+              week.push(addDays(gridStart, w * 7 + d));
+            }
+            weeks.push(week);
+          }
+          var currentMonth = monthDate.getMonth();
+
+          return (
+            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+              {/* Day-of-week headers */}
+              <div style={{
+                display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)',
+                borderBottom: '1px solid ' + T.border,
+                background: 'rgba(255,255,255,0.32)', backdropFilter: 'blur(20px)',
+                flexShrink: 0,
+              }}>
+                {DAYS_SHORT.map(function (dayName, di) {
+                  return (
+                    <div key={di} style={{
+                      padding: '10px 0', textAlign: 'center',
+                      borderRight: di < 6 ? '1px solid ' + T.divider : 'none',
+                    }}>
+                      <span style={{ fontSize: 10, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.5, textTransform: 'uppercase' }}>{dayName}</span>
+                    </div>
+                  );
+                })}
+              </div>
+
+              {/* Week rows */}
+              <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0 }}>
+                {weeks.map(function (week, wi) {
+                  return (
+                    <div key={wi} style={{
+                      flex: 1, display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)',
+                      borderBottom: wi < 5 ? '1px solid ' + T.divider : 'none',
+                      minHeight: 0,
+                    }}>
+                      {week.map(function (day, di) {
+                        var isCurrentMonth = day.getMonth() === currentMonth;
+                        var isToday = sameDay(day, today);
+                        var isWeekend = day.getDay() === 0 || day.getDay() === 6;
+
+                        // Events for this day
+                        var dayEvs = allEvents.filter(function (ev) { return sameDay(ev.start, day); });
+                        var maxShow = 3;
+
+                        return (
+                          <div
+                            key={di}
+                            onClick={function () { setCalView('day'); setWeekStart(new Date(day)); }}
+                            style={{
+                              borderRight: di < 6 ? '1px solid ' + T.divider : 'none',
+                              padding: '4px 5px',
+                              background: isToday ? 'rgba(155,126,200,0.04)' : isWeekend ? 'rgba(0,0,0,0.008)' : 'transparent',
+                              cursor: 'pointer',
+                              overflow: 'hidden',
+                              display: 'flex', flexDirection: 'column',
+                              transition: 'background 0.15s',
+                            }}
+                            onMouseEnter={function (e) { if (!isToday) e.currentTarget.style.background = 'rgba(155,126,200,0.03)'; }}
+                            onMouseLeave={function (e) { if (!isToday) e.currentTarget.style.background = isWeekend ? 'rgba(0,0,0,0.008)' : 'transparent'; }}
+                          >
+                            {/* Date number */}
+                            <div style={{ display: 'flex', justifyContent: 'center', marginBottom: 2 }}>
+                              <div style={{
+                                width: 24, height: 24, borderRadius: '50%',
+                                background: isToday ? 'linear-gradient(135deg,' + T.accent + ',' + T.rose + ')' : 'transparent',
+                                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                              }}>
+                                <span style={{
+                                  fontSize: 11,
+                                  fontWeight: isToday ? 700 : isCurrentMonth ? 500 : 400,
+                                  color: isToday ? '#FFF' : isCurrentMonth ? T.ink : T.inkFaint,
+                                }}>{day.getDate()}</span>
+                              </div>
+                            </div>
+
+                            {/* Event pills */}
+                            <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 1, overflow: 'hidden' }}>
+                              {dayEvs.slice(0, maxShow).map(function (ev) {
+                                var isGcal = ev.type === 'gcal';
+                                return (
+                                  <div
+                                    key={ev.id}
+                                    onClick={function (e) { e.stopPropagation(); setSelectedEvent(ev); }}
+                                    style={{
+                                      padding: '1px 5px', borderRadius: 4,
+                                      background: isGcal ? 'rgba(0,0,0,0.04)' : ev.color + '18',
+                                      borderLeft: isGcal ? 'none' : '2px solid ' + ev.color,
+                                      overflow: 'hidden',
+                                    }}
+                                  >
+                                    <span style={{
+                                      fontSize: 9, fontWeight: 600, lineHeight: 1.5,
+                                      color: isGcal ? T.inkMuted : ev.color,
+                                      whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                                      display: 'block',
+                                    }}>{ev.title}</span>
+                                  </div>
+                                );
+                              })}
+                              {dayEvs.length > maxShow && (
+                                <span style={{ fontSize: 9, color: T.inkMuted, fontWeight: 600, paddingLeft: 5 }}>
+                                  +{dayEvs.length - maxShow} more
+                                </span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
       </div>
 
       {/* ═══ FLOATING PILL BUTTON ═══ */}
