@@ -1,5 +1,6 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import WorldSection from '@/components/home/WorldSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -140,19 +141,19 @@ export default async function AppPage() {
 
   // ─── Palette ───
   const C = {
-    bg:          '#C5CDDA',
-    card:        'rgba(255,255,255,0.55)',
-    cardBorder:  'rgba(255,255,255,0.30)',
+    bg:          '#F0EBE6',
+    card:        'rgba(255,255,255,0.52)',
+    cardBorder:  'rgba(0,0,0,0.05)',
     text:        '#2D2A26',
     muted:       '#9E958B',
-    faint:       'rgba(255,255,255,0.18)',
-    divider:     'rgba(255,255,255,0.20)',
+    faint:       'rgba(0,0,0,0.03)',
+    divider:     'rgba(0,0,0,0.04)',
     accent:      '#9B7EC8',
-    accentDim:   'rgba(155,126,200,0.12)',
+    accentDim:   'rgba(155,126,200,0.10)',
     accentBorder:'rgba(155,126,200,0.25)',
     amber:       '#D4A47A',
-    amberDim:    'rgba(200,160,136,0.10)',
-    amberBorder: 'rgba(200,160,136,0.25)',
+    amberDim:    'rgba(212,164,122,0.10)',
+    amberBorder: 'rgba(212,164,122,0.25)',
   };
 
   const cardStyle: React.CSSProperties = {
@@ -353,32 +354,8 @@ export default async function AppPage() {
 
         {/* ──────────────────── World news ──────────────────── */}
         {news?.enabled && (
-          <div style={{ ...cardStyle, animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) 0.24s both' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <p style={{ ...labelStyle, marginBottom: 0 }}>{getSectionLabel('world', tone, pushiness)}</p>
-              <span style={{
-                fontSize: 10, fontWeight: 500, color: C.muted,
-                padding: '4px 10px', borderRadius: 20,
-                background: C.faint, border: `1px solid ${C.cardBorder}`,
-              }}>
-                {news.tone === 'positive' ? '☀ Positive' : news.tone === 'full' ? '🌐 Full reality' : '⚖ Balanced'}
-              </span>
-            </div>
-            <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.7 }}>
-              {tone === 'calm'
-                ? 'World news included in your briefing.'
-                : tone === 'hype'
-                ? 'World news ready in your morning briefing! 🌍'
-                : tone === 'pro'
-                ? 'Global briefing included with your morning summary.'
-                : 'Your morning briefing will include world news.'}
-              {news.outlets?.length > 0 && (
-                <span style={{ color: C.accent }}>
-                  {' '}From {news.outlets.slice(0, 3).map((o: string) => OUTLET_NAMES[o] || o).join(', ')}
-                  {news.outlets.length > 3 ? ` +${news.outlets.length - 3}` : ''}.
-                </span>
-              )}
-            </p>
+          <div style={{ animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) 0.24s both' }}>
+            <WorldSection tone={tone} sectionLabel={getSectionLabel('world', tone, pushiness)} />
           </div>
         )}
 
