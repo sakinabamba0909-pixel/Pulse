@@ -388,6 +388,19 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
   var [calendarChecked, setCalendarChecked] = useState(false);
   var [calendarChoice, setCalendarChoice] = useState(null); // 'pulse' | 'connect' | null
 
+  // Plan task inline editing state
+  var [planEditTask, setPlanEditTask] = useState(null); // { stepIdx, taskIdx }
+  var [planEditDate, setPlanEditDate] = useState('');
+  var [planEditTime, setPlanEditTime] = useState('');
+  var [planEditSlots, setPlanEditSlots] = useState([]);
+  var [planEditLoading, setPlanEditLoading] = useState(false);
+
+  // Calendar preview state
+  var [calPreviewMode, setCalPreviewMode] = useState('week'); // 'day' | '3day' | 'week' | 'month'
+  var [calPreviewDate, setCalPreviewDate] = useState(new Date());
+  var [calPreviewEvents, setCalPreviewEvents] = useState([]); // real calendar events
+  var [calPreviewLoaded, setCalPreviewLoaded] = useState(false);
+
   // Check calendar connection on mount
   useEffect(function () {
     fetch('/api/calendar/check?start=' + new Date().toISOString() + '&end=' + new Date(Date.now() + 3600000).toISOString())
@@ -474,6 +487,133 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
       });
   };
 
+  // ═══ PLAN TASK INLINE RESCHEDULE ═══
+  var openPlanEdit = function (stepIdx, taskIdx) {
+    var task = generatedSteps[stepIdx].tasks[taskIdx];
+    setPlanEditTask({ stepIdx: stepIdx, taskIdx: taskIdx });
+    setPlanEditSlots([]);
+    if (task.scheduled_start) {
+      var d = new Date(task.scheduled_start);
+      setPlanEditDate(d.toISOString().split('T')[0]);
+      setPlanEditTime(d.toTimeString().slice(0, 5));
+    } else {
+      setPlanEditDate('');
+      setPlanEditTime('');
+    }
+  };
+
+  var fetchPlanEditSlots = function () {
+    if (!planEditTask) return;
+    var task = generatedSteps[planEditTask.stepIdx].tasks[planEditTask.taskIdx];
+    var dur = task.est_minutes || 60;
+    setPlanEditLoading(true);
+    fetch('/api/calendar/slots?duration=' + dur)
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        setPlanEditLoading(false);
+        setPlanEditSlots(data.slots || []);
+      })
+      .catch(function () { setPlanEditLoading(false); setPlanEditSlots([]); });
+  };
+
+  var pickPlanEditSlot = function (slot) {
+    var d = new Date(slot.start);
+    setPlanEditDate(d.toISOString().split('T')[0]);
+    setPlanEditTime(d.toTimeString().slice(0, 5));
+  };
+
+  var savePlanEdit = function () {
+    if (!planEditTask || !planEditDate) return;
+    var si = planEditTask.stepIdx;
+    var ti = planEditTask.taskIdx;
+    var task = generatedSteps[si].tasks[ti];
+
+    var dt = planEditTime ? planEditDate + 'T' + planEditTime + ':00' : planEditDate + 'T09:00:00';
+    var newStart = new Date(dt);
+    var dur = task.est_minutes || 60;
+    var newEnd = new Date(newStart.getTime() + dur * 60000);
+    var oldStart = task.scheduled_start ? new Date(task.scheduled_start) : null;
+    var delta = oldStart ? newStart.getTime() - oldStart.getTime() : 0;
+
+    // Build new steps with cascade
+    var updated = generatedSteps.map(function (step, sIdx) {
+      return Object.assign({}, step, {
+        tasks: step.tasks.map(function (t, tIdx) {
+          var isTarget = sIdx === si && tIdx === ti;
+          var isAfter = sIdx > si || (sIdx === si && tIdx > ti);
+
+          if (isTarget) {
+            var startISO = newStart.toISOString();
+            var endISO = newEnd.toISOString();
+            var schedLabel = newStart.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ', ' + newStart.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            return Object.assign({}, t, { scheduled_start: startISO, scheduled_end: endISO, scheduled: schedLabel });
+          }
+
+          if (isAfter && delta !== 0 && t.scheduled_start) {
+            var shifted = new Date(new Date(t.scheduled_start).getTime() + delta);
+            var shiftedEnd = new Date(shifted.getTime() + (t.est_minutes || 60) * 60000);
+            var sLabel = shifted.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ', ' + shifted.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+            return Object.assign({}, t, { scheduled_start: shifted.toISOString(), scheduled_end: shiftedEnd.toISOString(), scheduled: sLabel });
+          }
+
+          return t;
+        }),
+      });
+    });
+
+    setGeneratedSteps(updated);
+
+    // Rebuild calendar blocks from updated tasks
+    var blocks = {};
+    updated.forEach(function (step) {
+      step.tasks.forEach(function (t) {
+        if (t.scheduled_start) {
+          var day = t.scheduled_start.split('T')[0];
+          if (!blocks[day]) blocks[day] = { day: day, slots: [] };
+          var d = new Date(t.scheduled_start);
+          blocks[day].slots.push({
+            start: d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
+            end: t.scheduled_end ? new Date(t.scheduled_end).toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }) : '',
+            task: t.title,
+            type: 'new',
+          });
+        }
+      });
+    });
+    var sortedBlocks = Object.keys(blocks).sort().map(function (k) { return blocks[k]; });
+    setGeneratedCalendar(sortedBlocks);
+
+    setPlanEditTask(null);
+  };
+
+  // ═══ CALENDAR PREVIEW DATA ═══
+  var fetchCalendarPreviewEvents = function () {
+    if (!calendarConnected) { setCalPreviewLoaded(true); return; }
+    // Determine the date range based on calPreviewMode
+    var start = new Date(calPreviewDate);
+    start.setHours(0, 0, 0, 0);
+    var end = new Date(start);
+    if (calPreviewMode === 'day') end.setDate(end.getDate() + 1);
+    else if (calPreviewMode === '3day') end.setDate(end.getDate() + 3);
+    else if (calPreviewMode === 'week') end.setDate(end.getDate() + 7);
+    else end.setDate(end.getDate() + 35); // month
+
+    fetch('/api/calendar/events?start=' + start.toISOString() + '&end=' + end.toISOString())
+      .then(function (r) { return r.json(); })
+      .then(function (data) {
+        setCalPreviewEvents(data.events || []);
+        setCalPreviewLoaded(true);
+      })
+      .catch(function () { setCalPreviewLoaded(true); });
+  };
+
+  // Fetch calendar events when preview opens or mode/date changes
+  useEffect(function () {
+    if (showCalendar && calendarConnected) {
+      fetchCalendarPreviewEvents();
+    }
+  }, [showCalendar, calPreviewMode, calPreviewDate, calendarConnected]);
+
   var buildSchedPrefs = function () {
     var prefs = {};
     selectedPrefs.forEach(function (id) {
@@ -548,6 +688,15 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
           setGeneratedSteps(mapped);
           setAiMessage(data.speech_reply || "Here's the plan I've put together based on your description:");
           if (data.calendar_blocks) setGeneratedCalendar(data.calendar_blocks);
+          // Auto-set calendar preview to start at the first scheduled task
+          var firstDate = null;
+          data.steps.forEach(function (s) {
+            s.tasks.forEach(function (t) {
+              if (t.scheduled_start && !firstDate) firstDate = new Date(t.scheduled_start);
+            });
+          });
+          if (firstDate) setCalPreviewDate(firstDate);
+          setShowCalendar(true);
           setTimeout(function () { setShowSteps(true); }, 400);
         } else {
           setAiMessage('Something went wrong generating the plan. Please try again.');
@@ -1242,14 +1391,56 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
                         {expanded && (
                           <div style={{ padding: '0 18px 16px', animation: 'fadeUp 0.3s ease both' }}>
                             <div style={{ borderTop: '1px solid ' + T.divider, paddingTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                              {step.tasks.map(function (task) {
+                              {step.tasks.map(function (task, ti) {
+                                var isEditing = planEditTask && planEditTask.stepIdx === si && planEditTask.taskIdx === ti;
                                 return (
-                                  <div key={task.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 12, background: 'rgba(255,255,255,0.4)', border: '1px solid ' + T.border }}>
-                                    <div style={{ width: 7, height: 7, borderRadius: '50%', background: T.sky, flexShrink: 0 }} />
-                                    <div style={{ flex: 1 }}>
-                                      <p style={{ fontSize: 13, fontWeight: 500, color: T.ink }}>{task.title}</p>
-                                      <p style={{ fontSize: 11, color: T.inkMuted }}>{task.scheduled} {'\u00B7'} {task.est}</p>
+                                  <div key={task.id}>
+                                    <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 14px', borderRadius: 12, background: isEditing ? 'rgba(155,126,200,0.06)' : 'rgba(255,255,255,0.4)', border: '1px solid ' + (isEditing ? T.accentBorder : T.border), transition: 'all 0.2s' }}>
+                                      <div style={{ width: 7, height: 7, borderRadius: '50%', background: projectColor, flexShrink: 0 }} />
+                                      <div style={{ flex: 1 }}>
+                                        <p style={{ fontSize: 13, fontWeight: 500, color: T.ink }}>{task.title}</p>
+                                        <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginTop: 2 }}>
+                                          <button onClick={function () { isEditing ? setPlanEditTask(null) : openPlanEdit(si, ti); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', display: 'inline-flex', alignItems: 'center', gap: 4 }}>
+                                            <span style={{ fontSize: 11, color: T.accentText, fontWeight: 500, textDecoration: 'underline', textDecorationStyle: 'dotted' }}>{task.scheduled || 'Set time'}</span>
+                                            <span style={{ fontSize: 9, color: T.inkMuted }}>{'\u270E'}</span>
+                                          </button>
+                                          <span style={{ fontSize: 11, color: T.inkMuted }}>{'\u00B7'} {task.est}</span>
+                                        </div>
+                                      </div>
                                     </div>
+
+                                    {/* Inline reschedule popover */}
+                                    {isEditing && (
+                                      <div style={{ margin: '6px 0 4px', padding: 14, borderRadius: 14, background: 'rgba(255,255,255,0.75)', backdropFilter: 'blur(20px)', border: '1px solid ' + T.accentBorder, boxShadow: T.shadowGlow, animation: 'fadeUp 0.25s ease both' }}>
+                                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 10 }}>
+                                          <p style={{ fontSize: 12, fontWeight: 600, color: T.accentText }}>Reschedule "{task.title}"</p>
+                                          <button onClick={function () { setPlanEditTask(null); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 13, color: T.inkMuted, padding: 0 }}>{'\u2715'}</button>
+                                        </div>
+                                        <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+                                          <input type="date" value={planEditDate} onChange={function (e) { setPlanEditDate(e.target.value); }} style={{ flex: 1, padding: '8px 10px', borderRadius: 10, border: '1px solid ' + T.border, background: 'rgba(255,255,255,0.5)', fontSize: 12, color: T.ink, fontFamily: "'Outfit', sans-serif" }} />
+                                          <input type="time" value={planEditTime} onChange={function (e) { setPlanEditTime(e.target.value); }} style={{ width: 100, padding: '8px 10px', borderRadius: 10, border: '1px solid ' + T.border, background: 'rgba(255,255,255,0.5)', fontSize: 12, color: T.ink, fontFamily: "'Outfit', sans-serif" }} />
+                                        </div>
+                                        {calendarConnected && (
+                                          <div style={{ marginBottom: 10 }}>
+                                            <button onClick={fetchPlanEditSlots} disabled={planEditLoading} style={{ padding: '5px 12px', borderRadius: 8, background: T.accentSoft, border: '1px solid ' + T.accentBorder, color: T.accentText, fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>
+                                              {planEditLoading ? 'Finding...' : '\uD83D\uDCC5 Suggest free times'}
+                                            </button>
+                                            {planEditSlots.length > 0 && (
+                                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+                                                {planEditSlots.map(function (slot, slotIdx) {
+                                                  return <button key={slotIdx} onClick={function () { pickPlanEditSlot(slot); }} style={{ textAlign: 'left', padding: '6px 10px', borderRadius: 8, background: 'rgba(255,255,255,0.5)', border: '1px solid ' + T.border, cursor: 'pointer', fontSize: 11, fontWeight: 500, color: T.ink }}>{slot.label}</button>;
+                                                })}
+                                              </div>
+                                            )}
+                                          </div>
+                                        )}
+                                        <p style={{ fontSize: 10, color: T.inkMuted, marginBottom: 8 }}>Tasks after this one will shift by the same amount.</p>
+                                        <div style={{ display: 'flex', gap: 8 }}>
+                                          <button onClick={savePlanEdit} disabled={!planEditDate} style={{ padding: '7px 16px', borderRadius: 10, background: planEditDate ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : 'rgba(155,126,200,0.2)', color: '#FFF', border: 'none', fontSize: 12, fontWeight: 600, cursor: planEditDate ? 'pointer' : 'not-allowed' }}>Apply</button>
+                                          <button onClick={function () { setPlanEditTask(null); }} style={{ padding: '7px 12px', borderRadius: 10, background: 'transparent', border: '1px solid ' + T.border, color: T.inkMuted, fontSize: 12, cursor: 'pointer' }}>Cancel</button>
+                                        </div>
+                                      </div>
+                                    )}
                                   </div>
                                 );
                               })}
@@ -1263,39 +1454,214 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
                     );
                   })}
 
-                  {/* Calendar Preview */}
-                  <div style={{ marginTop: 16 }}>
-                    <button onClick={function () { setShowCalendar(!showCalendar); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8, marginBottom: 12 }}>
-                      <span style={{ fontSize: 12, fontWeight: 600, color: T.accentText, letterSpacing: 0.3 }}>{'\uD83D\uDCC5'} CALENDAR PREVIEW</span>
-                      <span style={{ fontSize: 10, color: T.inkMuted, transform: showCalendar ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }}>{'\u25BC'}</span>
-                    </button>
-                    {showCalendar && generatedCalendar.length > 0 && (
-                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(' + Math.min(generatedCalendar.length, 5) + ', 1fr)', gap: 8, animation: 'fadeUp 0.4s ease both' }}>
-                        {generatedCalendar.map(function (day) {
-                          var dayLabel = day.day;
-                          var slots = day.slots || [];
-                          return (
-                            <div key={dayLabel} style={{ background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(12px)', borderRadius: 14, border: '1px solid ' + T.border, padding: 12, minHeight: 140 }}>
-                              <p style={{ fontSize: 11, fontWeight: 700, color: T.ink, marginBottom: 8, textAlign: 'center' }}>{dayLabel}</p>
-                              <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-                                {slots.map(function (slot, si) {
-                                  var isNew = slot.type ? slot.type === 'new' : true;
-                                  var timeLabel = slot.time || slot.start || '';
-                                  var titleLabel = slot.title || slot.task || '';
-                                  return (
-                                    <div key={si} style={{ padding: '6px 8px', borderRadius: 8, background: isNew ? 'linear-gradient(135deg, ' + T.accentSoft + ', ' + T.roseSoft + ')' : 'rgba(0,0,0,0.03)', border: isNew ? '1px solid ' + T.accentBorder : '1px solid transparent' }}>
-                                      <p style={{ fontSize: 9, color: isNew ? T.accentText : T.inkMuted, fontWeight: 600 }}>{timeLabel}</p>
-                                      <p style={{ fontSize: 10, color: isNew ? T.ink : T.inkMuted, fontWeight: isNew ? 500 : 400, lineHeight: 1.3 }}>{titleLabel}</p>
-                                    </div>
-                                  );
-                                })}
-                              </div>
+                  {/* ═══ VISUAL CALENDAR PREVIEW ═══ */}
+                  {(function () {
+                    // Collect all suggested tasks as calendar items
+                    var suggestedItems = [];
+                    generatedSteps.forEach(function (step) {
+                      step.tasks.forEach(function (t) {
+                        if (t.scheduled_start) {
+                          suggestedItems.push({ title: t.title, start: t.scheduled_start, end: t.scheduled_end || t.scheduled_start, type: 'suggested' });
+                        }
+                      });
+                    });
+
+                    // Compute date range for calendar
+                    var allDates = suggestedItems.map(function (i) { return new Date(i.start); });
+                    var rangeStart = allDates.length > 0 ? new Date(Math.min.apply(null, allDates)) : new Date();
+                    rangeStart.setHours(0, 0, 0, 0);
+
+                    // Build columns based on mode
+                    var numDays = calPreviewMode === 'day' ? 1 : calPreviewMode === '3day' ? 3 : calPreviewMode === 'week' ? 7 : 28;
+                    var baseDate = new Date(calPreviewDate);
+                    baseDate.setHours(0, 0, 0, 0);
+                    // For week mode, start on Monday
+                    if (calPreviewMode === 'week') {
+                      var dow = baseDate.getDay();
+                      baseDate.setDate(baseDate.getDate() - ((dow + 6) % 7));
+                    }
+
+                    var columns = [];
+                    for (var d = 0; d < numDays; d++) {
+                      var colDate = new Date(baseDate);
+                      colDate.setDate(colDate.getDate() + d);
+                      columns.push(colDate);
+                    }
+
+                    // All events: real + suggested
+                    var allEvents = calPreviewEvents.map(function (e) { return { title: e.title, start: e.start, end: e.end, type: 'existing' }; }).concat(suggestedItems);
+
+                    // Hours to display
+                    var HOUR_START = 7;
+                    var HOUR_END = 21;
+                    var HOUR_HEIGHT = calPreviewMode === 'month' ? 0 : 48;
+                    var hours = [];
+                    for (var h = HOUR_START; h <= HOUR_END; h++) hours.push(h);
+
+                    var dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+                    var monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                    var today = new Date(); today.setHours(0, 0, 0, 0);
+
+                    return (
+                      <div style={{ marginTop: 20 }}>
+                        {/* Header */}
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                          <button onClick={function () { setShowCalendar(!showCalendar); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, display: 'flex', alignItems: 'center', gap: 8 }}>
+                            <span style={{ fontSize: 12, fontWeight: 600, color: T.accentText, letterSpacing: 0.3 }}>{'\uD83D\uDCC5'} SCHEDULE PREVIEW</span>
+                            <span style={{ fontSize: 10, color: T.inkMuted, transform: showCalendar ? 'rotate(180deg)' : 'none', transition: 'transform 0.3s' }}>{'\u25BC'}</span>
+                          </button>
+                          {showCalendar && (
+                            <div style={{ display: 'flex', gap: 4 }}>
+                              {[{ id: 'day', label: 'Day' }, { id: '3day', label: '3 Days' }, { id: 'week', label: 'Week' }, { id: 'month', label: 'Month' }].map(function (m) {
+                                var active = calPreviewMode === m.id;
+                                return <button key={m.id} onClick={function () { setCalPreviewMode(m.id); }} style={{ padding: '4px 10px', borderRadius: 8, background: active ? T.accentSoft : 'transparent', border: '1px solid ' + (active ? T.accentBorder : 'transparent'), color: active ? T.accentText : T.inkMuted, fontSize: 11, fontWeight: active ? 600 : 500, cursor: 'pointer' }}>{m.label}</button>;
+                              })}
                             </div>
-                          );
-                        })}
+                          )}
+                        </div>
+
+                        {showCalendar && (
+                          <div style={{ animation: 'fadeUp 0.4s ease both' }}>
+                            {/* Navigation */}
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
+                              <button onClick={function () { var d = new Date(calPreviewDate); d.setDate(d.getDate() - numDays); setCalPreviewDate(d); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: T.inkMuted, padding: '4px 8px' }}>{'\u2039'}</button>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                                <span style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>
+                                  {calPreviewMode === 'month'
+                                    ? monthNames[baseDate.getMonth()] + ' ' + baseDate.getFullYear()
+                                    : monthNames[columns[0].getMonth()] + ' ' + columns[0].getDate() + (numDays > 1 ? ' – ' + (columns[columns.length - 1].getMonth() !== columns[0].getMonth() ? monthNames[columns[columns.length - 1].getMonth()] + ' ' : '') + columns[columns.length - 1].getDate() : '') + ', ' + columns[0].getFullYear()
+                                  }
+                                </span>
+                                <button onClick={function () { setCalPreviewDate(new Date()); }} style={{ padding: '2px 8px', borderRadius: 6, background: T.accentSoft, border: '1px solid ' + T.accentBorder, color: T.accentText, fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>Today</button>
+                              </div>
+                              <button onClick={function () { var d = new Date(calPreviewDate); d.setDate(d.getDate() + numDays); setCalPreviewDate(d); }} style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: 16, color: T.inkMuted, padding: '4px 8px' }}>{'\u203A'}</button>
+                            </div>
+
+                            {/* Month View */}
+                            {calPreviewMode === 'month' && (function () {
+                              var firstDay = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1);
+                              var startPad = (firstDay.getDay() + 6) % 7; // Monday start
+                              var daysInMonth = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0).getDate();
+                              var cells = [];
+                              for (var p = 0; p < startPad; p++) cells.push(null);
+                              for (var dd = 1; dd <= daysInMonth; dd++) cells.push(new Date(baseDate.getFullYear(), baseDate.getMonth(), dd));
+
+                              return (
+                                <div style={{ background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(16px)', borderRadius: 16, border: '1px solid ' + T.border, overflow: 'hidden' }}>
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)', borderBottom: '1px solid ' + T.divider }}>
+                                    {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(function (dn) {
+                                      return <div key={dn} style={{ padding: '8px 0', textAlign: 'center', fontSize: 10, fontWeight: 600, color: T.inkMuted }}>{dn}</div>;
+                                    })}
+                                  </div>
+                                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(7, 1fr)' }}>
+                                    {cells.map(function (cellDate, ci) {
+                                      if (!cellDate) return <div key={'pad_' + ci} style={{ minHeight: 72, borderRight: '1px solid ' + T.divider, borderBottom: '1px solid ' + T.divider }} />;
+                                      var cellStr = cellDate.toISOString().split('T')[0];
+                                      var isToday = cellDate.getTime() === today.getTime();
+                                      var dayEvents = allEvents.filter(function (ev) { return ev.start && ev.start.split('T')[0] === cellStr; });
+                                      return (
+                                        <div key={cellStr} style={{ minHeight: 72, padding: 4, borderRight: '1px solid ' + T.divider, borderBottom: '1px solid ' + T.divider, background: isToday ? 'rgba(155,126,200,0.05)' : 'transparent' }}>
+                                          <p style={{ fontSize: 11, fontWeight: isToday ? 700 : 500, color: isToday ? T.accentText : T.ink, textAlign: 'right', marginBottom: 4, padding: '0 2px' }}>{cellDate.getDate()}</p>
+                                          {dayEvents.slice(0, 3).map(function (ev, ei) {
+                                            var isSuggested = ev.type === 'suggested';
+                                            return (
+                                              <div key={ei} style={{ padding: '2px 4px', borderRadius: 4, marginBottom: 2, fontSize: 9, fontWeight: 500, lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', background: isSuggested ? projectColor + '20' : 'rgba(0,0,0,0.04)', color: isSuggested ? projectColor : T.inkSoft, borderLeft: '2px solid ' + (isSuggested ? projectColor : T.inkFaint) }}>
+                                                {ev.title}
+                                              </div>
+                                            );
+                                          })}
+                                          {dayEvents.length > 3 && <p style={{ fontSize: 8, color: T.inkMuted, padding: '0 4px' }}>+{dayEvents.length - 3} more</p>}
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                </div>
+                              );
+                            })()}
+
+                            {/* Day / 3-Day / Week View (time grid) */}
+                            {calPreviewMode !== 'month' && (
+                              <div style={{ background: 'rgba(255,255,255,0.5)', backdropFilter: 'blur(16px)', borderRadius: 16, border: '1px solid ' + T.border, overflow: 'hidden' }}>
+                                {/* Column headers */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '42px repeat(' + columns.length + ', 1fr)', borderBottom: '1px solid ' + T.divider }}>
+                                  <div style={{ padding: 6 }} />
+                                  {columns.map(function (col) {
+                                    var colIsToday = col.getTime() === today.getTime();
+                                    return (
+                                      <div key={col.toISOString()} style={{ padding: '8px 4px', textAlign: 'center', borderLeft: '1px solid ' + T.divider, background: colIsToday ? 'rgba(155,126,200,0.06)' : 'transparent' }}>
+                                        <p style={{ fontSize: 10, fontWeight: 600, color: colIsToday ? T.accentText : T.inkMuted }}>{dayNames[col.getDay()]}</p>
+                                        <p style={{ fontSize: 16, fontWeight: colIsToday ? 700 : 500, color: colIsToday ? T.accentText : T.ink }}>{col.getDate()}</p>
+                                      </div>
+                                    );
+                                  })}
+                                </div>
+
+                                {/* Time grid */}
+                                <div style={{ display: 'grid', gridTemplateColumns: '42px repeat(' + columns.length + ', 1fr)', maxHeight: 480, overflowY: 'auto' }}>
+                                  {/* Hour labels + cells */}
+                                  {hours.map(function (hr) {
+                                    var hrLabel = hr === 0 ? '12 AM' : hr < 12 ? hr + ' AM' : hr === 12 ? '12 PM' : (hr - 12) + ' PM';
+                                    return [
+                                      <div key={'lbl_' + hr} style={{ padding: '2px 4px', fontSize: 9, color: T.inkMuted, textAlign: 'right', height: HOUR_HEIGHT, borderBottom: '1px solid ' + T.divider, display: 'flex', alignItems: 'flex-start', justifyContent: 'flex-end' }}>{hrLabel}</div>
+                                    ].concat(columns.map(function (col) {
+                                      var colStr = col.toISOString().split('T')[0];
+                                      var colIsToday = col.getTime() === today.getTime();
+                                      // Find events that overlap this hour
+                                      var hourEvents = allEvents.filter(function (ev) {
+                                        if (!ev.start) return false;
+                                        var evDate = ev.start.split('T')[0];
+                                        if (evDate !== colStr) return false;
+                                        var evHour = new Date(ev.start).getHours();
+                                        var evEndHour = ev.end ? new Date(ev.end).getHours() + (new Date(ev.end).getMinutes() > 0 ? 1 : 0) : evHour + 1;
+                                        return hr >= evHour && hr < evEndHour;
+                                      });
+                                      // Only render at the start hour
+                                      var startsThisHour = hourEvents.filter(function (ev) {
+                                        return new Date(ev.start).getHours() === hr;
+                                      });
+                                      return (
+                                        <div key={colStr + '_' + hr} style={{ height: HOUR_HEIGHT, borderLeft: '1px solid ' + T.divider, borderBottom: '1px solid ' + T.divider, position: 'relative', background: colIsToday ? 'rgba(155,126,200,0.02)' : 'transparent' }}>
+                                          {startsThisHour.map(function (ev, ei) {
+                                            var evStart = new Date(ev.start);
+                                            var evEnd = ev.end ? new Date(ev.end) : new Date(evStart.getTime() + 3600000);
+                                            var durHrs = Math.max(0.5, (evEnd - evStart) / 3600000);
+                                            var topOffset = (evStart.getMinutes() / 60) * HOUR_HEIGHT;
+                                            var blockHeight = Math.max(20, durHrs * HOUR_HEIGHT - 2);
+                                            var isSuggested = ev.type === 'suggested';
+                                            var startLabel = evStart.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                                            return (
+                                              <div key={ei} style={{ position: 'absolute', top: topOffset, left: 2, right: 2, height: blockHeight, borderRadius: 6, padding: '3px 5px', overflow: 'hidden', fontSize: 10, lineHeight: 1.3, background: isSuggested ? 'linear-gradient(135deg, ' + projectColor + '25, ' + projectColor + '15)' : 'rgba(122,171,200,0.15)', border: '1px solid ' + (isSuggested ? projectColor + '40' : 'rgba(122,171,200,0.25)'), color: isSuggested ? projectColor : T.sky, zIndex: 2 }}>
+                                                <p style={{ fontWeight: 600, fontSize: 9, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{ev.title}</p>
+                                                {blockHeight > 28 && <p style={{ fontSize: 8, opacity: 0.7, marginTop: 1 }}>{startLabel}</p>}
+                                              </div>
+                                            );
+                                          })}
+                                        </div>
+                                      );
+                                    }));
+                                  })}
+                                </div>
+                              </div>
+                            )}
+
+                            {/* Legend */}
+                            <div style={{ display: 'flex', gap: 16, marginTop: 10, justifyContent: 'center' }}>
+                              <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                <div style={{ width: 10, height: 10, borderRadius: 3, background: projectColor + '30', border: '1px solid ' + projectColor + '50' }} />
+                                <span style={{ fontSize: 10, color: T.inkMuted }}>New tasks</span>
+                              </div>
+                              {calPreviewEvents.length > 0 && (
+                                <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
+                                  <div style={{ width: 10, height: 10, borderRadius: 3, background: 'rgba(122,171,200,0.2)', border: '1px solid rgba(122,171,200,0.35)' }} />
+                                  <span style={{ fontSize: 10, color: T.inkMuted }}>Existing events</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
+                    );
+                  })()}
 
                   {/* Approve All + Create */}
                   <div style={{ marginTop: 20, display: 'flex', gap: 10, animation: 'fadeUp 0.4s ease 0.5s both' }}>
