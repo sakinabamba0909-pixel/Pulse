@@ -23,6 +23,25 @@ const C = {
   divider: 'rgba(0,0,0,0.04)',
 }
 
+const RSS_FEEDS: Record<string, string[]> = {
+  cnn: [
+    'https://rss.cnn.com/rss/cnn_topstories.rss',
+    'https://rss.cnn.com/rss/edition.rss',
+  ],
+  bbc: ['https://feeds.bbci.co.uk/news/rss.xml'],
+  npr: ['https://feeds.npr.org/1001/rss.xml'],
+  guardian: ['https://www.theguardian.com/world/rss'],
+  nyt: ['https://rss.nytimes.com/services/xml/rss/nyt/HomePage.xml'],
+  ap: ['https://rsshub.app/apnews/topics/apf-topnews'],
+  reuters: ['https://www.reutersagency.com/feed/?taxonomy=best-sectors&post_type=best'],
+  wsj: ['https://feeds.content.dowjones.io/public/rss/mw_topstories'],
+}
+
+const SOURCE_NAMES: Record<string, string> = {
+  ap: 'AP News', reuters: 'Reuters', bbc: 'BBC', nyt: 'NY Times',
+  cnn: 'CNN', wsj: 'WSJ', npr: 'NPR', guardian: 'The Guardian',
+}
+
 function timeAgo(dateStr: string | null): string {
   if (!dateStr) return ''
   const diff = Date.now() - new Date(dateStr).getTime()
@@ -35,6 +54,28 @@ function timeAgo(dateStr: string | null): string {
   return `${days}d ago`
 }
 
+async function fetchFeedViaProxy(feedUrl: string, sourceId: string, sourceName: string): Promise<Article[]> {
+  const proxyUrl = `https://api.rss2json.com/v1/api.json?rss_url=${encodeURIComponent(feedUrl)}`
+  try {
+    const res = await fetch(proxyUrl)
+    if (!res.ok) return []
+    const data = await res.json()
+    if (data.status !== 'ok' || !Array.isArray(data.items)) return []
+    return data.items.map((item: any) => ({
+      title: (item.title || '').replace(/<[^>]+>/g, '').trim(),
+      link: item.link || item.guid || '',
+      source: sourceName,
+      sourceId,
+      pubDate: item.pubDate || null,
+      description: item.description
+        ? item.description.replace(/<[^>]+>/g, '').replace(/&[a-z]+;/gi, ' ').trim().slice(0, 200)
+        : null,
+    })).filter((a: Article) => a.title && a.link)
+  } catch {
+    return []
+  }
+}
+
 export default function WorldSection({ tone, sectionLabel }: { tone: string; sectionLabel: string }) {
   const [articles, setArticles] = useState<Article[]>([])
   const [loading, setLoading] = useState(true)
@@ -42,11 +83,51 @@ export default function WorldSection({ tone, sectionLabel }: { tone: string; sec
   const [newsTone, setNewsTone] = useState<string>('balanced')
 
   useEffect(() => {
+    // Step 1: get user preferences from our API
     fetch('/api/news/headlines')
       .then(r => r.json())
-      .then(data => {
-        setArticles(data.articles || [])
+      .then(async (data) => {
         if (data.tone) setNewsTone(data.tone)
+
+        // If server already returned articles, use them
+        if (data.articles && data.articles.length > 0) {
+          setArticles(data.articles)
+          setLoading(false)
+          return
+        }
+
+        // Step 2: if server returned no articles, fetch client-side via rss2json
+        const outlets: string[] = data.outlets?.map((o: any) => typeof o === 'string' ? o : o.id) || []
+        if (outlets.length === 0) {
+          setLoading(false)
+          return
+        }
+
+        const allArticles: Article[] = []
+        const fetches = outlets.map(async (outletId) => {
+          const feeds = RSS_FEEDS[outletId]
+          if (!feeds) return
+          const sourceName = SOURCE_NAMES[outletId] || outletId
+          for (const feedUrl of feeds) {
+            const result = await fetchFeedViaProxy(feedUrl, outletId, sourceName)
+            if (result.length > 0) {
+              allArticles.push(...result)
+              return
+            }
+          }
+        })
+
+        await Promise.allSettled(fetches)
+
+        // Sort by pubDate newest first, take top 12
+        allArticles.sort((a, b) => {
+          if (!a.pubDate && !b.pubDate) return 0
+          if (!a.pubDate) return 1
+          if (!b.pubDate) return -1
+          return new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime()
+        })
+
+        setArticles(allArticles.slice(0, 12))
         setLoading(false)
       })
       .catch(() => { setError(true); setLoading(false) })
