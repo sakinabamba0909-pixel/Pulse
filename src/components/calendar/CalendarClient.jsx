@@ -431,6 +431,402 @@ function EventDetailPanel({ event, projects, onClose, onRefresh }) {
   );
 }
 
+/* ═══ ADD EVENT MODAL ═══ */
+function AddEventModal({ slotContext, projects, calendarConnected, onClose, onRefresh }) {
+  var [tab, setTab] = useState('voice'); // 'voice' | 'form'
+  var [saving, setSaving] = useState(false);
+
+  // Voice tab state
+  var [voiceText, setVoiceText] = useState('');
+  var [voiceParsing, setVoiceParsing] = useState(false);
+  var [voiceParsed, setVoiceParsed] = useState(null); // { tasks, speech_reply }
+  var [voiceError, setVoiceError] = useState(null);
+
+  // Form tab state — pre-fill from slotContext
+  var defaultDate = slotContext ? slotContext.date.toISOString().split('T')[0] : new Date().toISOString().split('T')[0];
+  var defaultStartH = slotContext ? Math.floor(slotContext.hour) : 9;
+  var defaultStartM = slotContext ? (slotContext.hour % 1 !== 0 ? '30' : '00') : '00';
+  var defaultStart = defaultStartH.toString().padStart(2, '0') + ':' + defaultStartM;
+  var endH = slotContext ? Math.floor(slotContext.hour + 1) : 10;
+  var defaultEnd = endH.toString().padStart(2, '0') + ':' + defaultStartM;
+
+  var [formTitle, setFormTitle] = useState('');
+  var [formDate, setFormDate] = useState(defaultDate);
+  var [formStart, setFormStart] = useState(defaultStart);
+  var [formEnd, setFormEnd] = useState(defaultEnd);
+  var [formProject, setFormProject] = useState('');
+  var [formDuration, setFormDuration] = useState('60');
+
+  // Voice: parse text with AI
+  async function handleVoiceParse() {
+    if (!voiceText.trim()) return;
+    setVoiceParsing(true);
+    setVoiceError(null);
+    try {
+      var res = await fetch('/api/tasks/parse', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: voiceText,
+          timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+          current_datetime: new Date().toISOString(),
+          existing_projects: projects,
+          existing_relationships: [],
+        }),
+      });
+      var data = await res.json();
+      if (data.error) throw new Error(data.error);
+      setVoiceParsed(data);
+    } catch (err) {
+      setVoiceError(err.message || 'Failed to parse');
+    }
+    setVoiceParsing(false);
+  }
+
+  // Voice: save all parsed tasks
+  async function handleVoiceSave() {
+    if (!voiceParsed || !voiceParsed.tasks || voiceParsed.tasks.length === 0) return;
+    setSaving(true);
+    var created = [];
+    for (var i = 0; i < voiceParsed.tasks.length; i++) {
+      var t = voiceParsed.tasks[i];
+      var body = {
+        title: t.title,
+        status: 'pending',
+        due_at: t.due_at || null,
+        priority: t.priority || 'normal',
+        duration_minutes: t.duration_minutes || 60,
+        project_id: t.project_id || null,
+      };
+      // If we have a slot context and only one task, schedule it there
+      if (slotContext && voiceParsed.tasks.length === 1) {
+        var slotStart = new Date(slotContext.date);
+        slotStart.setHours(Math.floor(slotContext.hour), (slotContext.hour % 1) * 60, 0, 0);
+        var dur = t.duration_minutes || 60;
+        var slotEnd = new Date(slotStart.getTime() + dur * 60000);
+        body.scheduled_start = slotStart.toISOString();
+        body.scheduled_end = slotEnd.toISOString();
+      }
+      try {
+        var res = await fetch('/api/tasks', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        var task = await res.json();
+        if (task.id) created.push(task);
+      } catch (e) { /* skip failed */ }
+    }
+    // Sync to Google Calendar if connected
+    if (calendarConnected && created.length > 0) {
+      try {
+        await fetch('/api/calendar/events/create', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ tasks: created }),
+        });
+      } catch (e) { /* non-blocking */ }
+    }
+    setSaving(false);
+    onRefresh();
+  }
+
+  // Form: create single task
+  async function handleFormSave() {
+    if (!formTitle.trim()) return;
+    setSaving(true);
+    var scheduledStart = new Date(formDate + 'T' + formStart + ':00');
+    var scheduledEnd = new Date(formDate + 'T' + formEnd + ':00');
+    var dur = Math.round((scheduledEnd - scheduledStart) / 60000);
+    if (dur <= 0) dur = parseInt(formDuration) || 60;
+    var body = {
+      title: formTitle,
+      status: 'pending',
+      due_at: scheduledStart.toISOString(),
+      scheduled_start: scheduledStart.toISOString(),
+      scheduled_end: scheduledEnd.toISOString(),
+      duration_minutes: dur,
+      priority: 'normal',
+    };
+    if (formProject) body.project_id = formProject;
+    try {
+      var res = await fetch('/api/tasks', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      var task = await res.json();
+      // Sync to Google Calendar
+      if (calendarConnected && task.id) {
+        try {
+          await fetch('/api/calendar/events/create', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ tasks: [task] }),
+          });
+        } catch (e) { /* non-blocking */ }
+      }
+    } catch (e) { /* skip */ }
+    setSaving(false);
+    onRefresh();
+  }
+
+  var inputStyle = {
+    width: '100%', fontSize: 13, color: T.ink,
+    background: 'rgba(0,0,0,0.03)', border: '1px solid ' + T.border,
+    borderRadius: 10, padding: '10px 14px', boxSizing: 'border-box',
+    fontFamily: "'Outfit', sans-serif", transition: 'border 0.2s',
+  };
+
+  return (
+    <div style={{
+      position: 'fixed', inset: 0, zIndex: 40,
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+    }}>
+      {/* Backdrop */}
+      <div onClick={onClose} style={{
+        position: 'absolute', inset: 0,
+        background: 'rgba(45,42,38,0.25)', backdropFilter: 'blur(8px)',
+      }} />
+
+      {/* Modal */}
+      <div style={{
+        position: 'relative', width: 440, maxHeight: '80vh',
+        background: 'rgba(255,255,255,0.88)', backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)',
+        borderRadius: 20, border: '1px solid ' + T.border,
+        boxShadow: '0 20px 60px rgba(0,0,0,0.10), 0 0 40px rgba(155,126,200,0.08)',
+        display: 'flex', flexDirection: 'column', overflow: 'hidden',
+        animation: 'slideUp 0.3s cubic-bezier(0.4,0,0.2,1)',
+      }}>
+        {/* Header */}
+        <div style={{
+          padding: '20px 24px 0', display: 'flex', alignItems: 'center', gap: 10,
+        }}>
+          <Orb size={20} />
+          <h3 style={{
+            fontFamily: "'Fraunces', serif", fontSize: 18, fontWeight: 500,
+            color: T.ink, flex: 1, letterSpacing: -0.3,
+          }}>New event</h3>
+          <button onClick={onClose} style={{
+            width: 30, height: 30, borderRadius: '50%',
+            background: 'rgba(0,0,0,0.04)', border: 'none',
+            fontSize: 14, color: T.inkMuted, cursor: 'pointer',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+          }}>{'\u2715'}</button>
+        </div>
+
+        {/* Tab switcher */}
+        <div style={{
+          display: 'flex', gap: 3, margin: '16px 24px 0',
+          background: 'rgba(0,0,0,0.04)', borderRadius: 12, padding: 3,
+        }}>
+          {[{ id: 'voice', label: '\u2726 Voice', desc: 'Describe naturally' }, { id: 'form', label: '\u270E Form', desc: 'Manual entry' }].map(function (t) {
+            var active = tab === t.id;
+            return (
+              <button key={t.id} onClick={function () { setTab(t.id); }} style={{
+                flex: 1, padding: '9px 10px', borderRadius: 10,
+                background: active ? 'rgba(255,255,255,0.85)' : 'transparent',
+                border: active ? '1px solid ' + T.accentBorder : '1px solid transparent',
+                fontSize: 12, fontWeight: active ? 600 : 400,
+                color: active ? T.accentText : T.inkMuted,
+                cursor: 'pointer', textAlign: 'center',
+                boxShadow: active ? T.shadow : 'none', transition: 'all 0.2s',
+              }}>
+                <span style={{ display: 'block' }}>{t.label}</span>
+                <span style={{ fontSize: 10, color: T.inkFaint, fontWeight: 400 }}>{t.desc}</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Body */}
+        <div style={{ flex: 1, overflowY: 'auto', padding: '16px 24px 20px' }}>
+
+          {/* ═══ VOICE TAB ═══ */}
+          {tab === 'voice' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              <div style={{ position: 'relative' }}>
+                <textarea
+                  value={voiceText}
+                  onChange={function (e) { setVoiceText(e.target.value); }}
+                  placeholder={'Describe your event naturally…\n\ne.g. "Meeting with Sarah tomorrow at 2pm for 30 minutes"'}
+                  rows={4}
+                  onKeyDown={function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleVoiceParse(); } }}
+                  style={{
+                    ...inputStyle,
+                    resize: 'none', lineHeight: 1.5, minHeight: 100,
+                  }}
+                />
+                <div style={{
+                  position: 'absolute', bottom: 8, right: 8,
+                  display: 'flex', gap: 6,
+                }}>
+                  <button onClick={handleVoiceParse} disabled={voiceParsing || !voiceText.trim()} style={{
+                    padding: '6px 14px', borderRadius: 8,
+                    background: voiceText.trim() ? 'linear-gradient(135deg,' + T.accent + ',' + T.rose + ')' : 'rgba(0,0,0,0.06)',
+                    color: voiceText.trim() ? '#FFF' : T.inkFaint,
+                    border: 'none', fontSize: 11, fontWeight: 600, cursor: voiceText.trim() ? 'pointer' : 'default',
+                    opacity: voiceParsing ? 0.6 : 1,
+                  }}>{voiceParsing ? 'Parsing…' : 'Parse \u2192'}</button>
+                </div>
+              </div>
+
+              {voiceError && (
+                <div style={{ padding: '10px 14px', borderRadius: 10, background: T.urgentSoft, border: '1px solid ' + T.urgent + '30' }}>
+                  <p style={{ fontSize: 12, color: T.urgent, fontWeight: 500 }}>{voiceError}</p>
+                </div>
+              )}
+
+              {voiceParsed && (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                  {/* AI reply */}
+                  {voiceParsed.speech_reply && (
+                    <div style={{
+                      display: 'flex', alignItems: 'center', gap: 8,
+                      padding: '10px 14px', borderRadius: 12,
+                      background: T.accentSoft, border: '1px solid ' + T.accentBorder,
+                    }}>
+                      <Orb size={16} />
+                      <p style={{ fontSize: 12, color: T.accentText, fontWeight: 500, fontStyle: 'italic' }}>
+                        {voiceParsed.speech_reply}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Parsed tasks preview */}
+                  {voiceParsed.tasks && voiceParsed.tasks.map(function (t, idx) {
+                    return (
+                      <div key={idx} style={{
+                        padding: '12px 14px', borderRadius: 12,
+                        background: 'rgba(255,255,255,0.6)', border: '1px solid ' + T.border,
+                      }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 6 }}>
+                          <div style={{
+                            width: 7, height: 7, borderRadius: '50%', background: T.accent, flexShrink: 0,
+                          }} />
+                          <p style={{ fontSize: 13, fontWeight: 600, color: T.ink }}>{t.title}</p>
+                        </div>
+                        <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                          {t.due_at && (
+                            <span style={{
+                              fontSize: 10, padding: '3px 8px', borderRadius: 6,
+                              background: T.skySoft, border: '1px solid ' + T.sky + '25',
+                              color: T.sky, fontWeight: 600,
+                            }}>
+                              {new Date(t.due_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', hour: 'numeric', minute: '2-digit' })}
+                            </span>
+                          )}
+                          {t.duration_minutes && (
+                            <span style={{
+                              fontSize: 10, padding: '3px 8px', borderRadius: 6,
+                              background: T.peachSoft, border: '1px solid ' + T.peach + '25',
+                              color: T.peach, fontWeight: 600,
+                            }}>{t.duration_minutes} min</span>
+                          )}
+                          {t.priority && t.priority !== 'normal' && (
+                            <span style={{
+                              fontSize: 10, padding: '3px 8px', borderRadius: 6,
+                              background: t.priority === 'urgent' ? T.urgentSoft : T.sageSoft,
+                              border: '1px solid ' + (t.priority === 'urgent' ? T.urgent : T.sage) + '25',
+                              color: t.priority === 'urgent' ? T.urgent : T.sage, fontWeight: 600,
+                            }}>{t.priority}</span>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {/* Save button */}
+                  <button onClick={handleVoiceSave} disabled={saving} style={{
+                    padding: '12px 0', borderRadius: 12, width: '100%',
+                    background: 'linear-gradient(135deg,' + T.accent + ',' + T.rose + ')',
+                    color: '#FFF', border: 'none', fontSize: 14, fontWeight: 600,
+                    boxShadow: '0 4px 16px rgba(155,126,200,0.3)',
+                    cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.6 : 1,
+                  }}>
+                    {saving ? 'Creating…' : 'Add ' + voiceParsed.tasks.length + ' event' + (voiceParsed.tasks.length > 1 ? 's' : '') + ' \u2192'}
+                  </button>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* ═══ FORM TAB ═══ */}
+          {tab === 'form' && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+              {/* Title */}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: T.inkMuted, display: 'block', marginBottom: 5, letterSpacing: 0.3 }}>EVENT TITLE</label>
+                <input
+                  value={formTitle}
+                  onChange={function (e) { setFormTitle(e.target.value); }}
+                  placeholder="What's happening?"
+                  autoFocus
+                  style={inputStyle}
+                />
+              </div>
+
+              {/* Date */}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: T.inkMuted, display: 'block', marginBottom: 5, letterSpacing: 0.3 }}>DATE</label>
+                <input type="date" value={formDate} onChange={function (e) { setFormDate(e.target.value); }} style={inputStyle} />
+              </div>
+
+              {/* Time row */}
+              <div style={{ display: 'flex', gap: 10 }}>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: T.inkMuted, display: 'block', marginBottom: 5, letterSpacing: 0.3 }}>START</label>
+                  <input type="time" value={formStart} onChange={function (e) { setFormStart(e.target.value); }} style={inputStyle} />
+                </div>
+                <div style={{ flex: 1 }}>
+                  <label style={{ fontSize: 11, fontWeight: 600, color: T.inkMuted, display: 'block', marginBottom: 5, letterSpacing: 0.3 }}>END</label>
+                  <input type="time" value={formEnd} onChange={function (e) { setFormEnd(e.target.value); }} style={inputStyle} />
+                </div>
+              </div>
+
+              {/* Project */}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 600, color: T.inkMuted, display: 'block', marginBottom: 5, letterSpacing: 0.3 }}>PROJECT</label>
+                <select value={formProject} onChange={function (e) { setFormProject(e.target.value); }} style={{ ...inputStyle, appearance: 'auto' }}>
+                  <option value="">No project</option>
+                  {projects.map(function (p) {
+                    return <option key={p.id} value={p.id}>{p.name}</option>;
+                  })}
+                </select>
+              </div>
+
+              {/* Google Calendar sync note */}
+              {calendarConnected && (
+                <div style={{
+                  display: 'flex', alignItems: 'center', gap: 8,
+                  padding: '8px 12px', borderRadius: 10,
+                  background: 'rgba(0,0,0,0.02)', border: '1px solid ' + T.divider,
+                }}>
+                  <span style={{ fontSize: 13 }}>📅</span>
+                  <span style={{ fontSize: 11, color: T.inkMuted, fontWeight: 500 }}>Will sync to Google Calendar</span>
+                </div>
+              )}
+
+              {/* Save */}
+              <button onClick={handleFormSave} disabled={saving || !formTitle.trim()} style={{
+                padding: '12px 0', borderRadius: 12, width: '100%',
+                background: formTitle.trim() ? 'linear-gradient(135deg,' + T.accent + ',' + T.rose + ')' : 'rgba(0,0,0,0.06)',
+                color: formTitle.trim() ? '#FFF' : T.inkFaint,
+                border: 'none', fontSize: 14, fontWeight: 600,
+                boxShadow: formTitle.trim() ? '0 4px 16px rgba(155,126,200,0.3)' : 'none',
+                cursor: formTitle.trim() ? 'pointer' : 'default',
+                opacity: saving ? 0.6 : 1,
+              }}>
+                {saving ? 'Creating…' : 'Add event \u2192'}
+              </button>
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ═══ MAIN COMPONENT ═══ */
 export default function CalendarClient({ tasks, projects, calendarConnected }) {
   var router = useRouter();
@@ -863,7 +1259,16 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
         />
       )}
 
-      {/* Add event modal placeholder — step 5 */}
+      {/* ═══ ADD EVENT MODAL ═══ */}
+      {showAddModal && (
+        <AddEventModal
+          slotContext={slotContext}
+          projects={projects}
+          calendarConnected={calendarConnected}
+          onClose={closeModal}
+          onRefresh={function () { closeModal(); router.refresh(); }}
+        />
+      )}
       {/* Pulse bar placeholder — step 6 */}
     </div>
   );
