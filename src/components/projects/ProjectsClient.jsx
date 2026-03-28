@@ -360,6 +360,7 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
   var [transcript, setTranscript] = useState('');
   var [projectName, setProjectName] = useState('');
   var [projectColor, setProjectColor] = useState(hueToHSL(Math.random() * 360));
+  var [projectDeadline, setProjectDeadline] = useState('');
   var [projectDesc, setProjectDesc] = useState('');
   var [importedContext, setImportedContext] = useState('');
   var [aiTyping, setAiTyping] = useState(false);
@@ -643,6 +644,7 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
         name: projectName,
         description: projectDesc || projectName,
         context: importedContext || undefined,
+        deadline: projectDeadline || undefined,
         scheduling_preferences: buildSchedPrefs(),
         existing_tasks: tasks.filter(function (t) { return t.status !== 'done'; }),
         calendar_mode: calendarConnected ? 'google' : calendarChoice === 'pulse' ? 'pulse' : null,
@@ -741,6 +743,7 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
         color: projectColor,
         scheduling_preferences: buildSchedPrefs(),
         description: projectDesc || projectName,
+        target_date: projectDeadline || undefined,
       }),
     })
       .then(function (res) { return res.json(); })
@@ -842,6 +845,23 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
       });
   };
 
+  var [confirmDelete, setConfirmDelete] = useState(null); // project id or null
+
+  var deleteProject = function (projectId) {
+    fetch('/api/projects/' + projectId, { method: 'DELETE' })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        if (data.error) {
+          setAiMessage('Error: ' + data.error);
+          return;
+        }
+        setConfirmDelete(null);
+        setSelectedProject(null);
+        setView('list');
+        router.refresh();
+      });
+  };
+
   var openProject = function (p) {
     setSelectedProject(p);
     setView('detail');
@@ -878,10 +898,9 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
   };
 
   return (
-    <div style={{ display: 'flex', minHeight: '100vh', fontFamily: "'Outfit', sans-serif", color: T.ink }}>
+    <div style={{ fontFamily: "'Outfit', sans-serif", color: T.ink, minHeight: '100vh', position: 'relative' }}>
       <link href={FONT_URL} rel="stylesheet" />
       <style>{
-        '* { box-sizing: border-box; margin: 0; padding: 0; }' +
         '::selection { background: ' + T.accentMid + '; color: ' + T.accentText + '; }' +
         '::-webkit-scrollbar { width: 4px; }' +
         '::-webkit-scrollbar-thumb { background: ' + T.inkFaint + '; border-radius: 2px; }' +
@@ -895,31 +914,8 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
 
       <GanzfeldLight />
 
-      {/* SIDEBAR */}
-      <aside style={{ width: 230, flexShrink: 0, background: 'rgba(255,255,255,0.35)', backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)', borderRight: '1px solid rgba(255,255,255,0.3)', display: 'flex', flexDirection: 'column', position: 'fixed', top: 0, left: 0, bottom: 0, zIndex: 20 }}>
-        <div style={{ padding: '32px 24px 24px', display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(0,0,0,0.04)' }}>
-          <Orb size={28} />
-          <span style={{ fontFamily: "'Fraunces', serif", fontSize: 22, fontWeight: 400, letterSpacing: -0.5 }}>Pulse</span>
-        </div>
-        <nav style={{ flex: 1, padding: '16px 14px', display: 'flex', flexDirection: 'column', gap: 2 }}>
-          {[{ id: 'home', label: 'Home' }, { id: 'tasks', label: 'Tasks' }, { id: 'goals', label: 'Goals' }, { id: 'people', label: 'People' }, { id: 'reminders', label: 'Reminders' }, { id: 'projects', label: 'Projects' }].map(function (n) {
-            var active = n.id === 'projects';
-            return (
-              <button key={n.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '11px 16px', borderRadius: 12, background: active ? 'rgba(155,126,200,0.08)' : 'transparent', border: active ? '1px solid rgba(155,126,200,0.12)' : '1px solid transparent', cursor: 'pointer', width: '100%', transition: 'all 0.4s' }}>
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: active ? T.accent : T.inkFaint, boxShadow: active ? '0 0 10px rgba(155,126,200,0.5)' : 'none' }} />
-                <span style={{ fontSize: 14.5, fontWeight: active ? 600 : 400, color: active ? T.accentText : T.inkSoft }}>{n.label}</span>
-              </button>
-            );
-          })}
-        </nav>
-        <div style={{ padding: '18px 20px', borderTop: '1px solid rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, rgba(155,126,200,0.12), rgba(212,132,154,0.08))', border: '1.5px solid rgba(155,126,200,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12, fontWeight: 700, color: T.accent }}>S</div>
-          <span style={{ fontSize: 13, fontWeight: 500, color: T.inkSoft }}>Sakina</span>
-        </div>
-      </aside>
-
       {/* MAIN */}
-      <main style={{ flex: 1, marginLeft: 230, padding: '0 0 120px', position: 'relative', zIndex: 1 }}>
+      <div style={{ padding: '0 0 120px', position: 'relative', zIndex: 1 }}>
         <div style={{ maxWidth: 760, margin: '0 auto', padding: '0 36px' }}>
 
           {/* ═══ PROJECT LIST VIEW ═══ */}
@@ -952,33 +948,47 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
             {/* Project Cards */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {projectViews.map(function (p, i) {
+                var isDeleting = confirmDelete === p.id;
                 return (
-                  <button key={p.id} onClick={function () { openProject(p); }} style={{
-                    width: '100%', textAlign: 'left', padding: '20px 22px', borderRadius: 18,
+                  <div key={p.id} style={{
+                    width: '100%', textAlign: 'left', borderRadius: 18,
                     background: 'rgba(255,255,255,0.52)', backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-                    border: '1px solid ' + T.border, cursor: 'pointer',
+                    border: '1px solid ' + (isDeleting ? T.urgent + '40' : T.border),
                     boxShadow: T.shadow, transition: 'all 0.4s cubic-bezier(0.4,0,0.2,1)',
-                    animation: 'fadeUp 0.5s ease ' + (0.15 + i * 0.08) + 's both',
+                    animation: 'fadeUp 0.5s ease ' + (0.15 + i * 0.08) + 's both', overflow: 'hidden',
                   }}>
-                    <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
-                      <div style={{ width: 10, height: 10, borderRadius: 4, background: p.color, boxShadow: '0 0 8px ' + p.color + '40', flexShrink: 0 }} />
-                      <div style={{ flex: 1 }}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
-                          <span style={{ fontSize: 16, fontWeight: 600 }}>{p.name}</span>
-                          <span style={{ fontSize: 11, color: T.inkMuted }}>{p.completedSteps}/{p.totalSteps} steps</span>
+                    <button onClick={function () { openProject(p); }} style={{ width: '100%', textAlign: 'left', padding: '20px 22px', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: 4, background: p.color, boxShadow: '0 0 8px ' + p.color + '40', flexShrink: 0 }} />
+                        <div style={{ flex: 1 }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 4 }}>
+                            <span style={{ fontSize: 16, fontWeight: 600 }}>{p.name}</span>
+                            <span style={{ fontSize: 11, color: T.inkMuted }}>{p.completedSteps}/{p.totalSteps} steps</span>
+                          </div>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                            <span style={{ fontSize: 12, color: T.inkMuted }}>{p.currentStep}</span>
+                            <span style={{ fontSize: 11, color: p.color, fontWeight: 500 }}>{p.progress}%</span>
+                          </div>
                         </div>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-                          <span style={{ fontSize: 12, color: T.inkMuted }}>{p.currentStep}</span>
-                          <span style={{ fontSize: 11, color: p.color, fontWeight: 500 }}>{p.progress}%</span>
-                        </div>
+                        <Sparkline data={p.sparkline} color={p.color} />
                       </div>
-                      <Sparkline data={p.sparkline} color={p.color} />
-                    </div>
-                    {/* Progress bar */}
-                    <div style={{ height: 3, background: 'rgba(0,0,0,0.04)', borderRadius: 2, marginTop: 14 }}>
-                      <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, ' + p.color + ', ' + p.color + '80)', width: p.progress + '%', transition: 'width 0.6s', boxShadow: '0 0 8px ' + p.color + '30' }} />
-                    </div>
-                  </button>
+                      <div style={{ height: 3, background: 'rgba(0,0,0,0.04)', borderRadius: 2, marginTop: 14 }}>
+                        <div style={{ height: '100%', borderRadius: 2, background: 'linear-gradient(90deg, ' + p.color + ', ' + p.color + '80)', width: p.progress + '%', transition: 'width 0.6s', boxShadow: '0 0 8px ' + p.color + '30' }} />
+                      </div>
+                    </button>
+                    {/* Delete zone */}
+                    {isDeleting ? (
+                      <div style={{ padding: '10px 22px 14px', display: 'flex', alignItems: 'center', gap: 10, borderTop: '1px solid ' + T.divider, animation: 'fadeUp 0.2s ease both' }}>
+                        <span style={{ fontSize: 12, color: T.urgent, fontWeight: 500 }}>Delete this project and all its tasks?</span>
+                        <button onClick={function () { deleteProject(p.id); }} style={{ marginLeft: 'auto', padding: '5px 14px', borderRadius: 8, background: T.urgent, color: '#FFF', border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Delete</button>
+                        <button onClick={function () { setConfirmDelete(null); }} style={{ padding: '5px 12px', borderRadius: 8, background: 'transparent', border: '1px solid ' + T.border, color: T.inkMuted, fontSize: 11, cursor: 'pointer' }}>Cancel</button>
+                      </div>
+                    ) : (
+                      <div style={{ padding: '0 22px 10px', display: 'flex', justifyContent: 'flex-end' }}>
+                        <button onClick={function (e) { e.stopPropagation(); setConfirmDelete(p.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '4px 8px', fontSize: 11, color: T.inkFaint, transition: 'color 0.2s' }} title="Delete project">{'\uD83D\uDDD1'}</button>
+                      </div>
+                    )}
+                  </div>
                 );
               })}
             </div>
@@ -991,7 +1001,16 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
 
               <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 8 }}>
                 <div style={{ width: 14, height: 14, borderRadius: 5, background: selectedProject.color, boxShadow: '0 0 10px ' + selectedProject.color + '50' }} />
-                <h1 style={{ fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 400, letterSpacing: -0.5 }}>{selectedProject.name}</h1>
+                <h1 style={{ flex: 1, fontFamily: "'Fraunces', serif", fontSize: 32, fontWeight: 400, letterSpacing: -0.5 }}>{selectedProject.name}</h1>
+                {confirmDelete === selectedProject.id ? (
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                    <span style={{ fontSize: 11, color: T.urgent, fontWeight: 500 }}>Delete?</span>
+                    <button onClick={function () { deleteProject(selectedProject.id); }} style={{ padding: '5px 12px', borderRadius: 8, background: T.urgent, color: '#FFF', border: 'none', fontSize: 11, fontWeight: 600, cursor: 'pointer' }}>Yes</button>
+                    <button onClick={function () { setConfirmDelete(null); }} style={{ padding: '5px 10px', borderRadius: 8, background: 'transparent', border: '1px solid ' + T.border, color: T.inkMuted, fontSize: 11, cursor: 'pointer' }}>No</button>
+                  </div>
+                ) : (
+                  <button onClick={function () { setConfirmDelete(selectedProject.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '6px 10px', fontSize: 13, color: T.inkFaint, borderRadius: 8, transition: 'color 0.2s' }} title="Delete project">{'\uD83D\uDDD1'}</button>
+                )}
               </div>
               <p style={{ fontSize: 13, color: T.inkMuted, marginBottom: 28 }}>{selectedProject.startDate} {'\u2192'} {selectedProject.targetDate} {'\u00B7'} {selectedProject.tasksDone}/{selectedProject.tasksTotal} tasks {'\u00B7'} {selectedProject.completedSteps}/{selectedProject.totalSteps} steps</p>
 
@@ -1288,6 +1307,11 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
                     <div style={{ marginBottom: 18 }}>
                       <label style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.3, marginBottom: 6, display: 'block' }}>DESCRIBE YOUR PROJECT</label>
                       <textarea value={projectDesc} onChange={function (e) { setProjectDesc(e.target.value); }} placeholder="Tell Pulse everything — the more detail, the better the plan. What's the scope? Any deadlines? Budget? Who's involved?" rows={4} style={{ width: '100%', padding: '14px 16px', borderRadius: 14, border: '1px solid ' + T.border, background: 'rgba(255,255,255,0.5)', fontSize: 14, color: T.ink, fontFamily: "'Outfit', sans-serif", resize: 'none', lineHeight: 1.6 }} />
+                    </div>
+                    <div style={{ marginBottom: 18 }}>
+                      <label style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.3, marginBottom: 6, display: 'block' }}>DEADLINE <span style={{ fontWeight: 400, color: T.inkFaint }}>(optional)</span></label>
+                      <input type="date" value={projectDeadline} onChange={function (e) { setProjectDeadline(e.target.value); }} min={new Date().toISOString().split('T')[0]} style={{ width: '100%', padding: '12px 16px', borderRadius: 14, border: '1px solid ' + (projectDeadline ? T.accentBorder : T.border), background: 'rgba(255,255,255,0.5)', fontSize: 14, color: T.ink, fontFamily: "'Outfit', sans-serif", transition: 'border 0.2s' }} />
+                      {projectDeadline && <p style={{ fontSize: 11, color: T.accentText, marginTop: 4 }}>All tasks will be scheduled before {new Date(projectDeadline + 'T23:59:59').toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}</p>}
                     </div>
                     <div style={{ marginBottom: 20 }}>
                       <label style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.3, marginBottom: 6, display: 'block' }}>IMPORT CONTEXT <span style={{ fontWeight: 400, color: T.inkFaint }}>(optional)</span></label>
@@ -1682,7 +1706,7 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
           </>}
 
         </div>
-      </main>
+      </div>
     </div>
   );
 }

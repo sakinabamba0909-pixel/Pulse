@@ -94,6 +94,7 @@ export async function POST(req: Request) {
     context,
     scheduling_preferences,
     existing_tasks,
+    deadline,             // 'YYYY-MM-DD' or undefined
     calendar_mode,        // 'google' | 'pulse' | null
   } = await req.json()
 
@@ -185,6 +186,8 @@ ${existingTasksCtx}
 Calendar availability:
 ${calendarBusyCtx}
 
+${deadline ? `DEADLINE: ${deadline} — ALL tasks MUST be scheduled BEFORE this date. This is a hard constraint. Plan backwards from the deadline to ensure everything fits.` : 'No deadline set — schedule at a comfortable pace.'}
+
 Current date/time: ${new Date().toISOString()}
 
 Instructions:
@@ -196,6 +199,7 @@ Instructions:
 - Space tasks out reasonably — do not cram everything into one day.
 - Schedule tasks during reasonable working hours (8am–7pm in the user's timezone) unless preferences say otherwise.
 - Avoid scheduling conflicts with existing tasks.
+- If a DEADLINE is specified above, NEVER schedule any task on or after the deadline date. All work must be completed before the deadline.
 - Each step should have a name, a brief description, and an estimated total duration in hours.
 - Include a speech_reply: a short, friendly 1–2 sentence summary of the plan you generated.
 - Include calendar_blocks: a simplified view of which days have scheduled work and their time slots.
