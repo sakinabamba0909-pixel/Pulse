@@ -151,6 +151,286 @@ function buildCalendarEvents(tasks) {
     });
 }
 
+/* ═══ EVENT DETAIL PANEL ═══ */
+function EventDetailPanel({ event, projects, onClose, onRefresh }) {
+  var isGcal = event.type === 'gcal';
+  var [editing, setEditing] = useState(false);
+  var [title, setTitle] = useState(event.title);
+  var [date, setDate] = useState(event.start.toISOString().split('T')[0]);
+  var [startTime, setStartTime] = useState(
+    event.start.getHours().toString().padStart(2, '0') + ':' + event.start.getMinutes().toString().padStart(2, '0')
+  );
+  var [endTime, setEndTime] = useState(
+    event.end.getHours().toString().padStart(2, '0') + ':' + event.end.getMinutes().toString().padStart(2, '0')
+  );
+  var [projectId, setProjectId] = useState(event.projectId || '');
+  var [saving, setSaving] = useState(false);
+  var [confirmDelete, setConfirmDelete] = useState(false);
+
+  var durationMins = Math.round((event.end - event.start) / 60000);
+
+  async function handleSave() {
+    if (isGcal) return;
+    setSaving(true);
+    var scheduledStart = new Date(date + 'T' + startTime + ':00');
+    var scheduledEnd = new Date(date + 'T' + endTime + ':00');
+    var dur = Math.round((scheduledEnd - scheduledStart) / 60000);
+    var body = { title: title, scheduled_start: scheduledStart.toISOString(), scheduled_end: scheduledEnd.toISOString(), duration_minutes: dur > 0 ? dur : 60 };
+    if (projectId) body.project_id = projectId;
+    await fetch('/api/tasks/' + event.id, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body),
+    });
+    setSaving(false);
+    onRefresh();
+  }
+
+  async function handleComplete() {
+    if (isGcal) return;
+    await fetch('/api/tasks/' + event.id + '/complete', { method: 'POST' });
+    onRefresh();
+  }
+
+  async function handleDelete() {
+    if (isGcal) return;
+    await fetch('/api/tasks/' + event.id, { method: 'DELETE' });
+    onRefresh();
+  }
+
+  // Panel project info
+  var projMatch = projects.find(function (p) { return p.id === event.projectId; });
+  var statusLabel = event.status === 'done' ? 'Completed' : event.status === 'pending' ? 'Pending' : event.status || '—';
+
+  return (
+    <div style={{
+      position: 'fixed', top: 0, right: 0, bottom: 0, width: 370,
+      background: 'rgba(255,255,255,0.82)', backdropFilter: 'blur(40px)', WebkitBackdropFilter: 'blur(40px)',
+      borderLeft: '1px solid ' + T.border,
+      boxShadow: '-8px 0 40px rgba(0,0,0,0.06)',
+      zIndex: 30, display: 'flex', flexDirection: 'column',
+      animation: 'slideR 0.3s cubic-bezier(0.4,0,0.2,1)',
+    }}>
+      {/* Header */}
+      <div style={{
+        padding: '20px 22px 16px', display: 'flex', alignItems: 'center', gap: 10,
+        borderBottom: '1px solid ' + T.divider,
+      }}>
+        <div style={{
+          width: 10, height: 10, borderRadius: '50%', flexShrink: 0,
+          background: isGcal ? T.inkFaint : event.color,
+          boxShadow: isGcal ? 'none' : '0 0 8px ' + event.color + '55',
+        }} />
+        <span style={{
+          flex: 1, fontSize: 11, fontWeight: 600, textTransform: 'uppercase',
+          letterSpacing: 0.8, color: T.inkMuted,
+        }}>
+          {isGcal ? 'Google Calendar' : event.project || 'Task'}
+        </span>
+        <button onClick={onClose} style={{
+          width: 30, height: 30, borderRadius: '50%',
+          background: 'rgba(0,0,0,0.04)', border: 'none',
+          fontSize: 15, color: T.inkMuted, cursor: 'pointer',
+          display: 'flex', alignItems: 'center', justifyContent: 'center',
+        }}>{'\u2715'}</button>
+      </div>
+
+      {/* Body */}
+      <div style={{ flex: 1, overflowY: 'auto', padding: '20px 22px' }}>
+        {/* Title */}
+        {editing ? (
+          <input value={title} onChange={function (e) { setTitle(e.target.value); }} style={{
+            width: '100%', fontSize: 18, fontWeight: 600, fontFamily: "'Fraunces', serif",
+            color: T.ink, background: 'rgba(0,0,0,0.03)', border: '1px solid ' + T.accentBorder,
+            borderRadius: 10, padding: '10px 14px', marginBottom: 16, boxSizing: 'border-box',
+          }} />
+        ) : (
+          <h3 style={{
+            fontFamily: "'Fraunces', serif", fontSize: 20, fontWeight: 500,
+            color: T.ink, letterSpacing: -0.3, marginBottom: 16, lineHeight: 1.35,
+          }}>{event.title}</h3>
+        )}
+
+        {/* Info rows */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
+          {/* Date & Time */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+            <span style={{ fontSize: 15, width: 22, textAlign: 'center', color: T.inkMuted }}>◷</span>
+            {editing ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 6, flex: 1 }}>
+                <input type="date" value={date} onChange={function (e) { setDate(e.target.value); }} style={{
+                  fontSize: 13, color: T.ink, background: 'rgba(0,0,0,0.03)', border: '1px solid ' + T.border,
+                  borderRadius: 8, padding: '7px 10px', fontFamily: "'Outfit', sans-serif",
+                }} />
+                <div style={{ display: 'flex', gap: 6, alignItems: 'center' }}>
+                  <input type="time" value={startTime} onChange={function (e) { setStartTime(e.target.value); }} style={{
+                    fontSize: 13, color: T.ink, background: 'rgba(0,0,0,0.03)', border: '1px solid ' + T.border,
+                    borderRadius: 8, padding: '7px 10px', flex: 1, fontFamily: "'Outfit', sans-serif",
+                  }} />
+                  <span style={{ fontSize: 11, color: T.inkFaint }}>→</span>
+                  <input type="time" value={endTime} onChange={function (e) { setEndTime(e.target.value); }} style={{
+                    fontSize: 13, color: T.ink, background: 'rgba(0,0,0,0.03)', border: '1px solid ' + T.border,
+                    borderRadius: 8, padding: '7px 10px', flex: 1, fontFamily: "'Outfit', sans-serif",
+                  }} />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p style={{ fontSize: 13, fontWeight: 500, color: T.ink }}>
+                  {DAYS_SHORT[(event.start.getDay() + 6) % 7]}, {MONTH_NAMES[event.start.getMonth()]} {event.start.getDate()}
+                </p>
+                <p style={{ fontSize: 12, color: T.inkMuted, marginTop: 2 }}>
+                  {fmtTime(event.start)} – {fmtTime(event.end)}
+                  <span style={{ marginLeft: 8, fontSize: 11, color: T.inkFaint }}>({durationMins} min)</span>
+                </p>
+              </div>
+            )}
+          </div>
+
+          {/* Project */}
+          {(event.project || editing) && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 15, width: 22, textAlign: 'center', color: T.inkMuted }}>▦</span>
+              {editing ? (
+                <select value={projectId} onChange={function (e) { setProjectId(e.target.value); }} style={{
+                  fontSize: 13, color: T.ink, background: 'rgba(0,0,0,0.03)', border: '1px solid ' + T.border,
+                  borderRadius: 8, padding: '7px 10px', flex: 1, fontFamily: "'Outfit', sans-serif",
+                }}>
+                  <option value="">No project</option>
+                  {projects.map(function (p) {
+                    return <option key={p.id} value={p.id}>{p.name}</option>;
+                  })}
+                </select>
+              ) : (
+                <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                  {projMatch && (
+                    <div style={{
+                      width: 8, height: 8, borderRadius: '50%',
+                      background: projMatch.color || T.accent,
+                    }} />
+                  )}
+                  <p style={{ fontSize: 13, fontWeight: 500, color: T.ink }}>{event.project}</p>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Status (non-gcal) */}
+          {!isGcal && (
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+              <span style={{ fontSize: 15, width: 22, textAlign: 'center', color: T.inkMuted }}>
+                {event.status === 'done' ? '✓' : '◻'}
+              </span>
+              <div style={{
+                display: 'inline-flex', alignItems: 'center', gap: 5,
+                padding: '4px 10px', borderRadius: 8,
+                background: event.status === 'done' ? T.sageSoft : T.accentSoft,
+                border: '1px solid ' + (event.status === 'done' ? T.sage + '30' : T.accentBorder),
+              }}>
+                <div style={{
+                  width: 6, height: 6, borderRadius: '50%',
+                  background: event.status === 'done' ? T.sage : T.accent,
+                }} />
+                <span style={{
+                  fontSize: 11, fontWeight: 600,
+                  color: event.status === 'done' ? T.sage : T.accentText,
+                }}>{statusLabel}</span>
+              </div>
+            </div>
+          )}
+
+          {/* Google Calendar badge */}
+          {isGcal && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: 8,
+              padding: '10px 14px', borderRadius: 10,
+              background: 'rgba(0,0,0,0.02)', border: '1px solid ' + T.divider,
+              marginTop: 4,
+            }}>
+              <span style={{ fontSize: 14 }}>📅</span>
+              <span style={{ fontSize: 12, color: T.inkMuted, fontWeight: 500 }}>
+                Synced from Google Calendar
+              </span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Footer actions */}
+      {!isGcal && (
+        <div style={{
+          padding: '16px 22px', borderTop: '1px solid ' + T.divider,
+          display: 'flex', flexDirection: 'column', gap: 8,
+        }}>
+          {editing ? (
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={handleSave} disabled={saving} style={{
+                flex: 1, padding: '10px 0', borderRadius: 10,
+                background: 'linear-gradient(135deg,' + T.accent + ',' + T.rose + ')',
+                color: '#FFF', border: 'none', fontSize: 13, fontWeight: 600,
+                cursor: saving ? 'wait' : 'pointer', opacity: saving ? 0.6 : 1,
+              }}>{saving ? 'Saving…' : 'Save changes'}</button>
+              <button onClick={function () { setEditing(false); setTitle(event.title); }} style={{
+                padding: '10px 16px', borderRadius: 10,
+                background: 'rgba(0,0,0,0.04)', border: '1px solid ' + T.border,
+                fontSize: 13, fontWeight: 500, color: T.inkMuted, cursor: 'pointer',
+              }}>Cancel</button>
+            </div>
+          ) : (
+            <>
+              {/* Action buttons row */}
+              <div style={{ display: 'flex', gap: 8 }}>
+                {event.status !== 'done' && (
+                  <button onClick={handleComplete} style={{
+                    flex: 1, padding: '10px 0', borderRadius: 10,
+                    background: T.sageSoft, border: '1px solid ' + T.sage + '30',
+                    fontSize: 13, fontWeight: 600, color: T.sage, cursor: 'pointer',
+                    transition: 'all 0.2s',
+                  }}>✓ Done</button>
+                )}
+                <button onClick={function () { setEditing(true); }} style={{
+                  flex: 1, padding: '10px 0', borderRadius: 10,
+                  background: T.accentSoft, border: '1px solid ' + T.accentBorder,
+                  fontSize: 13, fontWeight: 600, color: T.accentText, cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}>Edit</button>
+              </div>
+
+              {/* Delete */}
+              {confirmDelete ? (
+                <div style={{
+                  display: 'flex', gap: 8, padding: '8px 12px', borderRadius: 10,
+                  background: T.urgentSoft, border: '1px solid ' + T.urgent + '30',
+                  alignItems: 'center',
+                }}>
+                  <span style={{ fontSize: 12, color: T.urgent, fontWeight: 500, flex: 1 }}>Delete this task?</span>
+                  <button onClick={handleDelete} style={{
+                    padding: '5px 14px', borderRadius: 8,
+                    background: T.urgent, color: '#FFF', border: 'none',
+                    fontSize: 12, fontWeight: 600, cursor: 'pointer',
+                  }}>Yes</button>
+                  <button onClick={function () { setConfirmDelete(false); }} style={{
+                    padding: '5px 14px', borderRadius: 8,
+                    background: 'rgba(0,0,0,0.04)', border: '1px solid ' + T.border,
+                    fontSize: 12, fontWeight: 500, color: T.inkMuted, cursor: 'pointer',
+                  }}>No</button>
+                </div>
+              ) : (
+                <button onClick={function () { setConfirmDelete(true); }} style={{
+                  padding: '9px 0', borderRadius: 10,
+                  background: 'transparent', border: '1px solid ' + T.border,
+                  fontSize: 12, fontWeight: 500, color: T.inkFaint, cursor: 'pointer',
+                  transition: 'all 0.2s',
+                }}>Delete task</button>
+              )}
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ═══ MAIN COMPONENT ═══ */
 export default function CalendarClient({ tasks, projects, calendarConnected }) {
   var router = useRouter();
@@ -573,7 +853,16 @@ export default function CalendarClient({ tasks, projects, calendarConnected }) {
         </button>
       )}
 
-      {/* Event detail panel placeholder — step 4 */}
+      {/* ═══ EVENT DETAIL PANEL ═══ */}
+      {selectedEvent && (
+        <EventDetailPanel
+          event={selectedEvent}
+          projects={projects}
+          onClose={function () { setSelectedEvent(null); }}
+          onRefresh={function () { router.refresh(); setSelectedEvent(null); }}
+        />
+      )}
+
       {/* Add event modal placeholder — step 5 */}
       {/* Pulse bar placeholder — step 6 */}
     </div>
