@@ -11,6 +11,7 @@ const NAV = [
   { href: '/app/reminders',     icon: '◷', label: 'Reminders'   },
   { href: '/app/projects',      icon: '▦', label: 'Projects'    },
   { href: '/app/calendar',      icon: '◫', label: 'Calendar'    },
+  { href: '/app/settings',      icon: '⚙', label: 'Settings'    },
 ];
 
 export default function Sidebar({ name }: { name: string }) {
@@ -99,41 +100,53 @@ export default function Sidebar({ name }: { name: string }) {
 
       {/* User footer */}
       <div style={{
-        padding: '14px 18px',
+        padding: '12px 12px 14px',
         borderTop: '1px solid rgba(0,0,0,0.04)',
-        display: 'flex', alignItems: 'center', gap: 10,
+        display: 'flex', flexDirection: 'column', gap: 6,
       }}>
-        <div style={{
-          width: 28, height: 28, borderRadius: '50%',
-          background: 'linear-gradient(135deg, rgba(155,126,200,0.15), rgba(212,132,154,0.10))',
-          border: '1.5px solid rgba(155,126,200,0.22)',
-          display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontSize: 11, fontWeight: 700, color: '#9B7EC8', flexShrink: 0,
-        }}>
-          {initial}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 4px' }}>
+          <div style={{
+            width: 28, height: 28, borderRadius: '50%',
+            background: 'linear-gradient(135deg, rgba(155,126,200,0.15), rgba(212,132,154,0.10))',
+            border: '1.5px solid rgba(155,126,200,0.22)',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, fontWeight: 700, color: '#9B7EC8', flexShrink: 0,
+          }}>
+            {initial}
+          </div>
+          <span style={{
+            fontSize: 13, fontWeight: 500, color: '#5C5650',
+            fontFamily: "'Outfit', sans-serif",
+            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+            flex: 1,
+          }}>
+            {name}
+          </span>
         </div>
-        <span style={{
-          fontSize: 13, fontWeight: 500, color: '#5C5650',
-          fontFamily: "'Outfit', sans-serif",
-          overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-          flex: 1,
-        }}>
-          {name}
-        </span>
         <button
           onClick={handleSignOut}
-          title="Sign out"
           style={{
-            background: 'none', border: 'none', cursor: 'pointer',
-            padding: 4, borderRadius: 6,
-            fontSize: 14, color: '#9E958B',
-            transition: 'color 0.2s',
-            flexShrink: 0,
+            background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.05)',
+            cursor: 'pointer',
+            padding: '8px 16px', borderRadius: 10,
+            fontSize: 13, fontWeight: 500, color: '#9E958B',
+            fontFamily: "'Outfit', sans-serif",
+            transition: 'all 0.2s',
+            width: '100%',
+            textAlign: 'center',
           }}
-          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#D4727A' }}
-          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#9E958B' }}
+          onMouseEnter={e => {
+            e.currentTarget.style.background = 'rgba(212,114,122,0.08)';
+            e.currentTarget.style.color = '#D4727A';
+            e.currentTarget.style.borderColor = 'rgba(212,114,122,0.2)';
+          }}
+          onMouseLeave={e => {
+            e.currentTarget.style.background = 'rgba(0,0,0,0.03)';
+            e.currentTarget.style.color = '#9E958B';
+            e.currentTarget.style.borderColor = 'rgba(0,0,0,0.05)';
+          }}
         >
-          ↗
+          Sign out
         </button>
       </div>
     </aside>

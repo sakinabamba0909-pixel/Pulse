@@ -60,5 +60,5 @@ export async function GET(req: NextRequest) {
     updated_at:              new Date().toISOString(),
   }, { onConflict: 'user_id,provider' })
 
-  return NextResponse.redirect(`${origin}/app/tasks?calendar_connected=1`)
+  return NextResponse.redirect(`${origin}/app/settings?calendar_connected=1`)
 }
