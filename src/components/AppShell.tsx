@@ -28,19 +28,19 @@ export default function AppShell({ children, userName, taskCount = 0, focusCount
   const pathname = usePathname();
   const [scrollY, setScrollY] = useState(0);
   const [bloom, setBloom] = useState(0);
-  const [showIntro, setShowIntro] = useState(false);
-  const [appVisible, setAppVisible] = useState(true);
+  const [showIntro, setShowIntro] = useState(true);
+  const [appVisible, setAppVisible] = useState(false);
 
   const mood = getMood(pathname);
 
   useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const seen = sessionStorage.getItem('pulse_intro_shown');
-      if (!seen) {
-        setShowIntro(true);
-        setAppVisible(false);
-        sessionStorage.setItem('pulse_intro_shown', '1');
-      }
+    const seen = sessionStorage.getItem('pulse_intro_shown');
+    if (seen) {
+      // Already shown this session — skip straight to app
+      setShowIntro(false);
+      setAppVisible(true);
+    } else {
+      sessionStorage.setItem('pulse_intro_shown', '1');
     }
   }, []);
 
