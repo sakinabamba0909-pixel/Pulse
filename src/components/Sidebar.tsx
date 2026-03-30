@@ -1,8 +1,9 @@
 'use client';
 
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Orb from './Orb';
+import { createClient } from '@/lib/supabase/client';
 
 const NAV = [
   { href: '/app',               icon: '◉', label: 'Home'        },
@@ -14,7 +15,14 @@ const NAV = [
 
 export default function Sidebar({ name }: { name: string }) {
   const pathname = usePathname();
+  const router = useRouter();
   const initial = name?.[0]?.toUpperCase() || 'P';
+
+  const handleSignOut = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
 
   return (
     <aside style={{
@@ -108,9 +116,25 @@ export default function Sidebar({ name }: { name: string }) {
           fontSize: 13, fontWeight: 500, color: '#5C5650',
           fontFamily: "'Outfit', sans-serif",
           overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+          flex: 1,
         }}>
           {name}
         </span>
+        <button
+          onClick={handleSignOut}
+          title="Sign out"
+          style={{
+            background: 'none', border: 'none', cursor: 'pointer',
+            padding: 4, borderRadius: 6,
+            fontSize: 14, color: '#9E958B',
+            transition: 'color 0.2s',
+            flexShrink: 0,
+          }}
+          onMouseEnter={e => { (e.currentTarget as HTMLElement).style.color = '#D4727A' }}
+          onMouseLeave={e => { (e.currentTarget as HTMLElement).style.color = '#9E958B' }}
+        >
+          ↗
+        </button>
       </div>
     </aside>
   );
