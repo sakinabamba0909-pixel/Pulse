@@ -5,13 +5,26 @@ import Link from 'next/link';
 import Orb from './Orb';
 import { createClient } from '@/lib/supabase/client';
 
+const P = {
+  ink:          '#2D2026',
+  inkSoft:      '#6B5860',
+  inkMuted:     '#A8949C',
+  inkFaint:     '#D4C8CD',
+  orchid:       '#D56989',
+  pinkSoft:     'rgba(234,156,175,0.15)',
+  pinkBorder:   'rgba(234,156,175,0.30)',
+  orchidSoft:   'rgba(213,105,137,0.12)',
+  border:       'rgba(45,32,38,0.07)',
+  divider:      'rgba(45,32,38,0.05)',
+};
+
 const NAV = [
-  { href: '/app',               icon: '◉', label: 'Home'        },
-  { href: '/app/tasks',         icon: '◻', label: 'Tasks'       },
-  { href: '/app/reminders',     icon: '◷', label: 'Reminders'   },
-  { href: '/app/projects',      icon: '▦', label: 'Projects'    },
-  { href: '/app/calendar',      icon: '◫', label: 'Calendar'    },
-  { href: '/app/settings',      icon: '⚙', label: 'Settings'    },
+  { href: '/app',               label: 'Home'        },
+  { href: '/app/tasks',         label: 'Tasks'       },
+  { href: '/app/reminders',     label: 'Reminders'   },
+  { href: '/app/projects',      label: 'Projects'    },
+  { href: '/app/calendar',      label: 'Calendar'    },
+  { href: '/app/settings',      label: 'Settings'    },
 ];
 
 export default function Sidebar({ name }: { name: string }) {
@@ -27,32 +40,32 @@ export default function Sidebar({ name }: { name: string }) {
 
   return (
     <aside style={{
-      width: 230, flexShrink: 0,
-      background: 'rgba(255,255,255,0.28)',
-      backdropFilter: 'blur(40px)',
-      WebkitBackdropFilter: 'blur(40px)',
-      borderRight: '1px solid rgba(0,0,0,0.05)',
+      width: 210, flexShrink: 0,
+      background: 'rgba(247,243,240,0.6)',
+      backdropFilter: 'blur(44px)',
+      WebkitBackdropFilter: 'blur(44px)',
+      borderRight: `1px solid ${P.border}`,
       display: 'flex', flexDirection: 'column',
       position: 'fixed', top: 0, left: 0, bottom: 0,
       zIndex: 20,
     }}>
       {/* Logo */}
       <div style={{
-        padding: '32px 24px 24px',
+        padding: '30px 22px 22px',
         display: 'flex', alignItems: 'center', gap: 10,
-        borderBottom: '1px solid rgba(0,0,0,0.04)',
+        borderBottom: `1px solid ${P.divider}`,
       }}>
-        <Orb size={26} animate={false} />
+        <Orb size={24} />
         <span style={{
           fontFamily: "'Fraunces', serif",
-          fontSize: 22, fontWeight: 400, color: '#2D2A26', letterSpacing: -0.5,
+          fontSize: 20, fontWeight: 300, letterSpacing: -0.5, color: P.ink,
         }}>
           Pulse
         </span>
       </div>
 
       {/* Nav items */}
-      <nav style={{ flex: 1, padding: '10px 12px', display: 'flex', flexDirection: 'column', gap: 2 }}>
+      <nav style={{ flex: 1, padding: '14px 12px', display: 'flex', flexDirection: 'column', gap: 1 }}>
         {NAV.map(item => {
           const isActive = item.href === '/app'
             ? pathname === '/app'
@@ -62,34 +75,30 @@ export default function Sidebar({ name }: { name: string }) {
             <Link key={item.href} href={item.href} style={{ textDecoration: 'none' }}>
               <div style={{
                 display: 'flex', alignItems: 'center', gap: 10,
-                padding: '11px 16px', borderRadius: 12,
-                background: isActive ? 'rgba(155,126,200,0.10)' : 'transparent',
-                border: isActive ? '1px solid rgba(155,126,200,0.18)' : '1px solid transparent',
+                padding: '10px 14px', borderRadius: 12,
+                background: isActive ? P.pinkSoft : 'transparent',
+                border: isActive ? `1px solid ${P.pinkBorder}` : '1px solid transparent',
                 cursor: 'pointer',
-                transition: 'all 0.4s cubic-bezier(0.4,0,0.2,1)',
+                transition: 'all 0.2s',
               }}>
-                <span style={{
-                  fontSize: 13, width: 16, textAlign: 'center', flexShrink: 0,
-                  color: isActive ? '#9B7EC8' : '#9E958B',
-                }}>
-                  {item.icon}
-                </span>
+                <div style={{
+                  width: 5, height: 5, borderRadius: '50%',
+                  background: isActive ? P.orchid : P.inkFaint,
+                  boxShadow: isActive ? '0 0 8px rgba(213,105,137,0.5)' : 'none',
+                  flexShrink: 0,
+                }} />
                 <span style={{
                   fontSize: 14,
-                  fontWeight: isActive ? 600 : 400,
-                  color: isActive ? '#7B5EA8' : '#5C5650',
-                  fontFamily: "'Outfit', sans-serif",
-                  letterSpacing: -0.1,
+                  fontWeight: isActive ? 500 : 300,
+                  color: isActive ? P.ink : P.inkSoft,
                 }}>
                   {item.label}
                 </span>
                 {isActive && (
                   <div style={{
-                    marginLeft: 'auto', width: 6, height: 6,
-                    borderRadius: '50%',
-                    background: '#9B7EC8',
-                    boxShadow: '0 0 10px rgba(155,126,200,0.5)',
-                    flexShrink: 0,
+                    marginLeft: 'auto', width: 3, height: 3,
+                    borderRadius: '50%', background: P.orchid,
+                    animation: 'glowPulse 2.5s ease infinite',
                   }} />
                 )}
               </div>
@@ -100,50 +109,49 @@ export default function Sidebar({ name }: { name: string }) {
 
       {/* User footer */}
       <div style={{
-        padding: '12px 12px 14px',
-        borderTop: '1px solid rgba(0,0,0,0.04)',
-        display: 'flex', flexDirection: 'column', gap: 6,
+        padding: '14px 18px',
+        borderTop: `1px solid ${P.divider}`,
+        display: 'flex', flexDirection: 'column', gap: 10,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <div style={{
-            width: 28, height: 28, borderRadius: '50%',
-            background: 'linear-gradient(135deg, rgba(155,126,200,0.15), rgba(212,132,154,0.10))',
-            border: '1.5px solid rgba(155,126,200,0.22)',
+            width: 30, height: 30, borderRadius: '50%',
+            background: `linear-gradient(135deg, ${P.pinkSoft}, ${P.orchidSoft})`,
+            border: `1.5px solid ${P.pinkBorder}`,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 11, fontWeight: 700, color: '#9B7EC8', flexShrink: 0,
+            fontSize: 11, fontWeight: 600, color: P.orchid, flexShrink: 0,
           }}>
             {initial}
           </div>
-          <span style={{
-            fontSize: 13, fontWeight: 500, color: '#5C5650',
-            fontFamily: "'Outfit', sans-serif",
-            overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
-            flex: 1,
-          }}>
-            {name}
-          </span>
+          <div style={{ minWidth: 0 }}>
+            <p style={{ fontSize: 13, fontWeight: 500, color: P.ink, lineHeight: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {name}
+            </p>
+            <p style={{ fontSize: 10, color: P.inkMuted, marginTop: 2 }}>
+              {new Date().getHours() < 12 ? 'Good morning' : new Date().getHours() < 17 ? 'Good afternoon' : 'Good evening'} ✦
+            </p>
+          </div>
         </div>
         <button
           onClick={handleSignOut}
           style={{
-            background: 'rgba(0,0,0,0.03)', border: '1px solid rgba(0,0,0,0.05)',
+            background: P.orchidSoft,
+            border: `1px solid rgba(213,105,137,0.20)`,
             cursor: 'pointer',
-            padding: '8px 16px', borderRadius: 10,
-            fontSize: 13, fontWeight: 500, color: '#9E958B',
+            padding: '7px 14px', borderRadius: 10,
+            fontSize: 12, fontWeight: 500, color: P.orchid,
             fontFamily: "'Outfit', sans-serif",
             transition: 'all 0.2s',
             width: '100%',
             textAlign: 'center',
           }}
           onMouseEnter={e => {
-            e.currentTarget.style.background = 'rgba(212,114,122,0.08)';
-            e.currentTarget.style.color = '#D4727A';
-            e.currentTarget.style.borderColor = 'rgba(212,114,122,0.2)';
+            e.currentTarget.style.background = 'rgba(213,105,137,0.20)';
+            e.currentTarget.style.borderColor = 'rgba(213,105,137,0.35)';
           }}
           onMouseLeave={e => {
-            e.currentTarget.style.background = 'rgba(0,0,0,0.03)';
-            e.currentTarget.style.color = '#9E958B';
-            e.currentTarget.style.borderColor = 'rgba(0,0,0,0.05)';
+            e.currentTarget.style.background = P.orchidSoft;
+            e.currentTarget.style.borderColor = 'rgba(213,105,137,0.20)';
           }}
         >
           Sign out

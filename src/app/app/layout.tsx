@@ -29,7 +29,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
         fontFamily: "'Outfit', sans-serif",
       }}>
         <Sidebar name={profile?.name || ''} />
-        <main style={{ flex: 1, marginLeft: 230, minHeight: '100vh', position: 'relative' }}>
+        <main style={{ flex: 1, marginLeft: 210, minHeight: '100vh', position: 'relative' }}>
           {children}
         </main>
       </div>
