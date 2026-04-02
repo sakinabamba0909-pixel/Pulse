@@ -94,7 +94,7 @@ export default async function AppPage() {
       .is('parent_task_id', null)
       .order('is_pinned', { ascending: false })
       .order('due_at', { ascending: true, nullsFirst: false })
-      .limit(12),
+      .limit(50),
     supabase.from('projects')
       .select('id,name,color,status,project_steps(id,name,status,step_number)')
       .eq('user_id', user.id)
@@ -105,17 +105,15 @@ export default async function AppPage() {
 
   if (!profile?.onboarding_completed) redirect('/app/onboarding');
 
-  // Compute today's focus tasks (pinned first, then today by priority, max 3)
-  const priorityRank = (p: string) => ({ urgent: 0, high: 1, normal: 2, low: 3 }[p] ?? 2)
   const todayStr = new Date().toISOString().split('T')[0]
-  const focusTasks = (() => {
-    const tasks = (rawTasks ?? []).filter(t => !t.blocked_by_task_id)
-    const pinned = tasks.filter((t: any) => t.is_pinned)
-    if (pinned.length >= 3) return pinned.slice(0, 3)
-    const todayTasks = tasks
-      .filter((t: any) => !t.is_pinned && t.due_at?.startsWith(todayStr))
-      .sort((a: any, b: any) => priorityRank(a.priority) - priorityRank(b.priority))
-    return [...pinned, ...todayTasks].slice(0, 3)
+  // All pending tasks (not blocked) for the focus section
+  const allTasks = (rawTasks ?? []).filter((t: any) => !t.blocked_by_task_id)
+  // Focus count = pinned + today's tasks (for stats)
+  const priorityRank = (p: string) => ({ urgent: 0, high: 1, normal: 2, low: 3 }[p] ?? 2)
+  const focusCount = (() => {
+    const pinned = allTasks.filter((t: any) => t.is_pinned)
+    const todayTasks = allTasks.filter((t: any) => !t.is_pinned && t.due_at?.startsWith(todayStr))
+    return pinned.length + todayTasks.length
   })()
 
   const now = new Date();
@@ -203,6 +201,25 @@ export default async function AppPage() {
     };
   });
 
+  // Generate briefing summary for speak/write buttons
+  const briefingParts: string[] = [];
+  briefingParts.push(`Good ${hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'}, ${profile.name}.`);
+  if (urgentCount > 0) briefingParts.push(`You have ${urgentCount} urgent task${urgentCount !== 1 ? 's' : ''} today.`);
+  const todayTaskCount = allTasks.filter((t: any) => t.due_at?.startsWith(todayStr)).length;
+  if (todayTaskCount > 0) briefingParts.push(`${todayTaskCount} task${todayTaskCount !== 1 ? 's' : ''} scheduled for today.`);
+  if (goals && goals.length > 0) briefingParts.push(`${goals.length} goal${goals.length !== 1 ? 's' : ''} in focus: ${goals.map((g: any) => g.title).slice(0, 3).join(', ')}.`);
+  if (relationships && relationships.length > 0) {
+    const overdueContacts = relationships.filter(r => {
+      const thresholds: Record<string, number> = { daily: 2, weekly: 9, biweekly: 16, monthly: 35 };
+      const threshold = thresholds[r.contact_frequency?.toLowerCase()] ?? 9;
+      const days = r.last_contact_at ? Math.floor((Date.now() - new Date(r.last_contact_at).getTime()) / 86400000) : null;
+      return days !== null && days >= threshold;
+    });
+    if (overdueContacts.length > 0) briefingParts.push(`Consider reaching out to ${overdueContacts.map(c => c.person_name).slice(0, 2).join(' and ')}.`);
+  }
+  if (projectsData.length > 0) briefingParts.push(`${projectsData.length} active project${projectsData.length !== 1 ? 's' : ''}.`);
+  const briefingSummary = briefingParts.join(' ');
+
   // ─── Palette (pink/green/orchid) ───
   const C = {
     bg:          '#F7F3F0',
@@ -255,6 +272,8 @@ export default async function AppPage() {
             timeStr={timeStr}
             urgentCount={urgentCount}
             pulseMessages={pulseMessages}
+            briefingSummary={briefingSummary}
+            briefingFormat={profile.briefing_format}
           />
         </div>
 
@@ -297,16 +316,17 @@ export default async function AppPage() {
           </div>
         )}
 
-        {/* ──────────────────── Focus Tasks ──────────────────── */}
-        <FocusSection tasks={focusTasks.map((t: any): FocusTask => {
+        {/* ──────────────────── Tasks ──────────────────── */}
+        <FocusSection tasks={allTasks.map((t: any): FocusTask => {
           const proj = Array.isArray(t.project) ? t.project[0] : t.project;
           return {
             id: t.id,
             title: t.title,
             priority: t.priority,
+            due_at: t.due_at,
             projectName: proj?.name,
             projectColor: proj?.color,
-            isUrgent: t.priority === 'urgent',
+            isPinned: t.is_pinned,
           };
         })} />
 
@@ -389,7 +409,7 @@ export default async function AppPage() {
               { icon: '🌙', time: formatTime(profile.wind_down_time), label: 'Wind down' },
             ]}
             stats={[
-              { val: String(focusTasks.length), label: 'today', color: '#EA9CAF' },
+              { val: String(focusCount), label: 'today', color: '#EA9CAF' },
               { val: String(projectsData.length), label: 'projects', color: '#C2DC80' },
               { val: String(goals?.length ?? 0), label: 'goals', color: '#D56989' },
             ]}
