@@ -9,119 +9,77 @@ interface GanzfeldLightProps {
   isIntro?: boolean;
 }
 
-// Cool blue → lavender → pink palette inspired by the Rythm reference
-const MOODS: Record<string, { a: number[]; b: number[]; c: number[]; d: number[] }> = {
-  intro:     { a: [220, 50, 80], b: [270, 42, 82], c: [320, 45, 82], d: [240, 38, 84] },
-  home:      { a: [215, 45, 81], b: [265, 38, 83], c: [325, 40, 82], d: [245, 35, 85] },
-  tasks:     { a: [225, 42, 80], b: [275, 40, 82], c: [315, 42, 83], d: [250, 36, 84] },
-  goals:     { a: [210, 48, 80], b: [250, 42, 82], c: [290, 38, 84], d: [230, 40, 83] },
-  people:    { a: [230, 40, 82], b: [290, 42, 81], c: [330, 44, 82], d: [260, 36, 84] },
-  reminders: { a: [210, 44, 82], b: [255, 40, 83], c: [300, 38, 83], d: [235, 38, 85] },
-  projects:  { a: [220, 42, 81], b: [270, 40, 82], c: [310, 40, 83], d: [245, 36, 84] },
-};
-
 export default function GanzfeldLight({ mood, scrollY, bloom, isIntro = false }: GanzfeldLightProps) {
-  const layer1Ref = useRef<HTMLDivElement>(null);
-  const layer2Ref = useRef<HTMLDivElement>(null);
-  const layer3Ref = useRef<HTMLDivElement>(null);
-  const layer4Ref = useRef<HTMLDivElement>(null);
-  const layer5Ref = useRef<HTMLDivElement>(null);
-
-  const currentColors = useRef({ a: [...(MOODS.home.a)], b: [...(MOODS.home.b)], c: [...(MOODS.home.c)], d: [...(MOODS.home.d)] });
-  const animRef = useRef<number>(0);
-  const tRef = useRef(0);
-  const moodRef = useRef(mood);
-  const bloomRef = useRef(bloom);
-  const scrollRef = useRef(scrollY);
-  const isIntroRef = useRef(isIntro);
-
-  useEffect(() => { moodRef.current = mood; }, [mood]);
-  useEffect(() => { bloomRef.current = bloom; }, [bloom]);
-  useEffect(() => { scrollRef.current = scrollY; }, [scrollY]);
-  useEffect(() => { isIntroRef.current = isIntro; }, [isIntro]);
+  const ref = useRef<HTMLCanvasElement>(null);
+  const phase = useRef(0);
+  const frame = useRef<number>(0);
 
   useEffect(() => {
-    const lerp = (a: number, b: number, t: number) => a + (b - a) * t;
+    const c = ref.current;
+    if (!c) return;
+    const ctx = c.getContext('2d');
+    if (!ctx) return;
 
-    const animate = () => {
-      tRef.current += 0.016;
-      const t = tRef.current;
-      const target = MOODS[moodRef.current] || MOODS.home;
-      const cur = currentColors.current;
-      const speed = 0.006;
-      const drift = Math.sin(t) * 5;
-      const bloomBoostS = bloomRef.current * 14;
-      const bloomBoostL = bloomRef.current * 4;
+    function resize() {
+      c!.width = window.innerWidth;
+      c!.height = window.innerHeight;
+    }
+    resize();
+    window.addEventListener('resize', resize);
 
-      // Lerp toward target
-      for (let i = 0; i < 3; i++) {
-        cur.a[i] = lerp(cur.a[i], target.a[i] + (i === 1 ? bloomBoostS : i === 2 ? bloomBoostL : 0), speed);
-        cur.b[i] = lerp(cur.b[i], target.b[i] + (i === 1 ? bloomBoostS : i === 2 ? bloomBoostL : 0), speed);
-        cur.c[i] = lerp(cur.c[i], target.c[i], speed);
-        cur.d[i] = lerp(cur.d[i], target.d[i], speed);
-      }
+    function hsl(h: number, s: number, l: number, a: number) {
+      return `hsla(${h},${s}%,${l}%,${a})`;
+    }
 
-      const hslA = `hsl(${cur.a[0] + drift},${cur.a[1]}%,${cur.a[2]}%)`;
-      const hslB = `hsl(${cur.b[0] - drift * 0.5},${cur.b[1]}%,${cur.b[2]}%)`;
-      const hslC = `hsl(${cur.c[0] + drift * 0.3},${cur.c[1]}%,${cur.c[2]}%)`;
-      const hslD = `hsl(${cur.d[0]},${cur.d[1]}%,${cur.d[2]}%)`;
+    function draw() {
+      phase.current += 0.0012;
+      const t = phase.current;
+      const d = Math.sin(t) * 5;
+      const d2 = Math.cos(t * 0.7) * 4;
+      const W = c!.width;
+      const H = c!.height;
+      ctx!.clearRect(0, 0, W, H);
 
-      const scrollShift = scrollRef.current * 0.015;
-      const scale = isIntroRef.current ? 'scale(1.15)' : 'scale(1)';
+      // Base warm background
+      ctx!.fillStyle = '#F2EBE6';
+      ctx!.fillRect(0, 0, W, H);
 
-      if (layer1Ref.current) {
-        layer1Ref.current.style.background = `radial-gradient(ellipse 130% 110% at ${15 + scrollShift * 0.3}% ${10 - scrollShift}%, ${hslA} 0%, transparent 65%)`;
-        layer1Ref.current.style.opacity = '0.55';
-        layer1Ref.current.style.transform = scale;
-      }
-      if (layer2Ref.current) {
-        layer2Ref.current.style.background = `radial-gradient(ellipse 110% 130% at ${80 - scrollShift * 0.2}% ${20 - scrollShift * 0.5}%, ${hslB} 0%, transparent 65%)`;
-        layer2Ref.current.style.opacity = '0.50';
-        layer2Ref.current.style.transform = scale;
-      }
-      if (layer3Ref.current) {
-        layer3Ref.current.style.background = `radial-gradient(ellipse 140% 90% at ${55 + scrollShift * 0.1}% ${90 + scrollShift * 0.3}%, ${hslC} 0%, transparent 60%)`;
-        layer3Ref.current.style.opacity = '0.50';
-        layer3Ref.current.style.transform = scale;
-      }
-      if (layer4Ref.current) {
-        layer4Ref.current.style.background = `radial-gradient(ellipse 70% 60% at ${50 - scrollShift * 0.1}% ${40 - scrollShift * 0.4}%, ${hslD} 0%, transparent 65%)`;
-        layer4Ref.current.style.opacity = '0.30';
-        layer4Ref.current.style.transform = scale;
-      }
-      if (layer5Ref.current) {
-        layer5Ref.current.style.background = `linear-gradient(170deg, ${hslA} 0%, ${hslC} 100%)`;
-        layer5Ref.current.style.opacity = '0.30';
-        layer5Ref.current.style.transform = scale;
-      }
+      // Gradient layers — pink top-left, green top-right, rose bottom, orchid center
+      const layers: [number, number, number, number, number, number, number, number][] = [
+        [W * 0.12, H * 0.08, W * 0.65, 330 + d,  60, 88, 0.30, 0.08],
+        [W * 0.80, H * 0.18, W * 0.55, 80 + d2,  50, 85, 0.22, 0.06],
+        [W * 0.50, H * 0.92, W * 0.60, 350 - d,  55, 87, 0.20, 0.05],
+        [W * 0.55, H * 0.50, W * 0.30, 300 + d2, 45, 86, 0.14, 0.00],
+      ];
 
-      animRef.current = requestAnimationFrame(animate);
+      layers.forEach(([cx, cy, r, h, s, l, a1, a2]) => {
+        const g = ctx!.createRadialGradient(cx, cy, 0, cx, cy, r);
+        g.addColorStop(0, hsl(h, s, l, a1));
+        g.addColorStop(0.5, hsl(h, s, l, a2));
+        g.addColorStop(1, 'transparent');
+        ctx!.fillStyle = g;
+        ctx!.fillRect(0, 0, W, H);
+      });
+
+      frame.current = requestAnimationFrame(draw);
+    }
+
+    draw();
+    return () => {
+      cancelAnimationFrame(frame.current);
+      window.removeEventListener('resize', resize);
     };
-
-    animRef.current = requestAnimationFrame(animate);
-    return () => cancelAnimationFrame(animRef.current);
   }, []);
 
-  const baseLayer: React.CSSProperties = {
-    position: 'absolute',
-    inset: '-30%',
-    transition: 'transform 1.2s cubic-bezier(0.4,0,0.2,1)',
-  };
-
   return (
-    <div style={{
-      position: 'fixed',
-      inset: 0,
-      zIndex: 0,
-      pointerEvents: 'none',
-      overflow: 'hidden',
-      background: '#C5CDDA',
-    }}>
-      <div ref={layer1Ref} style={baseLayer} />
-      <div ref={layer2Ref} style={baseLayer} />
-      <div ref={layer3Ref} style={baseLayer} />
-      <div ref={layer4Ref} style={baseLayer} />
-      <div ref={layer5Ref} style={{ ...baseLayer, inset: '-20%' }} />
-    </div>
+    <canvas
+      ref={ref}
+      style={{
+        position: 'fixed',
+        inset: 0,
+        zIndex: 0,
+        pointerEvents: 'none',
+      }}
+    />
   );
 }

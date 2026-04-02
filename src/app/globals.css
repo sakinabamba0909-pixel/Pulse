@@ -5,42 +5,55 @@
 @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300&display=swap');
 
 :root {
-  /* Warm Ganzfeld Theme — matches Projects */
-  --bg: #F0EBE6;
-  --surface: rgba(255,255,255,0.52);
-  --surface-hover: rgba(255,255,255,0.65);
-  --elevated: rgba(255,255,255,0.78);
-  --ink: #2D2A26;
-  --ink-soft: #5C5650;
-  --ink-muted: #9E958B;
-  --ink-faint: #C9C1B8;
-  --accent: #9B7EC8;
-  --accent-soft: rgba(155,126,200,0.10);
-  --accent-mid: rgba(155,126,200,0.18);
-  --accent-border: rgba(155,126,200,0.25);
-  --accent-text: #7B5EA8;
-  --accent-glow: rgba(155,126,200,0.15);
-  --rose: #D4849A;
-  --rose-soft: rgba(212,132,154,0.12);
+  /* Warm pink / green / orchid palette */
+  --bg: #F7F3F0;
+  --bg-warm: #F2EBE6;
+  --surface: rgba(255,255,255,0.55);
+  --surface-hover: rgba(255,255,255,0.68);
+  --elevated: rgba(255,255,255,0.80);
+  --ink: #2D2026;
+  --ink-soft: #6B5860;
+  --ink-muted: #A8949C;
+  --ink-faint: #D4C8CD;
+  --accent: #D56989;
+  --accent-soft: rgba(213,105,137,0.12);
+  --accent-mid: rgba(213,105,137,0.18);
+  --accent-border: rgba(213,105,137,0.25);
+  --accent-text: #8F3552;
+  --accent-glow: rgba(213,105,137,0.15);
+  --green: #C2DC80;
+  --green-dark: #7A9E35;
+  --green-soft: rgba(194,220,128,0.18);
+  --green-border: rgba(194,220,128,0.35);
+  --pink: #EA9CAF;
+  --pink-dark: #B85A74;
+  --pink-soft: rgba(234,156,175,0.15);
+  --pink-border: rgba(234,156,175,0.30);
+  --orchid: #D56989;
+  --orchid-dark: #8F3552;
+  --orchid-soft: rgba(213,105,137,0.12);
+  --orchid-border: rgba(213,105,137,0.25);
+  --rose: #EA9CAF;
+  --rose-soft: rgba(234,156,175,0.15);
   --peach: #D4A47A;
   --peach-soft: rgba(212,164,122,0.10);
   --sky: #7AABC8;
   --sky-soft: rgba(122,171,200,0.12);
   --sage: #7EB89B;
   --sage-soft: rgba(126,184,155,0.10);
-  --urgent: #D4727A;
-  --urgent-soft: rgba(212,114,122,0.10);
+  --urgent: #D56989;
+  --urgent-soft: rgba(213,105,137,0.10);
   --normal: #7AABC8;
   --normal-soft: rgba(122,171,200,0.10);
-  --low: #C9C1B8;
-  --low-soft: rgba(201,193,184,0.10);
-  --border: rgba(0,0,0,0.05);
-  --border-hover: rgba(0,0,0,0.08);
-  --border-glow: rgba(155,126,200,0.22);
-  --divider: rgba(0,0,0,0.04);
-  --shadow: 0 1px 2px rgba(0,0,0,0.02), 0 4px 16px rgba(0,0,0,0.03);
-  --shadow-hover: 0 2px 8px rgba(0,0,0,0.03), 0 12px 32px rgba(0,0,0,0.05);
-  --shadow-glow: 0 0 24px rgba(155,126,200,0.08), 0 4px 16px rgba(0,0,0,0.03);
+  --low: #D4C8CD;
+  --low-soft: rgba(212,200,205,0.10);
+  --border: rgba(45,32,38,0.07);
+  --border-hover: rgba(45,32,38,0.10);
+  --border-glow: rgba(213,105,137,0.22);
+  --divider: rgba(45,32,38,0.05);
+  --shadow: 0 1px 2px rgba(45,32,38,0.03), 0 6px 24px rgba(45,32,38,0.05);
+  --shadow-hover: 0 2px 8px rgba(45,32,38,0.04), 0 12px 32px rgba(45,32,38,0.06);
+  --shadow-glow: 0 0 24px rgba(213,105,137,0.08), 0 4px 16px rgba(45,32,38,0.03);
 }
 
 * {
@@ -57,8 +70,8 @@ body {
 }
 
 ::selection {
-  background: var(--accent-mid);
-  color: var(--accent-text);
+  background: rgba(213,105,137,0.2);
+  color: #2D2026;
 }
 
 ::-webkit-scrollbar { width: 4px; }
@@ -95,6 +108,11 @@ input:focus, textarea:focus { outline: none; }
 @keyframes float {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-6px); }
+}
+
+@keyframes orbFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-8px); }
 }
 
 .animate-fade-in { animation: fadeIn 0.5s ease forwards; }
