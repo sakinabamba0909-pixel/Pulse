@@ -66,11 +66,10 @@ export default function FocusSection({ tasks }: FocusSectionProps) {
         return (
           <div
             key={t.id}
-            onClick={() => toggle(t.id)}
             style={{
               display: 'flex', alignItems: 'center', gap: 0,
               borderBottom: `1px solid ${P.divider}`,
-              cursor: 'pointer', transition: 'all 0.22s',
+              transition: 'all 0.22s',
               opacity: d ? 0.38 : 1,
               animation: `fadeUp 0.5s ease ${0.14 + i * 0.07}s both`,
             }}
@@ -82,19 +81,22 @@ export default function FocusSection({ tasks }: FocusSectionProps) {
               opacity: d ? 0.3 : 1, transition: 'all 0.2s',
             }} />
 
-            {/* check */}
-            <div style={{
-              width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginRight: 14,
-              border: `1.5px solid ${d ? P.inkFaint : barColor}`,
-              background: d ? barColor : 'transparent',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              transition: 'all 0.2s',
-            }}>
+            {/* check circle — click to complete */}
+            <div
+              onClick={(e) => { e.stopPropagation(); toggle(t.id); }}
+              style={{
+                width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginRight: 14,
+                border: `1.5px solid ${d ? P.inkFaint : barColor}`,
+                background: d ? barColor : 'transparent',
+                display: 'flex', alignItems: 'center', justifyContent: 'center',
+                transition: 'all 0.2s', cursor: 'pointer',
+              }}
+            >
               {d && <span style={{ color: 'white', fontSize: 9, fontWeight: 700 }}>✓</span>}
             </div>
 
-            {/* text */}
-            <div style={{ flex: 1, minWidth: 0, padding: '16px 0' }}>
+            {/* text — click to navigate */}
+            <a href={`/app/tasks?task=${t.id}`} style={{ flex: 1, minWidth: 0, padding: '16px 0', textDecoration: 'none', cursor: 'pointer' }}>
               <p style={{
                 fontSize: 16, fontWeight: d ? 300 : 500,
                 color: d ? P.inkMuted : P.ink,
@@ -106,7 +108,7 @@ export default function FocusSection({ tasks }: FocusSectionProps) {
               <p style={{ fontSize: 11, color: P.inkMuted, fontWeight: 300 }}>
                 {t.projectName}
               </p>
-            </div>
+            </a>
 
             {/* urgent tag */}
             {t.priority === 'urgent' && !d && (
