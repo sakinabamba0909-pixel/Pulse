@@ -114,11 +114,11 @@ export default async function AppPage() {
 
   if (profile.wake_time) {
     const [wH, wM] = profile.wake_time.split(':').map(Number);
-    scheduleEvents.unshift({ time: formatTime(profile.wake_time), label: 'Wake', color: '#D4C8CD', isCurrent: false, _h: wH + wM / 60 });
+    scheduleEvents.unshift({ time: formatTime(profile.wake_time), label: 'Wake', color: '#C2DC80', isCurrent: false, _h: wH + wM / 60 });
   }
   if (profile.wind_down_time) {
     const [wdH, wdM] = profile.wind_down_time.split(':').map(Number);
-    scheduleEvents.push({ time: formatTime(profile.wind_down_time), label: 'Wind down', color: '#D4C8CD', isCurrent: false, _h: wdH + wdM / 60 });
+    scheduleEvents.push({ time: formatTime(profile.wind_down_time), label: 'Wind down', color: '#B8A9D4', isCurrent: false, _h: wdH + wdM / 60 });
   }
 
   // Sort by time and mark the next upcoming event

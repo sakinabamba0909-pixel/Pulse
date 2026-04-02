@@ -65,11 +65,11 @@ export default function TodayStrip({ events, dateLabel }: TodayStripProps) {
                   width: ev.isCurrent ? 14 : 9,
                   height: ev.isCurrent ? 14 : 9,
                   borderRadius: '50%',
-                  background: ev.isCurrent ? ev.color : P.inkFaint,
+                  background: ev.color,
                   border: ev.isCurrent ? '2px solid white' : 'none',
                   boxShadow: ev.isCurrent
                     ? `0 0 12px ${ev.color}80, 0 0 0 3px ${ev.color}25`
-                    : 'none',
+                    : `0 0 4px ${ev.color}30`,
                   marginBottom: 12,
                   transition: 'all 0.3s',
                   flexShrink: 0,
@@ -89,7 +89,7 @@ export default function TodayStrip({ events, dateLabel }: TodayStripProps) {
                 </p>
                 <p style={{
                   fontSize: 10,
-                  color: ev.isCurrent ? ev.color : P.inkFaint,
+                  color: ev.isCurrent ? ev.color : P.inkMuted,
                   fontWeight: 300,
                   textAlign: 'center',
                 }}>
