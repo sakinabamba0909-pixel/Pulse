@@ -58,14 +58,13 @@ export default async function AppPage() {
 
   if (!profile?.onboarding_completed) redirect('/app/onboarding');
 
-  const todayStr = new Date().toISOString().split('T')[0]
-  const allTasks = (rawTasks ?? []).filter((t: any) => !t.blocked_by_task_id)
-  // Only today's tasks for the Focus section (pinned + due today)
-  const focusTasks = allTasks.filter((t: any) => t.is_pinned || t.due_at?.startsWith(todayStr))
-  const focusCount = focusTasks.length
-
   const now = new Date();
   const tz = profile.timezone || 'America/New_York';
+  const todayStr = now.toLocaleDateString('en-CA', { timeZone: tz }); // YYYY-MM-DD in user's tz
+  const allTasks = (rawTasks ?? []).filter((t: any) => !t.blocked_by_task_id)
+  // Only today's tasks for the Focus section (pinned + due today + no due date)
+  const focusTasks = allTasks.filter((t: any) => t.is_pinned || !t.due_at || t.due_at?.startsWith(todayStr))
+  const focusCount = focusTasks.length
   const hour = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hour12: false }).format(now));
   const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: tz });
   const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: tz });
