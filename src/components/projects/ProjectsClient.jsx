@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 var FONT_URL =
   'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300&display=swap';
@@ -403,6 +403,19 @@ export default function ProjectsClient({ projects: rawProjects, completedProject
   var [calPreviewDate, setCalPreviewDate] = useState(new Date());
   var [calPreviewEvents, setCalPreviewEvents] = useState([]); // real calendar events
   var [calPreviewLoaded, setCalPreviewLoaded] = useState(false);
+
+  // Auto-open project from URL param (e.g. ?project=uuid)
+  var searchParams = useSearchParams();
+  useEffect(function () {
+    var projectId = searchParams.get('project');
+    if (projectId && projectViews.length > 0) {
+      var match = projectViews.find(function (p) { return p.id === projectId; });
+      if (match) {
+        setSelectedProject(match);
+        setView('detail');
+      }
+    }
+  }, [searchParams, projectViews.length]);
 
   // Check calendar connection on mount
   useEffect(function () {

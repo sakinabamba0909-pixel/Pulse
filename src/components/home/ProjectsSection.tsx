@@ -9,6 +9,7 @@ const P = {
 };
 
 export interface ProjectData {
+  id?: string;
   name: string;
   color: string;
   pct: number;
@@ -45,8 +46,9 @@ export default function ProjectsSection({ projects }: ProjectsSectionProps) {
           const isHov = hov === i;
           const flexVal = 1;
           return (
-            <div
+            <a
               key={i}
+              href={p.id ? `/app/projects?project=${p.id}` : '/app/projects'}
               onMouseEnter={() => setHov(i)}
               onMouseLeave={() => setHov(null)}
               style={{
@@ -60,6 +62,7 @@ export default function ProjectsSection({ projects }: ProjectsSectionProps) {
                 transition: 'all 0.35s cubic-bezier(0.4,0,0.2,1)',
                 position: 'relative',
                 overflow: 'hidden',
+                textDecoration: 'none', color: 'inherit',
               }}
             >
               {/* Color fill at bottom — progress indicator */}
@@ -95,7 +98,7 @@ export default function ProjectsSection({ projects }: ProjectsSectionProps) {
                   {p.pct}<span style={{ fontSize: 10 }}>%</span>
                 </p>
               </div>
-            </div>
+            </a>
           );
         })}
       </div>
