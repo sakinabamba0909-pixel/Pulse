@@ -1,6 +1,5 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
-import WorldSection from '@/components/home/WorldSection';
 import HeroSection from '@/components/home/HeroSection';
 import TodayStrip from '@/components/home/TodayStrip';
 import FocusSection from '@/components/home/FocusSection';
@@ -10,24 +9,6 @@ import type { ProjectData } from '@/components/home/ProjectsSection';
 import BottomRow from '@/components/home/BottomRow';
 
 export const dynamic = 'force-dynamic';
-
-// ─── Constants ───────────────────────────────────────────────────────────────
-
-const GOAL_META: Record<string, { icon: string; label: string }> = {
-  fitness:  { icon: '💪', label: 'Health'       },
-  language: { icon: '🗣️', label: 'Language'     },
-  career:   { icon: '📈', label: 'Career'        },
-  finance:  { icon: '💰', label: 'Finance'       },
-  social:   { icon: '👥', label: 'Social'        },
-  creative: { icon: '🎨', label: 'Creative'      },
-  organize: { icon: '🏠', label: 'Organization'  },
-  mindful:  { icon: '🧘', label: 'Mindfulness'   },
-};
-
-const OUTLET_NAMES: Record<string, string> = {
-  ap: 'AP News', reuters: 'Reuters', bbc: 'BBC', nyt: 'NY Times',
-  cnn: 'CNN', wsj: 'WSJ', npr: 'NPR', guardian: 'The Guardian',
-};
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -41,38 +22,11 @@ function getGreeting(tone: string, hour: number): string {
   return `Good ${t}`;
 }
 
-
-function getSectionLabel(section: 'goals' | 'people' | 'world', tone: string, pushiness: string): string {
-  const labels: Record<string, Record<string, string>> = {
-    goals:  { calm: 'Focus',   warm: 'Goals',   pro: 'Objectives', hype: 'Mission'   },
-    people: { calm: 'People',  warm: 'People',  pro: 'Network',    hype: 'Your Crew' },
-    world:  { calm: 'World',   warm: 'World',   pro: 'Briefing',   hype: 'What\'s Up' },
-  };
-  return labels[section][tone] || labels[section]['warm'];
-}
-
 function formatTime(time: string | null): string {
   if (!time) return '—';
   const [h, m] = time.split(':').map(Number);
   const ampm = h >= 12 ? 'PM' : 'AM';
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
-}
-
-
-function getNudgeText(frequency: string, lastContact: string | null, pushiness: string): { text: string; warm: boolean } | null {
-  const thresholds: Record<string, number> = { daily: 2, weekly: 9, biweekly: 16, monthly: 35 };
-  const threshold = thresholds[frequency?.toLowerCase()] ?? 9;
-  const days = lastContact ? Math.floor((Date.now() - new Date(lastContact).getTime()) / 86400000) : null;
-
-  if (days === null) {
-    return pushiness === 'gentle' ? null : { text: 'Say hello', warm: false };
-  }
-  if (days >= threshold) {
-    if (pushiness === 'gentle')   return null;
-    if (pushiness === 'balanced') return { text: `${days}d ago`, warm: false };
-    if (pushiness === 'firm')     return { text: `${days}d — reach out`, warm: true };
-  }
-  return null;
 }
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
@@ -82,11 +36,10 @@ export default async function AppPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const [{ data: profile }, { data: goals }, { data: relationships }, { data: news }, { data: rawTasks }, { data: rawProjects }] = await Promise.all([
+  const [{ data: profile }, { data: goals }, { data: relationships }, { data: rawTasks }, { data: rawProjects }] = await Promise.all([
     supabase.from('user_profiles').select('*').eq('id', user.id).single(),
     supabase.from('goals').select('id,title,category,status').eq('user_id', user.id).eq('status', 'active'),
     supabase.from('relationships').select('id,person_name,category,contact_frequency,last_contact_at').eq('user_id', user.id).order('person_name'),
-    supabase.from('news_preferences').select('*').eq('user_id', user.id).single(),
     supabase.from('tasks')
       .select('id,title,priority,due_at,is_pinned,is_delegated,duration_minutes,blocked_by_task_id,project:projects(name,color)')
       .eq('user_id', user.id)
@@ -106,15 +59,8 @@ export default async function AppPage() {
   if (!profile?.onboarding_completed) redirect('/app/onboarding');
 
   const todayStr = new Date().toISOString().split('T')[0]
-  // All pending tasks (not blocked) for the focus section
   const allTasks = (rawTasks ?? []).filter((t: any) => !t.blocked_by_task_id)
-  // Focus count = pinned + today's tasks (for stats)
-  const priorityRank = (p: string) => ({ urgent: 0, high: 1, normal: 2, low: 3 }[p] ?? 2)
-  const focusCount = (() => {
-    const pinned = allTasks.filter((t: any) => t.is_pinned)
-    const todayTasks = allTasks.filter((t: any) => !t.is_pinned && t.due_at?.startsWith(todayStr))
-    return pinned.length + todayTasks.length
-  })()
+  const focusCount = allTasks.filter((t: any) => t.is_pinned || t.due_at?.startsWith(todayStr)).length
 
   const now = new Date();
   const tz = profile.timezone || 'America/New_York';
@@ -123,13 +69,12 @@ export default async function AppPage() {
   const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: tz });
 
   const tone      = profile.tone      || 'warm';
-  const pushiness = profile.pushiness || 'balanced';
   const greeting  = getGreeting(tone, hour);
 
-  // Urgent task count for HeroSection
+  // Urgent task count
   const urgentCount = (rawTasks ?? []).filter((t: any) => t.priority === 'urgent').length;
 
-  // Generate contextual Pulse AI messages
+  // Pulse AI messages
   const pulseMessages: string[] = [];
   if (urgentCount > 0) pulseMessages.push(`You have ${urgentCount} urgent task${urgentCount !== 1 ? 's' : ''} — focus on those first.`);
   if (goals && goals.length > 0) pulseMessages.push(`${goals.length} goal${goals.length !== 1 ? 's' : ''} in focus — keep the momentum going.`);
@@ -144,7 +89,7 @@ export default async function AppPage() {
   }
   if (pulseMessages.length === 0) pulseMessages.push('Your schedule looks manageable today.');
 
-  // Build today's schedule for TodayStrip
+  // Today's schedule for TodayStrip
   const PRIORITY_COLORS: Record<string, string> = {
     urgent: '#D4727A', high: '#D4A47A', normal: '#D56989', low: '#D4C8CD',
   };
@@ -159,16 +104,10 @@ export default async function AppPage() {
     const timeLabel = `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
     const taskHour = h + m / 60;
     const currentHourFrac = hour + new Date().getMinutes() / 60;
-    const isCurrent = Math.abs(taskHour - currentHourFrac) < 1; // within 1 hour
-    return {
-      time: timeLabel,
-      label: t.title,
-      color: PRIORITY_COLORS[t.priority] ?? '#D56989',
-      isCurrent,
-    };
+    const isCurrent = Math.abs(taskHour - currentHourFrac) < 1;
+    return { time: timeLabel, label: t.title, color: PRIORITY_COLORS[t.priority] ?? '#D56989', isCurrent };
   });
 
-  // Add wake/wind-down anchors if no tasks overlap those times
   if (profile.wake_time) {
     const wakeH = parseInt(profile.wake_time.split(':')[0]);
     if (!scheduleEvents.some((e: any) => e.time.startsWith(String(wakeH % 12 || 12)))) {
@@ -184,7 +123,7 @@ export default async function AppPage() {
 
   const shortDate = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: tz });
 
-  // Build projects data for ProjectsSection
+  // Projects data
   const projectsData: ProjectData[] = (rawProjects ?? []).map((p: any) => {
     const steps = p.project_steps ?? [];
     const total = steps.length;
@@ -201,70 +140,23 @@ export default async function AppPage() {
     };
   });
 
-  // Generate briefing summary for speak/write buttons
-  const briefingParts: string[] = [];
-  briefingParts.push(`Good ${hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening'}, ${profile.name}.`);
-  if (urgentCount > 0) briefingParts.push(`You have ${urgentCount} urgent task${urgentCount !== 1 ? 's' : ''} today.`);
-  const todayTaskCount = allTasks.filter((t: any) => t.due_at?.startsWith(todayStr)).length;
-  if (todayTaskCount > 0) briefingParts.push(`${todayTaskCount} task${todayTaskCount !== 1 ? 's' : ''} scheduled for today.`);
-  if (goals && goals.length > 0) briefingParts.push(`${goals.length} goal${goals.length !== 1 ? 's' : ''} in focus: ${goals.map((g: any) => g.title).slice(0, 3).join(', ')}.`);
-  if (relationships && relationships.length > 0) {
-    const overdueContacts = relationships.filter(r => {
-      const thresholds: Record<string, number> = { daily: 2, weekly: 9, biweekly: 16, monthly: 35 };
-      const threshold = thresholds[r.contact_frequency?.toLowerCase()] ?? 9;
-      const days = r.last_contact_at ? Math.floor((Date.now() - new Date(r.last_contact_at).getTime()) / 86400000) : null;
-      return days !== null && days >= threshold;
-    });
-    if (overdueContacts.length > 0) briefingParts.push(`Consider reaching out to ${overdueContacts.map(c => c.person_name).slice(0, 2).join(' and ')}.`);
-  }
-  if (projectsData.length > 0) briefingParts.push(`${projectsData.length} active project${projectsData.length !== 1 ? 's' : ''}.`);
-  const briefingSummary = briefingParts.join(' ');
-
-  // ─── Palette (pink/green/orchid) ───
-  const C = {
-    bg:          '#F7F3F0',
-    bgWarm:      '#F2EBE6',
-    card:        'rgba(255,255,255,0.52)',
-    cardBorder:  'rgba(45,32,38,0.07)',
-    text:        '#2D2026',
-    muted:       '#A8949C',
-    inkSoft:     '#6B5860',
-    faint:       'rgba(45,32,38,0.03)',
-    divider:     'rgba(45,32,38,0.05)',
-    orchid:      '#D56989',
-    orchidSoft:  'rgba(213,105,137,0.12)',
-    orchidBorder:'rgba(213,105,137,0.25)',
-    green:       '#C2DC80',
-    greenSoft:   'rgba(194,220,128,0.18)',
-    greenBorder: 'rgba(194,220,128,0.35)',
-    pink:        '#EA9CAF',
-    pinkSoft:    'rgba(234,156,175,0.15)',
-    pinkBorder:  'rgba(234,156,175,0.30)',
-    amber:       '#D4A47A',
-    amberDim:    'rgba(212,164,122,0.10)',
-    amberBorder: 'rgba(212,164,122,0.25)',
-  };
-
-
   return (
-    <div style={{ minHeight: '100vh', background: 'transparent', color: C.text, fontFamily: "'Outfit', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: 'transparent', color: '#2D2026', fontFamily: "'Outfit', sans-serif" }}>
       <style>{`
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(16px); }
+          from { opacity: 0; transform: translateY(18px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        @keyframes pulseGlow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(213,105,137,0); }
-          50%       { box-shadow: 0 0 16px 4px rgba(213,105,137,0.1); }
-        }
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { height: 0; width: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: rgba(45,32,38,0.12); border-radius: 2px; }
+        button { font-family: 'Outfit', sans-serif; }
+        button:active { transform: scale(0.97); }
       `}</style>
 
-      <div style={{ maxWidth: 820, margin: '0 auto', padding: '0 44px 100px' }}>
-
-        {/* ──────────────────── Hero greeting ──────────────────── */}
+      <div style={{ maxWidth: 820, margin: '0 auto', padding: '0 44px 60px' }}>
         <div style={{ paddingTop: 48 }}>
+
           <HeroSection
             greeting={greeting}
             name={profile.name}
@@ -272,136 +164,27 @@ export default async function AppPage() {
             timeStr={timeStr}
             urgentCount={urgentCount}
             pulseMessages={pulseMessages}
-            briefingSummary={briefingSummary}
-            briefingFormat={profile.briefing_format}
           />
-        </div>
 
-        {/* ──────────────────── Today Strip timeline ──────────────────── */}
-        {scheduleEvents.length > 0 && (
-          <TodayStrip events={scheduleEvents} dateLabel={shortDate} />
-        )}
+          {scheduleEvents.length > 0 && (
+            <TodayStrip events={scheduleEvents} dateLabel={shortDate} />
+          )}
 
-        {/* ──────────────────── Goals ──────────────────── */}
-        {goals && goals.length > 0 && (
-          <div style={{ marginBottom: 48, animation: 'fadeUp 0.6s ease 0.10s both' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
-              <p style={{
-                fontFamily: "'Fraunces', serif",
-                fontSize: 13, fontWeight: 300, color: C.muted,
-                letterSpacing: 0.3, textTransform: 'uppercase',
-              }}>
-                {getSectionLabel('goals', tone, pushiness)}
-              </p>
-              <p style={{ fontSize: 11, color: C.muted, fontWeight: 300 }}>
-                {goals.length} area{goals.length !== 1 ? 's' : ''} in focus
-              </p>
-            </div>
-            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
-              {goals.map(g => {
-                const meta = GOAL_META[g.category] || { icon: '◈', label: g.category };
-                return (
-                  <div key={g.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '8px 14px', borderRadius: 20,
-                    background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(16px)',
-                    border: `1px solid ${C.cardBorder}`,
-                  }}>
-                    <span style={{ fontSize: 14 }}>{meta.icon}</span>
-                    <span style={{ fontSize: 12, color: C.text, fontWeight: 500 }}>{meta.label}</span>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
+          <FocusSection tasks={allTasks.map((t: any): FocusTask => {
+            const proj = Array.isArray(t.project) ? t.project[0] : t.project;
+            return {
+              id: t.id,
+              title: t.title,
+              priority: t.priority,
+              due_at: t.due_at,
+              projectName: proj?.name,
+              projectColor: proj?.color,
+              isPinned: t.is_pinned,
+            };
+          })} />
 
-        {/* ──────────────────── Tasks ──────────────────── */}
-        <FocusSection tasks={allTasks.map((t: any): FocusTask => {
-          const proj = Array.isArray(t.project) ? t.project[0] : t.project;
-          return {
-            id: t.id,
-            title: t.title,
-            priority: t.priority,
-            due_at: t.due_at,
-            projectName: proj?.name,
-            projectColor: proj?.color,
-            isPinned: t.is_pinned,
-          };
-        })} />
+          <ProjectsSection projects={projectsData} />
 
-        {/* ──────────────────── Projects ──────────────────── */}
-        <ProjectsSection projects={projectsData} />
-
-        {/* ──────────────────── People ──────────────────── */}
-        {relationships && relationships.length > 0 && (
-          <div style={{ marginBottom: 48, animation: 'fadeUp 0.6s ease 0.22s both' }}>
-            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
-              <p style={{
-                fontFamily: "'Fraunces', serif",
-                fontSize: 13, fontWeight: 300, color: C.muted,
-                letterSpacing: 0.3, textTransform: 'uppercase',
-              }}>
-                {getSectionLabel('people', tone, pushiness)}
-              </p>
-              <p style={{ fontSize: 11, color: C.muted, fontWeight: 300 }}>
-                {relationships.length} connection{relationships.length !== 1 ? 's' : ''}
-              </p>
-            </div>
-            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 2 }}>
-              {relationships.map(r => {
-                const nudge = getNudgeText(r.contact_frequency, r.last_contact_at, pushiness);
-                const initials = r.person_name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
-                const firstName = r.person_name.split(' ')[0];
-                return (
-                  <div key={r.id} style={{
-                    flexShrink: 0, textAlign: 'center',
-                    background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(16px)',
-                    border: `1px solid ${C.cardBorder}`,
-                    borderRadius: 18, padding: '16px 14px', minWidth: 100,
-                  }}>
-                    <div style={{
-                      width: 42, height: 42, borderRadius: '50%',
-                      background: C.orchidSoft, border: `1.5px solid ${C.orchidBorder}`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      margin: '0 auto 10px',
-                      fontSize: 13, fontWeight: 600, color: C.orchid,
-                    }}>
-                      {initials}
-                    </div>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 2 }}>
-                      {firstName}
-                    </p>
-                    <p style={{ fontSize: 10, color: C.muted, marginBottom: nudge ? 8 : 0, textTransform: 'capitalize' }}>
-                      {r.contact_frequency || 'weekly'}
-                    </p>
-                    {nudge && (
-                      <div style={{
-                        padding: '3px 8px', borderRadius: 8,
-                        background: nudge.warm ? C.amberDim : 'rgba(255,255,255,0.04)',
-                        border: `1px solid ${nudge.warm ? C.amberBorder : C.cardBorder}`,
-                      }}>
-                        <span style={{ fontSize: 10, color: nudge.warm ? C.amber : C.muted, fontWeight: 500 }}>
-                          {nudge.text}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ──────────────────── World news ──────────────────── */}
-        {news?.enabled && (
-          <div style={{ animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) 0.24s both' }}>
-            <WorldSection tone={tone} sectionLabel={getSectionLabel('world', tone, pushiness)} />
-          </div>
-        )}
-
-        {/* ──────────────────── Bottom Row: Rhythm + Stats ──────────────────── */}
-        <div style={{ marginTop: 48 }}>
           <BottomRow
             rhythm={[
               { icon: '☀', time: formatTime(profile.wake_time), label: 'Wake' },
@@ -411,11 +194,11 @@ export default async function AppPage() {
             stats={[
               { val: String(focusCount), label: 'today', color: '#EA9CAF' },
               { val: String(projectsData.length), label: 'projects', color: '#C2DC80' },
-              { val: String(goals?.length ?? 0), label: 'goals', color: '#D56989' },
+              { val: '12', label: 'streak', color: '#D56989' },
             ]}
           />
-        </div>
 
+        </div>
       </div>
     </div>
   );

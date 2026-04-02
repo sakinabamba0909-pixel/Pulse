@@ -1,26 +1,18 @@
 'use client';
 
-import { useState, useRef, useEffect, useCallback } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import Orb from '@/components/Orb';
 
-/* ─── Palette (matches globals.css vars) ─── */
+/* ─── Palette ─── */
 const P = {
-  ink:          '#2D2026',
-  inkSoft:      '#6B5860',
-  inkMuted:     '#A8949C',
-  inkFaint:     '#D4C8CD',
-  orchid:       '#D56989',
-  orchidSoft:   'rgba(213,105,137,0.12)',
-  orchidBorder: 'rgba(213,105,137,0.25)',
-  green:        '#C2DC80',
-  greenDark:    '#7A9E35',
-  greenSoft:    'rgba(194,220,128,0.18)',
-  greenBorder:  'rgba(194,220,128,0.35)',
-  pink:         '#EA9CAF',
-  pinkSoft:     'rgba(234,156,175,0.15)',
-  pinkBorder:   'rgba(234,156,175,0.30)',
-  divider:      'rgba(45,32,38,0.05)',
-  border:       'rgba(45,32,38,0.07)',
+  ink:      '#2D2026',
+  inkSoft:  '#6B5860',
+  inkMuted: '#A8949C',
+  inkFaint: '#D4C8CD',
+  orchid:   '#D56989',
+  green:    '#C2DC80',
+  pink:     '#EA9CAF',
+  divider:  'rgba(45,32,38,0.05)',
 };
 
 /* ─── TypeWriter ─── */
@@ -58,30 +50,11 @@ interface HeroSectionProps {
   timeStr: string;
   urgentCount: number;
   pulseMessages: string[];
-  briefingSummary?: string; // text summary for speak/write
-  briefingFormat?: string;  // 'alarm' | 'written' | 'both'
 }
 
-export default function HeroSection({ greeting, name, dateStr, timeStr, urgentCount, pulseMessages, briefingSummary, briefingFormat }: HeroSectionProps) {
+export default function HeroSection({ greeting, name, dateStr, timeStr, urgentCount, pulseMessages }: HeroSectionProps) {
   const [msgIdx, setMsgIdx] = useState(0);
   const [dismissed, setDismissed] = useState(false);
-  const [speaking, setSpeaking] = useState(false);
-  const [showWritten, setShowWritten] = useState(false);
-
-  const speakBriefing = useCallback(() => {
-    if (!briefingSummary || typeof window === 'undefined') return;
-    if (speaking) {
-      window.speechSynthesis?.cancel();
-      setSpeaking(false);
-      return;
-    }
-    const utterance = new SpeechSynthesisUtterance(briefingSummary);
-    utterance.rate = 1.05;
-    utterance.onend = () => setSpeaking(false);
-    utterance.onerror = () => setSpeaking(false);
-    window.speechSynthesis?.speak(utterance);
-    setSpeaking(true);
-  }, [briefingSummary, speaking]);
 
   const msgs = pulseMessages.length > 0 ? pulseMessages : [
     'Your schedule looks manageable today.',
@@ -146,74 +119,13 @@ export default function HeroSection({ greeting, name, dateStr, timeStr, urgentCo
             </p>
           </div>
           <div style={{ display: 'flex', gap: 6, flexShrink: 0, marginTop: 2 }}>
-            {msgs.length > 1 && (
-              <button
-                onClick={() => setMsgIdx(i => i + 1)}
-                style={{ fontSize: 11, color: P.orchid, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', fontWeight: 500 }}
-              >
-                next ›
-              </button>
-            )}
-            <button
-              onClick={() => setDismissed(true)}
-              style={{ fontSize: 16, color: P.inkFaint, background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1 }}
-            >
+            <button onClick={() => setMsgIdx(i => i + 1)} style={{ fontSize: 11, color: P.orchid, background: 'none', border: 'none', cursor: 'pointer', padding: '2px 0', fontWeight: 500 }}>
+              next ›
+            </button>
+            <button onClick={() => setDismissed(true)} style={{ fontSize: 16, color: P.inkFaint, background: 'none', border: 'none', cursor: 'pointer', lineHeight: 1 }}>
               ×
             </button>
           </div>
-        </div>
-      )}
-
-      {/* Briefing action buttons */}
-      {briefingSummary && (
-        <div style={{ display: 'flex', gap: 10, marginTop: dismissed ? 0 : 16 }}>
-          <button
-            onClick={speakBriefing}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '10px 20px', borderRadius: 14,
-              background: speaking ? P.orchidSoft : P.pinkSoft,
-              border: `1px solid ${speaking ? P.orchidBorder : P.pinkBorder}`,
-              cursor: 'pointer', transition: 'all 0.2s',
-              fontSize: 13, fontWeight: 500, color: speaking ? P.orchid : P.ink,
-              fontFamily: "'Outfit', sans-serif",
-            }}
-          >
-            <span style={{ fontSize: 15 }}>{speaking ? '⏸' : '🔔'}</span>
-            {speaking ? 'Stop' : 'Speak it'}
-          </button>
-          <button
-            onClick={() => setShowWritten(v => !v)}
-            style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              padding: '10px 20px', borderRadius: 14,
-              background: showWritten ? P.greenSoft : 'rgba(255,255,255,0.5)',
-              border: `1px solid ${showWritten ? P.greenBorder : P.border}`,
-              cursor: 'pointer', transition: 'all 0.2s',
-              fontSize: 13, fontWeight: 500, color: showWritten ? P.greenDark : P.ink,
-              fontFamily: "'Outfit', sans-serif",
-            }}
-          >
-            <span style={{ fontSize: 15 }}>📖</span>
-            Write it out
-          </button>
-        </div>
-      )}
-
-      {/* Written briefing panel */}
-      {showWritten && briefingSummary && (
-        <div style={{
-          marginTop: 14, padding: '16px 20px', borderRadius: 16,
-          background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(16px)',
-          border: `1px solid ${P.border}`,
-          animation: 'fadeUp 0.3s ease both',
-        }}>
-          <p style={{ fontSize: 9, fontWeight: 700, color: P.green, letterSpacing: 0.8, textTransform: 'uppercase', marginBottom: 8 }}>
-            Your Briefing
-          </p>
-          <p style={{ fontSize: 14, color: P.inkSoft, lineHeight: 1.7, fontWeight: 300 }}>
-            {briefingSummary}
-          </p>
         </div>
       )}
     </div>

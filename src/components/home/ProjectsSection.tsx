@@ -45,14 +45,12 @@ export default function ProjectsSection({ projects }: ProjectsSectionProps) {
           const isHov = hov === i;
           const flexVal = 20 + p.pct;
           return (
-            <a
+            <div
               key={i}
-              href="/app/projects"
-              style={{ flex: flexVal, minWidth: 0, textDecoration: 'none' }}
               onMouseEnter={() => setHov(i)}
               onMouseLeave={() => setHov(null)}
-            >
-              <div style={{
+              style={{
+                flex: flexVal, minWidth: 0,
                 borderRadius: 20,
                 background: isHov ? `${p.color}22` : 'rgba(255,255,255,0.55)',
                 backdropFilter: 'blur(16px)',
@@ -62,43 +60,42 @@ export default function ProjectsSection({ projects }: ProjectsSectionProps) {
                 transition: 'all 0.35s cubic-bezier(0.4,0,0.2,1)',
                 position: 'relative',
                 overflow: 'hidden',
-                height: '100%',
-              }}>
-                {/* Color fill at bottom — progress indicator */}
+              }}
+            >
+              {/* Color fill at bottom — progress indicator */}
+              <div style={{
+                position: 'absolute', bottom: 0, left: 0, right: 0,
+                height: `${p.pct}%`,
+                background: `linear-gradient(0deg, ${p.color}18, transparent)`,
+                borderRadius: '0 0 20px 20px',
+                transition: 'height 0.6s ease',
+              }} />
+              <div style={{ position: 'relative', zIndex: 1 }}>
                 <div style={{
-                  position: 'absolute', bottom: 0, left: 0, right: 0,
-                  height: `${p.pct}%`,
-                  background: `linear-gradient(0deg, ${p.color}18, transparent)`,
-                  borderRadius: '0 0 20px 20px',
-                  transition: 'height 0.6s ease',
+                  width: 8, height: 8, borderRadius: 2,
+                  background: p.color, marginBottom: 10,
+                  boxShadow: `0 0 8px ${p.color}60`,
                 }} />
-                <div style={{ position: 'relative', zIndex: 1 }}>
-                  <div style={{
-                    width: 8, height: 8, borderRadius: 2,
-                    background: p.color, marginBottom: 10,
-                    boxShadow: `0 0 8px ${p.color}60`,
-                  }} />
-                  <p style={{
-                    fontSize: 12, fontWeight: 500, color: P.ink, marginBottom: 4,
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                  }}>
-                    {p.name}
-                  </p>
-                  <p style={{
-                    fontSize: 10, color: P.inkMuted, fontWeight: 300, marginBottom: 12,
-                    whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
-                  }}>
-                    {p.step}
-                  </p>
-                  <p style={{
-                    fontSize: 18, fontWeight: 200, color: p.color,
-                    fontFamily: "'Fraunces', serif", letterSpacing: -0.5,
-                  }}>
-                    {p.pct}<span style={{ fontSize: 10 }}>%</span>
-                  </p>
-                </div>
+                <p style={{
+                  fontSize: 12, fontWeight: 500, color: P.ink, marginBottom: 4,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
+                  {p.name}
+                </p>
+                <p style={{
+                  fontSize: 10, color: P.inkMuted, fontWeight: 300, marginBottom: 12,
+                  whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis',
+                }}>
+                  {p.step}
+                </p>
+                <p style={{
+                  fontSize: 18, fontWeight: 200, color: p.color,
+                  fontFamily: "'Fraunces', serif", letterSpacing: -0.5,
+                }}>
+                  {p.pct}<span style={{ fontSize: 10 }}>%</span>
+                </p>
               </div>
-            </a>
+            </div>
           );
         })}
       </div>
