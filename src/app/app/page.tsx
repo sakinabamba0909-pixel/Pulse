@@ -3,6 +3,8 @@ import { redirect } from 'next/navigation';
 import WorldSection from '@/components/home/WorldSection';
 import HeroSection from '@/components/home/HeroSection';
 import TodayStrip from '@/components/home/TodayStrip';
+import FocusSection from '@/components/home/FocusSection';
+import type { FocusTask } from '@/components/home/FocusSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -321,37 +323,18 @@ export default async function AppPage() {
           </div>
         </div>
 
-        {/* ──────────────────── Today's Focus ──────────────────── */}
-        {focusTasks.length > 0 && (
-          <a href="/app/tasks" style={{ textDecoration: 'none' }}>
-            <div style={{ ...cardStyle, marginBottom: 14, animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) 0.12s both', cursor: 'pointer' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                <p style={{ ...labelStyle, marginBottom: 0 }}>Today&apos;s Focus</p>
-                <span style={{ fontSize: 11, color: C.orchid, fontWeight: 600 }}>View all →</span>
-              </div>
-              {focusTasks.map((t: any, i: number) => {
-                const dotColor = ({ urgent: '#D4727A', high: '#D4A47A', normal: '#7AABC8', low: '#9E958B' } as Record<string, string>)[t.priority] ?? '#9E958B'
-                const proj = Array.isArray(t.project) ? t.project[0] : t.project
-                return (
-                  <div key={t.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0',
-                    borderBottom: i < focusTasks.length - 1 ? `1px solid ${C.divider}` : 'none',
-                  }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0, display: 'inline-block' }} />
-                    <span style={{ fontSize: 13, color: C.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {t.title}
-                    </span>
-                    {proj && (
-                      <span style={{ fontSize: 11, padding: '1px 8px', borderRadius: 20, background: `${proj.color}18`, color: proj.color, fontWeight: 600, flexShrink: 0 }}>
-                        {proj.name}
-                      </span>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </a>
-        )}
+        {/* ──────────────────── Focus Tasks ──────────────────── */}
+        <FocusSection tasks={focusTasks.map((t: any): FocusTask => {
+          const proj = Array.isArray(t.project) ? t.project[0] : t.project;
+          return {
+            id: t.id,
+            title: t.title,
+            priority: t.priority,
+            projectName: proj?.name,
+            projectColor: proj?.color,
+            isUrgent: t.priority === 'urgent',
+          };
+        })} />
 
         {/* ──────────────────── People ──────────────────── */}
         {relationships && relationships.length > 0 && (
