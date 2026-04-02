@@ -98,16 +98,19 @@ export default function FocusSection({ tasks }: FocusSectionProps) {
             {/* text — click to navigate */}
             <a href={`/app/tasks?task=${t.id}`} style={{ flex: 1, minWidth: 0, padding: '16px 0', textDecoration: 'none', cursor: 'pointer' }}>
               <p style={{
-                fontSize: 16, fontWeight: d ? 300 : 500,
+                fontFamily: "'Fraunces', serif",
+                fontSize: 15, fontWeight: d ? 300 : 400,
                 color: d ? P.inkMuted : P.ink,
                 textDecoration: d ? 'line-through' : 'none',
-                letterSpacing: -0.2, marginBottom: 3,
+                letterSpacing: -0.3, marginBottom: 3,
               }}>
                 {t.title}
               </p>
-              <p style={{ fontSize: 11, color: P.inkMuted, fontWeight: 300 }}>
-                {t.projectName}
-              </p>
+              {t.projectName && (
+                <p style={{ fontSize: 10, color: t.projectColor || P.inkMuted, fontWeight: 500, letterSpacing: 0.3, textTransform: 'uppercase' }}>
+                  {t.projectName}
+                </p>
+              )}
             </a>
 
             {/* urgent tag */}
