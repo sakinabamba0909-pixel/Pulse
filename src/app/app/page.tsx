@@ -5,6 +5,8 @@ import HeroSection from '@/components/home/HeroSection';
 import TodayStrip from '@/components/home/TodayStrip';
 import FocusSection from '@/components/home/FocusSection';
 import type { FocusTask } from '@/components/home/FocusSection';
+import ProjectsSection from '@/components/home/ProjectsSection';
+import type { ProjectData } from '@/components/home/ProjectsSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,7 +87,7 @@ export default async function AppPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const [{ data: profile }, { data: goals }, { data: relationships }, { data: news }, { data: rawTasks }] = await Promise.all([
+  const [{ data: profile }, { data: goals }, { data: relationships }, { data: news }, { data: rawTasks }, { data: rawProjects }] = await Promise.all([
     supabase.from('user_profiles').select('*').eq('id', user.id).single(),
     supabase.from('goals').select('id,title,category,status').eq('user_id', user.id).eq('status', 'active'),
     supabase.from('relationships').select('id,person_name,category,contact_frequency,last_contact_at').eq('user_id', user.id).order('person_name'),
@@ -98,6 +100,12 @@ export default async function AppPage() {
       .order('is_pinned', { ascending: false })
       .order('due_at', { ascending: true, nullsFirst: false })
       .limit(12),
+    supabase.from('projects')
+      .select('id,name,color,status,project_steps(id,name,status,step_number)')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('updated_at', { ascending: false })
+      .limit(6),
   ]);
 
   if (!profile?.onboarding_completed) redirect('/app/onboarding');
@@ -182,6 +190,23 @@ export default async function AppPage() {
   }
 
   const shortDate = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: tz });
+
+  // Build projects data for ProjectsSection
+  const projectsData: ProjectData[] = (rawProjects ?? []).map((p: any) => {
+    const steps = p.project_steps ?? [];
+    const total = steps.length;
+    const doneCount = steps.filter((s: any) => s.status === 'done').length;
+    const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
+    const activeStep = steps
+      .sort((a: any, b: any) => a.step_number - b.step_number)
+      .find((s: any) => s.status === 'active' || s.status === 'pending');
+    return {
+      name: p.name,
+      color: p.color || '#D56989',
+      pct,
+      step: activeStep?.name || (doneCount === total && total > 0 ? 'Complete' : 'No steps yet'),
+    };
+  });
 
   // ─── Palette (pink/green/orchid) ───
   const C = {
@@ -335,6 +360,9 @@ export default async function AppPage() {
             isUrgent: t.priority === 'urgent',
           };
         })} />
+
+        {/* ──────────────────── Projects ──────────────────── */}
+        <ProjectsSection projects={projectsData} />
 
         {/* ──────────────────── People ──────────────────── */}
         {relationships && relationships.length > 0 && (
