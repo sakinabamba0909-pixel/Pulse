@@ -60,7 +60,9 @@ export default async function AppPage() {
 
   const todayStr = new Date().toISOString().split('T')[0]
   const allTasks = (rawTasks ?? []).filter((t: any) => !t.blocked_by_task_id)
-  const focusCount = allTasks.filter((t: any) => t.is_pinned || t.due_at?.startsWith(todayStr)).length
+  // Only today's tasks for the Focus section (pinned + due today)
+  const focusTasks = allTasks.filter((t: any) => t.is_pinned || t.due_at?.startsWith(todayStr))
+  const focusCount = focusTasks.length
 
   const now = new Date();
   const tz = profile.timezone || 'America/New_York';
@@ -170,7 +172,7 @@ export default async function AppPage() {
             <TodayStrip events={scheduleEvents} dateLabel={shortDate} />
           )}
 
-          <FocusSection tasks={allTasks.map((t: any): FocusTask => {
+          <FocusSection tasks={focusTasks.map((t: any): FocusTask => {
             const proj = Array.isArray(t.project) ? t.project[0] : t.project;
             return {
               id: t.id,

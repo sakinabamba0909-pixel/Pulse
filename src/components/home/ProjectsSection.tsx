@@ -43,14 +43,14 @@ export default function ProjectsSection({ projects }: ProjectsSectionProps) {
       <div style={{ display: 'flex', gap: 10, alignItems: 'stretch' }}>
         {projects.map((p, i) => {
           const isHov = hov === i;
-          const flexVal = 20 + p.pct;
+          const flexVal = 1;
           return (
             <div
               key={i}
               onMouseEnter={() => setHov(i)}
               onMouseLeave={() => setHov(null)}
               style={{
-                flex: flexVal, minWidth: 0,
+                flex: flexVal, minWidth: 0, maxWidth: 220,
                 borderRadius: 20,
                 background: isHov ? `${p.color}22` : 'rgba(255,255,255,0.55)',
                 backdropFilter: 'blur(16px)',

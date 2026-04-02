@@ -61,7 +61,7 @@ export default function HeroSection({ greeting, name, dateStr, timeStr, urgentCo
   ];
 
   const urgentText = urgentCount > 0
-    ? <><span style={{ color: P.ink, fontWeight: 500 }}>{urgentCount} urgent thing{urgentCount !== 1 ? 's' : ''}</span> and a clear afternoon.</>
+    ? <><a href="/app/tasks?filter=urgent" style={{ color: P.ink, fontWeight: 500, textDecoration: 'none', borderBottom: `1px solid ${P.inkFaint}`, transition: 'border-color 0.2s' }}>{urgentCount} urgent thing{urgentCount !== 1 ? 's' : ''}</a> and a clear afternoon.</>
     : <>Nothing urgent — enjoy your day.</>;
 
   return (
