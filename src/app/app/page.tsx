@@ -2,6 +2,7 @@ import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import WorldSection from '@/components/home/WorldSection';
 import HeroSection from '@/components/home/HeroSection';
+import TodayStrip from '@/components/home/TodayStrip';
 
 export const dynamic = 'force-dynamic';
 
@@ -140,6 +141,46 @@ export default async function AppPage() {
   }
   if (pulseMessages.length === 0) pulseMessages.push('Your schedule looks manageable today.');
 
+  // Build today's schedule for TodayStrip
+  const PRIORITY_COLORS: Record<string, string> = {
+    urgent: '#D4727A', high: '#D4A47A', normal: '#D56989', low: '#D4C8CD',
+  };
+  const todayTasks = (rawTasks ?? [])
+    .filter((t: any) => t.due_at?.startsWith(todayStr))
+    .sort((a: any, b: any) => new Date(a.due_at).getTime() - new Date(b.due_at).getTime());
+
+  const scheduleEvents = todayTasks.map((t: any) => {
+    const d = new Date(t.due_at);
+    const h = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hour12: false }).format(d));
+    const m = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: tz, minute: '2-digit' }).format(d));
+    const timeLabel = `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+    const taskHour = h + m / 60;
+    const currentHourFrac = hour + new Date().getMinutes() / 60;
+    const isCurrent = Math.abs(taskHour - currentHourFrac) < 1; // within 1 hour
+    return {
+      time: timeLabel,
+      label: t.title,
+      color: PRIORITY_COLORS[t.priority] ?? '#D56989',
+      isCurrent,
+    };
+  });
+
+  // Add wake/wind-down anchors if no tasks overlap those times
+  if (profile.wake_time) {
+    const wakeH = parseInt(profile.wake_time.split(':')[0]);
+    if (!scheduleEvents.some((e: any) => e.time.startsWith(String(wakeH % 12 || 12)))) {
+      scheduleEvents.unshift({ time: formatTime(profile.wake_time), label: 'Wake', color: '#D4C8CD', isCurrent: false });
+    }
+  }
+  if (profile.wind_down_time) {
+    const windH = parseInt(profile.wind_down_time.split(':')[0]);
+    if (!scheduleEvents.some((e: any) => e.time.startsWith(String(windH % 12 || 12)))) {
+      scheduleEvents.push({ time: formatTime(profile.wind_down_time), label: 'Wind down', color: '#D4C8CD', isCurrent: false });
+    }
+  }
+
+  const shortDate = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: tz });
+
   // ─── Palette (pink/green/orchid) ───
   const C = {
     bg:          '#F7F3F0',
@@ -205,6 +246,11 @@ export default async function AppPage() {
             pulseMessages={pulseMessages}
           />
         </div>
+
+        {/* ──────────────────── Today Strip timeline ──────────────────── */}
+        {scheduleEvents.length > 0 && (
+          <TodayStrip events={scheduleEvents} dateLabel={shortDate} />
+        )}
 
         {/* ──────────────────── Row 1: Your Day + Goals ──────────────────── */}
         <div style={{
