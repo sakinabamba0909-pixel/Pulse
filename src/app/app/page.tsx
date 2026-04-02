@@ -41,13 +41,12 @@ export default async function AppPage() {
     supabase.from('goals').select('id,title,category,status').eq('user_id', user.id).eq('status', 'active'),
     supabase.from('relationships').select('id,person_name,category,contact_frequency,last_contact_at').eq('user_id', user.id).order('person_name'),
     supabase.from('tasks')
-      .select('id,title,priority,due_at,is_pinned,is_delegated,duration_minutes,blocked_by_task_id,project:projects(name,color)')
+      .select('id,title,priority,due_at,is_pinned,is_delegated,duration_minutes,blocked_by_task_id,status,project_id,project:projects(name,color)')
       .eq('user_id', user.id)
-      .eq('status', 'pending')
       .is('parent_task_id', null)
       .order('is_pinned', { ascending: false })
       .order('due_at', { ascending: true, nullsFirst: false })
-      .limit(50),
+      .limit(200),
     supabase.from('projects')
       .select('id,name,color,status,project_steps(id,name,status,step_number)')
       .eq('user_id', user.id)
@@ -61,12 +60,13 @@ export default async function AppPage() {
   const now = new Date();
   const tz = profile.timezone || 'America/New_York';
   const todayStr = now.toLocaleDateString('en-CA', { timeZone: tz }); // YYYY-MM-DD in user's tz
-  const allTasks = (rawTasks ?? []).filter((t: any) => !t.blocked_by_task_id)
+  const allTasksRaw = (rawTasks ?? []) as any[];
+  const pendingTasks = allTasksRaw.filter((t: any) => t.status === 'pending' && !t.blocked_by_task_id);
   // Focus: today's tasks (pinned + due today), fallback to next 3 upcoming if none
-  const todayTasks_ = allTasks.filter((t: any) => t.is_pinned || t.due_at?.startsWith(todayStr))
+  const todayTasks_ = pendingTasks.filter((t: any) => t.is_pinned || t.due_at?.startsWith(todayStr))
   const focusTasks = todayTasks_.length > 0
     ? todayTasks_
-    : allTasks.filter((t: any) => t.due_at).slice(0, 3)
+    : pendingTasks.filter((t: any) => t.due_at).slice(0, 3)
   const focusCount = focusTasks.length
   const hour = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hour12: false }).format(now));
   const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: tz });
@@ -76,7 +76,7 @@ export default async function AppPage() {
   const greeting  = getGreeting(tone, hour);
 
   // Urgent task count
-  const urgentCount = (rawTasks ?? []).filter((t: any) => t.priority === 'urgent').length;
+  const urgentCount = pendingTasks.filter((t: any) => t.priority === 'urgent').length;
 
   // Pulse AI messages
   const pulseMessages: string[] = [];
@@ -127,22 +127,33 @@ export default async function AppPage() {
 
   const shortDate = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: tz });
 
-  // Projects data
-  const projectsData: ProjectData[] = (rawProjects ?? []).map((p: any) => {
+  // Projects data — percentage based on tasks (same as projects page)
+  const allProjectsData: (ProjectData & { id: string })[] = (rawProjects ?? []).map((p: any) => {
+    const pTasks = allTasksRaw.filter((t: any) => t.project_id === p.id);
+    const totalTasks = pTasks.length;
+    const doneTasks = pTasks.filter((t: any) => t.status === 'done').length;
+    const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
     const steps = p.project_steps ?? [];
-    const total = steps.length;
-    const doneCount = steps.filter((s: any) => s.status === 'done').length;
-    const pct = total > 0 ? Math.round((doneCount / total) * 100) : 0;
     const activeStep = steps
       .sort((a: any, b: any) => a.step_number - b.step_number)
       .find((s: any) => s.status === 'active' || s.status === 'pending');
     return {
+      id: p.id,
       name: p.name,
       color: p.color || '#D56989',
       pct,
-      step: activeStep?.name || (doneCount === total && total > 0 ? 'Complete' : 'No steps yet'),
+      step: activeStep?.name || (doneTasks === totalTasks && totalTasks > 0 ? 'Complete' : 'No steps yet'),
     };
   });
+
+  // Auto-mark projects at 100% as completed
+  const completedIds = allProjectsData.filter(p => p.pct === 100).map(p => p.id);
+  if (completedIds.length > 0) {
+    await supabase.from('projects').update({ status: 'completed' }).in('id', completedIds);
+  }
+
+  // Only show active (non-complete) projects on dashboard
+  const projectsData: ProjectData[] = allProjectsData.filter(p => p.pct < 100);
 
   return (
     <div style={{ minHeight: '100vh', background: 'transparent', color: '#2D2026', fontFamily: "'Outfit', sans-serif" }}>

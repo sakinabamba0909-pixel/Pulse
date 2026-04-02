@@ -346,12 +346,14 @@ function Sparkline({ data, color, width, height }) {
 }
 
 /* ═══ MAIN COMPONENT ═══ */
-export default function ProjectsClient({ projects: rawProjects, steps: rawSteps, tasks: rawTasks }) {
+export default function ProjectsClient({ projects: rawProjects, completedProjects: rawCompleted, steps: rawSteps, tasks: rawTasks }) {
   var router = useRouter();
   var projects = rawProjects || [];
+  var completed = rawCompleted || [];
   var steps = rawSteps || [];
   var tasks = rawTasks || [];
   var projectViews = buildProjectViews(projects, steps, tasks);
+  var completedViews = buildProjectViews(completed, steps, tasks);
 
   var [view, setView] = useState('list');
   var [selectedProject, setSelectedProject] = useState(null);
@@ -846,6 +848,8 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
   };
 
   var [confirmDelete, setConfirmDelete] = useState(null); // project id or null
+  var [showCompleted, setShowCompleted] = useState(false);
+  var [confirmDeleteAll, setConfirmDeleteAll] = useState(false);
 
   var deleteProject = function (projectId) {
     fetch('/api/projects/' + projectId, { method: 'DELETE' })
@@ -860,6 +864,15 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
         setView('list');
         router.refresh();
       });
+  };
+
+  var deleteAllCompleted = function () {
+    Promise.all(completedViews.map(function (p) {
+      return fetch('/api/projects/' + p.id, { method: 'DELETE' });
+    })).then(function () {
+      setConfirmDeleteAll(false);
+      router.refresh();
+    });
   };
 
   var openProject = function (p) {
@@ -992,6 +1005,65 @@ export default function ProjectsClient({ projects: rawProjects, steps: rawSteps,
                 );
               })}
             </div>
+
+            {/* ═══ COMPLETED PROJECTS ═══ */}
+            {completedViews.length > 0 && (
+              <div style={{ marginTop: 40, animation: 'fadeUp 0.5s ease 0.3s both' }}>
+                <button onClick={function () { setShowCompleted(!showCompleted); }} style={{
+                  background: 'none', border: 'none', cursor: 'pointer', padding: '8px 0',
+                  display: 'flex', alignItems: 'center', gap: 8, width: '100%',
+                }}>
+                  <span style={{ fontSize: 12, color: T.inkMuted, fontWeight: 500, letterSpacing: 0.5 }}>
+                    Completed ({completedViews.length})
+                  </span>
+                  <span style={{ fontSize: 10, color: T.inkFaint, transition: 'transform 0.2s', transform: showCompleted ? 'rotate(90deg)' : 'rotate(0deg)' }}>{'\u25B6'}</span>
+                  <div style={{ flex: 1, height: 1, background: T.divider }} />
+                  {showCompleted && (
+                    confirmDeleteAll ? (
+                      <span style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 11, color: T.urgent }}>Delete all?</span>
+                        <button onClick={function (e) { e.stopPropagation(); deleteAllCompleted(); }} style={{ padding: '3px 10px', borderRadius: 6, background: T.urgent, color: '#FFF', border: 'none', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>Yes</button>
+                        <button onClick={function (e) { e.stopPropagation(); setConfirmDeleteAll(false); }} style={{ padding: '3px 8px', borderRadius: 6, background: 'transparent', border: '1px solid ' + T.border, color: T.inkMuted, fontSize: 10, cursor: 'pointer' }}>No</button>
+                      </span>
+                    ) : (
+                      <button onClick={function (e) { e.stopPropagation(); setConfirmDeleteAll(true); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 8px', fontSize: 10, color: T.inkFaint }}>
+                        Clear all
+                      </button>
+                    )
+                  )}
+                </button>
+
+                {showCompleted && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginTop: 8 }}>
+                    {completedViews.map(function (p, i) {
+                      var isDeleting = confirmDelete === p.id;
+                      return (
+                        <div key={p.id} style={{
+                          borderRadius: 14, background: 'rgba(255,255,255,0.35)', backdropFilter: 'blur(16px)',
+                          border: '1px solid ' + (isDeleting ? T.urgent + '40' : T.border),
+                          boxShadow: T.shadow, overflow: 'hidden', opacity: 0.75,
+                          animation: 'fadeUp 0.3s ease ' + (i * 0.05) + 's both',
+                        }}>
+                          <div style={{ padding: '14px 18px', display: 'flex', alignItems: 'center', gap: 12 }}>
+                            <div style={{ width: 8, height: 8, borderRadius: 3, background: p.color, opacity: 0.5, flexShrink: 0 }} />
+                            <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: T.inkSoft, textDecoration: 'line-through' }}>{p.name}</span>
+                            <span style={{ fontSize: 11, color: T.sage, fontWeight: 500 }}>{'\u2713'} 100%</span>
+                            {isDeleting ? (
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
+                                <button onClick={function () { deleteProject(p.id); }} style={{ padding: '3px 10px', borderRadius: 6, background: T.urgent, color: '#FFF', border: 'none', fontSize: 10, fontWeight: 600, cursor: 'pointer' }}>Delete</button>
+                                <button onClick={function () { setConfirmDelete(null); }} style={{ padding: '3px 8px', borderRadius: 6, background: 'transparent', border: '1px solid ' + T.border, color: T.inkMuted, fontSize: 10, cursor: 'pointer' }}>Cancel</button>
+                              </span>
+                            ) : (
+                              <button onClick={function () { setConfirmDelete(p.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', fontSize: 11, color: T.inkFaint }} title="Delete">{'\uD83D\uDDD1'}</button>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </>}
 
           {/* ═══ PROJECT DETAIL VIEW ═══ */}
