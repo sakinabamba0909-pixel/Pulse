@@ -879,6 +879,14 @@ export default function ProjectsClient({ projects: rawProjects, completedProject
       });
   };
 
+  var reviveProject = function (projectId) {
+    fetch('/api/projects/' + projectId, {
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status: 'active' }),
+    }).then(function () { router.refresh(); });
+  };
+
   var deleteAllCompleted = function () {
     Promise.all(completedViews.map(function (p) {
       return fetch('/api/projects/' + p.id, { method: 'DELETE' });
@@ -1067,7 +1075,10 @@ export default function ProjectsClient({ projects: rawProjects, completedProject
                                 <button onClick={function () { setConfirmDelete(null); }} style={{ padding: '3px 8px', borderRadius: 6, background: 'transparent', border: '1px solid ' + T.border, color: T.inkMuted, fontSize: 10, cursor: 'pointer' }}>Cancel</button>
                               </span>
                             ) : (
-                              <button onClick={function () { setConfirmDelete(p.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', fontSize: 11, color: T.inkFaint }} title="Delete">{'\uD83D\uDDD1'}</button>
+                              <span style={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                                <button onClick={function () { reviveProject(p.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', fontSize: 11, color: T.sage }} title="Revive project">{'\u21BA'}</button>
+                                <button onClick={function () { setConfirmDelete(p.id); }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: '2px 6px', fontSize: 11, color: T.inkFaint }} title="Delete">{'\uD83D\uDDD1'}</button>
+                              </span>
                             )}
                           </div>
                         </div>
