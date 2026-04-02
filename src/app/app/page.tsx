@@ -7,6 +7,7 @@ import FocusSection from '@/components/home/FocusSection';
 import type { FocusTask } from '@/components/home/FocusSection';
 import ProjectsSection from '@/components/home/ProjectsSection';
 import type { ProjectData } from '@/components/home/ProjectsSection';
+import BottomRow from '@/components/home/BottomRow';
 
 export const dynamic = 'force-dynamic';
 
@@ -57,12 +58,6 @@ function formatTime(time: string | null): string {
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
-function getBriefingIcon(format: string): string {
-  return format === 'alarm' ? '🔔 Spoken alarm'
-       : format === 'written' ? '📖 Written briefing'
-       : format === 'both' ? '🔔 Alarm + 📖 Written'
-       : format;
-}
 
 function getNudgeText(frequency: string, lastContact: string | null, pushiness: string): { text: string; warm: boolean } | null {
   const thresholds: Record<string, number> = { daily: 2, weekly: 9, biweekly: 16, monthly: 35 };
@@ -233,17 +228,6 @@ export default async function AppPage() {
     amberBorder: 'rgba(212,164,122,0.25)',
   };
 
-  const cardStyle: React.CSSProperties = {
-    background: C.card, backdropFilter: 'blur(20px)', WebkitBackdropFilter: 'blur(20px)',
-    border: `1px solid ${C.cardBorder}`,
-    borderRadius: 22,
-    padding: '22px 24px',
-  };
-
-  const labelStyle: React.CSSProperties = {
-    fontSize: 10, fontWeight: 700, color: C.muted,
-    letterSpacing: 1, textTransform: 'uppercase', marginBottom: 18,
-  };
 
   return (
     <div style={{ minHeight: '100vh', background: 'transparent', color: C.text, fontFamily: "'Outfit', sans-serif" }}>
@@ -279,74 +263,39 @@ export default async function AppPage() {
           <TodayStrip events={scheduleEvents} dateLabel={shortDate} />
         )}
 
-        {/* ──────────────────── Row 1: Your Day + Goals ──────────────────── */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14,
-          animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) 0.08s both',
-        }}>
-          {/* Your Day card */}
-          <div style={cardStyle}>
-            <p style={labelStyle}>Your Day</p>
-            {[
-              { icon: '☀', label: 'Wake',       value: formatTime(profile.wake_time)      },
-              { icon: '◉', label: 'Briefing',   value: formatTime(profile.briefing_time)  },
-              { icon: '🌙', label: 'Wind down', value: formatTime(profile.wind_down_time) },
-            ].map((row, i, arr) => (
-              <div key={i} style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '9px 0',
-                borderBottom: i < arr.length - 1 ? `1px solid ${C.divider}` : 'none',
+        {/* ──────────────────── Goals ──────────────────── */}
+        {goals && goals.length > 0 && (
+          <div style={{ marginBottom: 48, animation: 'fadeUp 0.6s ease 0.10s both' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
+              <p style={{
+                fontFamily: "'Fraunces', serif",
+                fontSize: 13, fontWeight: 300, color: C.muted,
+                letterSpacing: 0.3, textTransform: 'uppercase',
               }}>
-                <span style={{ fontSize: 12, color: C.muted }}>{row.icon}&nbsp; {row.label}</span>
-                <span style={{ fontSize: 13, fontWeight: 500, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
-                  {row.value}
-                </span>
-              </div>
-            ))}
-            {profile.briefing_format && (
-              <div style={{
-                marginTop: 14, padding: '7px 12px', borderRadius: 10,
-                background: C.orchidSoft, border: `1px solid ${C.orchidBorder}`,
-              }}>
-                <span style={{ fontSize: 11, color: C.orchid, fontWeight: 500 }}>
-                  {getBriefingIcon(profile.briefing_format)}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Goals card */}
-          <div style={cardStyle}>
-            <p style={labelStyle}>{getSectionLabel('goals', tone, pushiness)}</p>
-            {goals && goals.length > 0 ? (
-              <>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
-                  {goals.map(g => {
-                    const meta = GOAL_META[g.category] || { icon: '◈', label: g.category };
-                    return (
-                      <div key={g.id} style={{
-                        display: 'flex', alignItems: 'center', gap: 6,
-                        padding: '6px 11px', borderRadius: 20,
-                        background: C.faint, border: `1px solid ${C.cardBorder}`,
-                      }}>
-                        <span style={{ fontSize: 13 }}>{meta.icon}</span>
-                        <span style={{ fontSize: 12, color: C.text }}>{meta.label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <p style={{ fontSize: 12, color: C.muted }}>
-                  {goals.length} area{goals.length !== 1 ? 's' : ''} in focus
-                </p>
-              </>
-            ) : (
-              <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.7 }}>
-                No active goals yet.<br />
-                <span style={{ color: C.orchid, fontWeight: 500 }}>Add some in settings →</span>
+                {getSectionLabel('goals', tone, pushiness)}
               </p>
-            )}
+              <p style={{ fontSize: 11, color: C.muted, fontWeight: 300 }}>
+                {goals.length} area{goals.length !== 1 ? 's' : ''} in focus
+              </p>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8 }}>
+              {goals.map(g => {
+                const meta = GOAL_META[g.category] || { icon: '◈', label: g.category };
+                return (
+                  <div key={g.id} style={{
+                    display: 'flex', alignItems: 'center', gap: 6,
+                    padding: '8px 14px', borderRadius: 20,
+                    background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(16px)',
+                    border: `1px solid ${C.cardBorder}`,
+                  }}>
+                    <span style={{ fontSize: 14 }}>{meta.icon}</span>
+                    <span style={{ fontSize: 12, color: C.text, fontWeight: 500 }}>{meta.label}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* ──────────────────── Focus Tasks ──────────────────── */}
         <FocusSection tasks={focusTasks.map((t: any): FocusTask => {
@@ -366,9 +315,20 @@ export default async function AppPage() {
 
         {/* ──────────────────── People ──────────────────── */}
         {relationships && relationships.length > 0 && (
-          <div style={{ ...cardStyle, marginBottom: 14, animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) 0.16s both' }}>
-            <p style={labelStyle}>{getSectionLabel('people', tone, pushiness)}</p>
-            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 2, marginLeft: -2, paddingLeft: 2 }}>
+          <div style={{ marginBottom: 48, animation: 'fadeUp 0.6s ease 0.22s both' }}>
+            <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
+              <p style={{
+                fontFamily: "'Fraunces', serif",
+                fontSize: 13, fontWeight: 300, color: C.muted,
+                letterSpacing: 0.3, textTransform: 'uppercase',
+              }}>
+                {getSectionLabel('people', tone, pushiness)}
+              </p>
+              <p style={{ fontSize: 11, color: C.muted, fontWeight: 300 }}>
+                {relationships.length} connection{relationships.length !== 1 ? 's' : ''}
+              </p>
+            </div>
+            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 2 }}>
               {relationships.map(r => {
                 const nudge = getNudgeText(r.contact_frequency, r.last_contact_at, pushiness);
                 const initials = r.person_name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
@@ -376,10 +336,10 @@ export default async function AppPage() {
                 return (
                   <div key={r.id} style={{
                     flexShrink: 0, textAlign: 'center',
-                    background: C.faint, border: `1px solid ${C.cardBorder}`,
+                    background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(16px)',
+                    border: `1px solid ${C.cardBorder}`,
                     borderRadius: 18, padding: '16px 14px', minWidth: 100,
                   }}>
-                    {/* Avatar */}
                     <div style={{
                       width: 42, height: 42, borderRadius: '50%',
                       background: C.orchidSoft, border: `1.5px solid ${C.orchidBorder}`,
@@ -420,28 +380,20 @@ export default async function AppPage() {
           </div>
         )}
 
-        {/* ──────────────────── Footer status bar ──────────────────── */}
-        <div style={{
-          marginTop: 48, paddingTop: 20, borderTop: `1px solid ${C.divider}`,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          animation: 'fadeUp 0.5s ease 0.4s both',
-        }}>
-          <div style={{ display: 'flex', gap: 20 }}>
-            {[
-              { label: 'Mode',  value: { voice: '🔊 Voice', text: '💬 Text', hybrid: '🔊💬 Hybrid' }[profile.response_mode as string] || '—' },
-              { label: 'Style', value: ({ warm: 'Warm', calm: 'Calm', pro: 'Pro', hype: 'Hyped' } as Record<string, string>)[tone] || '—' },
-              { label: 'Push',  value: ({ gentle: 'Gentle', balanced: 'Balanced', firm: 'Firm' } as Record<string, string>)[pushiness] || '—' },
-            ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-                <span style={{ fontSize: 10, color: C.muted }}>{item.label}</span>
-                <span style={{ fontSize: 11, color: C.text, fontWeight: 500 }}>{item.value}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.orchid }} />
-            <p style={{ fontSize: 11, color: C.muted }}>Pulse</p>
-          </div>
+        {/* ──────────────────── Bottom Row: Rhythm + Stats ──────────────────── */}
+        <div style={{ marginTop: 48 }}>
+          <BottomRow
+            rhythm={[
+              { icon: '☀', time: formatTime(profile.wake_time), label: 'Wake' },
+              { icon: '◉', time: formatTime(profile.briefing_time), label: 'Briefing' },
+              { icon: '🌙', time: formatTime(profile.wind_down_time), label: 'Wind down' },
+            ]}
+            stats={[
+              { val: String(focusTasks.length), label: 'today', color: '#EA9CAF' },
+              { val: String(projectsData.length), label: 'projects', color: '#C2DC80' },
+              { val: String(goals?.length ?? 0), label: 'goals', color: '#D56989' },
+            ]}
+          />
         </div>
 
       </div>
