@@ -1,6 +1,7 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
 import WorldSection from '@/components/home/WorldSection';
+import HeroSection from '@/components/home/HeroSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -24,33 +25,16 @@ const OUTLET_NAMES: Record<string, string> = {
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function getGreeting(name: string, tone: string, hour: number): string {
+function getGreeting(tone: string, hour: number): string {
   const t = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
   if (tone === 'hype') {
-    return t === 'morning'   ? `Rise and shine, ${name}! 🔥`
-         : t === 'afternoon' ? `Keep going, ${name}! ⚡`
-                             : `Evening check-in, ${name}! 🌟`;
+    return t === 'morning'   ? 'Rise & shine'
+         : t === 'afternoon' ? 'Keep going'
+                             : 'Evening check-in';
   }
-  if (tone === 'warm') {
-    return t === 'morning'   ? `Good morning, ${name}. ☀`
-         : t === 'afternoon' ? `Good afternoon, ${name}. 🌤`
-                             : `Good evening, ${name}. 🌙`;
-  }
-  // calm / pro
-  return `Good ${t}, ${name}.`;
+  return `Good ${t}`;
 }
 
-function getSubtitle(tone: string, pushiness: string, goalCount: number, peopleCount: number): string {
-  if (tone === 'calm') return 'Your day is ready.';
-  if (tone === 'hype') return "Let's make today count.";
-  if (tone === 'pro')  return pushiness === 'firm'
-    ? `${goalCount} goal${goalCount !== 1 ? 's' : ''} · ${peopleCount} connection${peopleCount !== 1 ? 's' : ''} · on track.`
-    : 'Your daily overview is ready.';
-  // warm
-  return peopleCount > 0
-    ? 'Your goals and people are right here.'
-    : 'Everything you care about, in one place.';
-}
 
 function getSectionLabel(section: 'goals' | 'people' | 'world', tone: string, pushiness: string): string {
   const labels: Record<string, Record<string, string>> = {
@@ -136,21 +120,46 @@ export default async function AppPage() {
 
   const tone      = profile.tone      || 'warm';
   const pushiness = profile.pushiness || 'balanced';
-  const greeting  = getGreeting(profile.name, tone, hour);
-  const subtitle  = getSubtitle(tone, pushiness, goals?.length ?? 0, relationships?.length ?? 0);
+  const greeting  = getGreeting(tone, hour);
 
-  // ─── Palette ───
+  // Urgent task count for HeroSection
+  const urgentCount = (rawTasks ?? []).filter((t: any) => t.priority === 'urgent').length;
+
+  // Generate contextual Pulse AI messages
+  const pulseMessages: string[] = [];
+  if (urgentCount > 0) pulseMessages.push(`You have ${urgentCount} urgent task${urgentCount !== 1 ? 's' : ''} — focus on those first.`);
+  if (goals && goals.length > 0) pulseMessages.push(`${goals.length} goal${goals.length !== 1 ? 's' : ''} in focus — keep the momentum going.`);
+  if (relationships && relationships.length > 0) {
+    const overdue = relationships.filter(r => {
+      const thresholds: Record<string, number> = { daily: 2, weekly: 9, biweekly: 16, monthly: 35 };
+      const threshold = thresholds[r.contact_frequency?.toLowerCase()] ?? 9;
+      const days = r.last_contact_at ? Math.floor((Date.now() - new Date(r.last_contact_at).getTime()) / 86400000) : null;
+      return days !== null && days >= threshold;
+    });
+    if (overdue.length > 0) pulseMessages.push(`${overdue[0].person_name} might appreciate a quick check-in.`);
+  }
+  if (pulseMessages.length === 0) pulseMessages.push('Your schedule looks manageable today.');
+
+  // ─── Palette (pink/green/orchid) ───
   const C = {
-    bg:          '#F0EBE6',
+    bg:          '#F7F3F0',
+    bgWarm:      '#F2EBE6',
     card:        'rgba(255,255,255,0.52)',
-    cardBorder:  'rgba(0,0,0,0.05)',
-    text:        '#2D2A26',
-    muted:       '#9E958B',
-    faint:       'rgba(0,0,0,0.03)',
-    divider:     'rgba(0,0,0,0.04)',
-    accent:      '#9B7EC8',
-    accentDim:   'rgba(155,126,200,0.10)',
-    accentBorder:'rgba(155,126,200,0.25)',
+    cardBorder:  'rgba(45,32,38,0.07)',
+    text:        '#2D2026',
+    muted:       '#A8949C',
+    inkSoft:     '#6B5860',
+    faint:       'rgba(45,32,38,0.03)',
+    divider:     'rgba(45,32,38,0.05)',
+    orchid:      '#D56989',
+    orchidSoft:  'rgba(213,105,137,0.12)',
+    orchidBorder:'rgba(213,105,137,0.25)',
+    green:       '#C2DC80',
+    greenSoft:   'rgba(194,220,128,0.18)',
+    greenBorder: 'rgba(194,220,128,0.35)',
+    pink:        '#EA9CAF',
+    pinkSoft:    'rgba(234,156,175,0.15)',
+    pinkBorder:  'rgba(234,156,175,0.30)',
     amber:       '#D4A47A',
     amberDim:    'rgba(212,164,122,0.10)',
     amberBorder: 'rgba(212,164,122,0.25)',
@@ -176,8 +185,8 @@ export default async function AppPage() {
           to   { opacity: 1; transform: translateY(0); }
         }
         @keyframes pulseGlow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(155,126,200,0); }
-          50%       { box-shadow: 0 0 16px 4px rgba(155,126,200,0.1); }
+          0%, 100% { box-shadow: 0 0 0 0 rgba(213,105,137,0); }
+          50%       { box-shadow: 0 0 16px 4px rgba(213,105,137,0.1); }
         }
         * { box-sizing: border-box; }
         ::-webkit-scrollbar { height: 0; width: 0; }
@@ -186,20 +195,15 @@ export default async function AppPage() {
       <div style={{ maxWidth: 740, margin: '0 auto', padding: '0 24px 100px' }}>
 
         {/* ──────────────────── Hero greeting ──────────────────── */}
-        <div style={{ paddingTop: 64, paddingBottom: 44, animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) both' }}>
-          <p style={{ fontSize: 12, color: C.muted, marginBottom: 8, letterSpacing: 0.2 }}>
-            {dateStr} &nbsp;·&nbsp; {timeStr}
-          </p>
-          <h1 style={{
-            fontFamily: "'Fraunces', serif",
-            fontSize: 38, fontWeight: 400, lineHeight: 1.1,
-            letterSpacing: -0.5, color: C.text, margin: '0 0 8px',
-          }}>
-            {greeting}
-          </h1>
-          <p style={{ fontSize: 15, color: C.muted, fontWeight: 400 }}>
-            {subtitle}
-          </p>
+        <div style={{ paddingTop: 64 }}>
+          <HeroSection
+            greeting={greeting}
+            name={profile.name}
+            dateStr={dateStr}
+            timeStr={timeStr}
+            urgentCount={urgentCount}
+            pulseMessages={pulseMessages}
+          />
         </div>
 
         {/* ──────────────────── Row 1: Your Day + Goals ──────────────────── */}
@@ -229,9 +233,9 @@ export default async function AppPage() {
             {profile.briefing_format && (
               <div style={{
                 marginTop: 14, padding: '7px 12px', borderRadius: 10,
-                background: C.accentDim, border: `1px solid ${C.accentBorder}`,
+                background: C.orchidSoft, border: `1px solid ${C.orchidBorder}`,
               }}>
-                <span style={{ fontSize: 11, color: C.accent, fontWeight: 500 }}>
+                <span style={{ fontSize: 11, color: C.orchid, fontWeight: 500 }}>
                   {getBriefingIcon(profile.briefing_format)}
                 </span>
               </div>
@@ -265,7 +269,7 @@ export default async function AppPage() {
             ) : (
               <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.7 }}>
                 No active goals yet.<br />
-                <span style={{ color: C.accent, fontWeight: 500 }}>Add some in settings →</span>
+                <span style={{ color: C.orchid, fontWeight: 500 }}>Add some in settings →</span>
               </p>
             )}
           </div>
@@ -277,7 +281,7 @@ export default async function AppPage() {
             <div style={{ ...cardStyle, marginBottom: 14, animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) 0.12s both', cursor: 'pointer' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
                 <p style={{ ...labelStyle, marginBottom: 0 }}>Today&apos;s Focus</p>
-                <span style={{ fontSize: 11, color: C.accent, fontWeight: 600 }}>View all →</span>
+                <span style={{ fontSize: 11, color: C.orchid, fontWeight: 600 }}>View all →</span>
               </div>
               {focusTasks.map((t: any, i: number) => {
                 const dotColor = ({ urgent: '#D4727A', high: '#D4A47A', normal: '#7AABC8', low: '#9E958B' } as Record<string, string>)[t.priority] ?? '#9E958B'
@@ -321,10 +325,10 @@ export default async function AppPage() {
                     {/* Avatar */}
                     <div style={{
                       width: 42, height: 42, borderRadius: '50%',
-                      background: C.accentDim, border: `1.5px solid ${C.accentBorder}`,
+                      background: C.orchidSoft, border: `1.5px solid ${C.orchidBorder}`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       margin: '0 auto 10px',
-                      fontSize: 13, fontWeight: 600, color: C.accent,
+                      fontSize: 13, fontWeight: 600, color: C.orchid,
                     }}>
                       {initials}
                     </div>
@@ -378,7 +382,7 @@ export default async function AppPage() {
             ))}
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.accent }} />
+            <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.orchid }} />
             <p style={{ fontSize: 11, color: C.muted }}>Pulse</p>
           </div>
         </div>
