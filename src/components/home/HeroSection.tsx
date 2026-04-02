@@ -13,6 +13,7 @@ const P = {
   orchidSoft:   'rgba(213,105,137,0.12)',
   orchidBorder: 'rgba(213,105,137,0.25)',
   green:        '#C2DC80',
+  greenDark:    '#7A9E35',
   greenSoft:    'rgba(194,220,128,0.18)',
   greenBorder:  'rgba(194,220,128,0.35)',
   pink:         '#EA9CAF',
@@ -174,11 +175,11 @@ export default function HeroSection({ greeting, name, dateStr, timeStr, urgentCo
               background: speaking ? P.orchidSoft : P.pinkSoft,
               border: `1px solid ${speaking ? P.orchidBorder : P.pinkBorder}`,
               cursor: 'pointer', transition: 'all 0.2s',
-              fontSize: 12, fontWeight: 500, color: speaking ? P.orchid : P.ink,
+              fontSize: 13, fontWeight: 500, color: speaking ? P.orchid : P.ink,
               fontFamily: "'Outfit', sans-serif",
             }}
           >
-            <span style={{ fontSize: 14 }}>{speaking ? '⏸' : '🔊'}</span>
+            <span style={{ fontSize: 15 }}>{speaking ? '⏸' : '🔔'}</span>
             {speaking ? 'Stop' : 'Speak it'}
           </button>
           <button
@@ -189,11 +190,11 @@ export default function HeroSection({ greeting, name, dateStr, timeStr, urgentCo
               background: showWritten ? P.greenSoft : 'rgba(255,255,255,0.5)',
               border: `1px solid ${showWritten ? P.greenBorder : P.border}`,
               cursor: 'pointer', transition: 'all 0.2s',
-              fontSize: 12, fontWeight: 500, color: P.ink,
+              fontSize: 13, fontWeight: 500, color: showWritten ? P.greenDark : P.ink,
               fontFamily: "'Outfit', sans-serif",
             }}
           >
-            <span style={{ fontSize: 14 }}>📖</span>
+            <span style={{ fontSize: 15 }}>📖</span>
             Write it out
           </button>
         </div>

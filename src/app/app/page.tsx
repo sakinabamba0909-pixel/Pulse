@@ -261,10 +261,10 @@ export default async function AppPage() {
         ::-webkit-scrollbar { height: 0; width: 0; }
       `}</style>
 
-      <div style={{ maxWidth: 740, margin: '0 auto', padding: '0 24px 100px' }}>
+      <div style={{ maxWidth: 820, margin: '0 auto', padding: '0 44px 100px' }}>
 
         {/* ──────────────────── Hero greeting ──────────────────── */}
-        <div style={{ paddingTop: 64 }}>
+        <div style={{ paddingTop: 48 }}>
           <HeroSection
             greeting={greeting}
             name={profile.name}

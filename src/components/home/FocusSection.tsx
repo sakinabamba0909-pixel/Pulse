@@ -8,6 +8,7 @@ const P = {
   inkMuted:     '#A8949C',
   inkFaint:     '#D4C8CD',
   orchid:       '#D56989',
+  orchidDark:   '#8F3552',
   orchidSoft:   'rgba(213,105,137,0.12)',
   orchidBorder: 'rgba(213,105,137,0.25)',
   pinkSoft:     'rgba(234,156,175,0.15)',
@@ -110,7 +111,7 @@ export default function FocusSection({ tasks }: FocusSectionProps) {
 
   const filtered = useMemo(() => {
     return tasks.filter(t => {
-      if (done[t.id]) return true; // always show completed for undo
+      if (done[t.id]) return true;
       if (filter === 'all') return true;
       if (filter === 'urgent') return t.priority === 'urgent';
       const bucket = dueBucket(t.due_at);
@@ -121,7 +122,6 @@ export default function FocusSection({ tasks }: FocusSectionProps) {
     });
   }, [tasks, filter, done]);
 
-  // Group by date bucket
   const grouped = useMemo(() => {
     const groups: Record<string, FocusTask[]> = {};
     const order = ['overdue', 'today', 'tomorrow', 'week', 'later', 'someday'];
@@ -140,13 +140,13 @@ export default function FocusSection({ tasks }: FocusSectionProps) {
   return (
     <div style={{ marginBottom: 48, animation: 'fadeUp 0.6s ease 0.12s both' }}>
       {/* Header */}
-      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', marginBottom: 20 }}>
         <p style={{
           fontFamily: "'Fraunces', serif",
           fontSize: 13, fontWeight: 300, color: P.inkMuted,
           letterSpacing: 0.3, textTransform: 'uppercase',
         }}>
-          Tasks
+          Focus
         </p>
         <p style={{ fontSize: 11, color: P.inkMuted, fontWeight: 300 }}>
           {remaining} remaining
@@ -154,7 +154,7 @@ export default function FocusSection({ tasks }: FocusSectionProps) {
       </div>
 
       {/* Filter pills */}
-      <div style={{ display: 'flex', gap: 6, marginBottom: 22, flexWrap: 'wrap' }}>
+      <div style={{ display: 'flex', gap: 6, marginBottom: 24, flexWrap: 'wrap' }}>
         {filters.map(f => {
           const active = filter === f.key;
           return (
@@ -162,13 +162,16 @@ export default function FocusSection({ tasks }: FocusSectionProps) {
               key={f.key}
               onClick={() => setFilter(f.key)}
               style={{
-                padding: '5px 14px', borderRadius: 20, cursor: 'pointer',
-                fontSize: 11, fontWeight: active ? 600 : 400,
+                padding: '6px 14px', borderRadius: 20, cursor: 'pointer',
+                fontSize: 12, fontWeight: 500,
                 fontFamily: "'Outfit', sans-serif",
-                background: active ? P.pinkSoft : 'rgba(255,255,255,0.5)',
-                border: `1px solid ${active ? P.pinkBorder : P.border}`,
-                color: active ? P.orchid : P.inkMuted,
-                transition: 'all 0.2s',
+                background: active ? P.pinkSoft : 'rgba(255,255,255,0.45)',
+                backdropFilter: 'blur(8px)',
+                WebkitBackdropFilter: 'blur(8px)',
+                border: `1px solid ${active ? P.pinkBorder : 'rgba(45,32,38,0.04)'}`,
+                color: active ? P.orchid : P.inkSoft,
+                boxShadow: active ? '0 0 12px rgba(213,105,137,0.15)' : 'none',
+                transition: 'all 0.4s cubic-bezier(0.4,0,0.2,1)',
               }}
             >
               {f.label}
@@ -180,11 +183,10 @@ export default function FocusSection({ tasks }: FocusSectionProps) {
       {/* Grouped task list */}
       {grouped.map((group, gi) => (
         <div key={group.bucket}>
-          {/* Group header — only show if filter is 'all' or 'week' (multi-group) */}
           {(filter === 'all' || filter === 'week') && grouped.length > 1 && (
             <p style={{
               fontSize: 10, fontWeight: 600, color: group.bucket === 'overdue' ? '#D4727A' : P.inkMuted,
-              letterSpacing: 0.5, textTransform: 'uppercase', marginTop: gi > 0 ? 20 : 0, marginBottom: 10,
+              letterSpacing: 0.5, textTransform: 'uppercase', marginTop: gi > 0 ? 24 : 0, marginBottom: 12,
             }}>
               {group.label}
             </p>
@@ -207,19 +209,19 @@ export default function FocusSection({ tasks }: FocusSectionProps) {
                   borderBottom: `1px solid ${P.divider}`,
                   cursor: 'pointer', transition: 'all 0.22s',
                   opacity: d ? 0.38 : 1,
-                  animation: `fadeUp 0.4s ease ${0.05 + i * 0.04}s both`,
+                  animation: `fadeUp 0.5s ease ${0.14 + i * 0.07}s both`,
                 }}
               >
-                {/* colored left accent bar */}
+                {/* colored left accent bar — exactly matches prototype */}
                 <div style={{
-                  width: 3, alignSelf: 'stretch', background: d ? P.inkFaint : barColor,
-                  borderRadius: 2, flexShrink: 0, marginRight: 16,
+                  width: 3, height: 60, background: d ? P.inkFaint : barColor,
+                  borderRadius: 2, flexShrink: 0, marginRight: 18,
                   opacity: d ? 0.3 : 1, transition: 'all 0.2s',
                 }} />
 
                 {/* check circle */}
                 <div style={{
-                  width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginRight: 12,
+                  width: 18, height: 18, borderRadius: '50%', flexShrink: 0, marginRight: 14,
                   border: `1.5px solid ${d ? P.inkFaint : barColor}`,
                   background: d ? barColor : 'transparent',
                   display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -228,25 +230,25 @@ export default function FocusSection({ tasks }: FocusSectionProps) {
                   {d && <span style={{ color: 'white', fontSize: 9, fontWeight: 700 }}>✓</span>}
                 </div>
 
-                {/* text */}
-                <div style={{ flex: 1, minWidth: 0, padding: '14px 0' }}>
+                {/* text — fontSize:16, fontWeight:500 matches prototype exactly */}
+                <div style={{ flex: 1, minWidth: 0, padding: '16px 0' }}>
                   <p style={{
-                    fontSize: 15, fontWeight: d ? 300 : 500,
+                    fontSize: 16, fontWeight: d ? 300 : 500,
                     color: d ? P.inkMuted : P.ink,
                     textDecoration: d ? 'line-through' : 'none',
                     letterSpacing: -0.2, marginBottom: 3,
                   }}>
-                    {t.isPinned && !d && <span style={{ color: P.orchid, marginRight: 4 }}>●</span>}
+                    {t.isPinned && !d && <span style={{ color: P.orchid, marginRight: 6, fontSize: 8 }}>●</span>}
                     {t.title}
                   </p>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
                     {t.projectName && (
-                      <span style={{ fontSize: 10, color: P.inkMuted, fontWeight: 300 }}>
+                      <span style={{ fontSize: 11, color: P.inkMuted, fontWeight: 300 }}>
                         {t.projectName}
                       </span>
                     )}
                     {dueTime && (
-                      <span style={{ fontSize: 10, color: P.inkFaint, fontWeight: 300 }}>
+                      <span style={{ fontSize: 11, color: P.inkFaint, fontWeight: 300 }}>
                         {dueTime}
                       </span>
                     )}
@@ -256,19 +258,19 @@ export default function FocusSection({ tasks }: FocusSectionProps) {
                 {/* due date label */}
                 {dueLabel && !d && (
                   <span style={{
-                    fontSize: 10, fontWeight: 500, flexShrink: 0, marginLeft: 8,
+                    fontSize: 11, fontWeight: 500, flexShrink: 0, marginLeft: 10,
                     color: isOverdue ? '#D4727A' : P.inkMuted,
                   }}>
                     {dueLabel}
                   </span>
                 )}
 
-                {/* priority tag */}
+                {/* priority tag — matches prototype: orchidSoft bg, orchidBorder, orchid text */}
                 {tag && !d && (
                   <div style={{
                     padding: '3px 10px', borderRadius: 20,
                     background: tag.bg, border: `1px solid ${tag.border}`,
-                    flexShrink: 0, marginLeft: 8,
+                    flexShrink: 0, marginLeft: 12,
                   }}>
                     <p style={{ fontSize: 9, fontWeight: 700, color: tag.color, letterSpacing: 0.5 }}>
                       {tag.label}
