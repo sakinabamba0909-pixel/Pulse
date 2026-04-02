@@ -101,29 +101,30 @@ export default async function AppPage() {
     .filter((t: any) => t.due_at?.startsWith(todayStr))
     .sort((a: any, b: any) => new Date(a.due_at).getTime() - new Date(b.due_at).getTime());
 
-  const scheduleEvents = todayTasks.map((t: any) => {
+  const currentHourFrac = hour + now.getMinutes() / 60;
+
+  // Build all schedule events with their hour fraction for sorting
+  const scheduleEvents: { time: string; label: string; color: string; isCurrent: boolean; _h: number }[] = todayTasks.map((t: any) => {
     const d = new Date(t.due_at);
     const h = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hour12: false }).format(d));
     const m = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: tz, minute: '2-digit' }).format(d));
     const timeLabel = `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
-    const taskHour = h + m / 60;
-    const currentHourFrac = hour + new Date().getMinutes() / 60;
-    const isCurrent = Math.abs(taskHour - currentHourFrac) < 1;
-    return { time: timeLabel, label: t.title, color: PRIORITY_COLORS[t.priority] ?? '#D56989', isCurrent };
+    return { time: timeLabel, label: t.title, color: PRIORITY_COLORS[t.priority] ?? '#D56989', isCurrent: false, _h: h + m / 60 };
   });
 
   if (profile.wake_time) {
-    const wakeH = parseInt(profile.wake_time.split(':')[0]);
-    if (!scheduleEvents.some((e: any) => e.time.startsWith(String(wakeH % 12 || 12)))) {
-      scheduleEvents.unshift({ time: formatTime(profile.wake_time), label: 'Wake', color: '#D4C8CD', isCurrent: false });
-    }
+    const [wH, wM] = profile.wake_time.split(':').map(Number);
+    scheduleEvents.unshift({ time: formatTime(profile.wake_time), label: 'Wake', color: '#D4C8CD', isCurrent: false, _h: wH + wM / 60 });
   }
   if (profile.wind_down_time) {
-    const windH = parseInt(profile.wind_down_time.split(':')[0]);
-    if (!scheduleEvents.some((e: any) => e.time.startsWith(String(windH % 12 || 12)))) {
-      scheduleEvents.push({ time: formatTime(profile.wind_down_time), label: 'Wind down', color: '#D4C8CD', isCurrent: false });
-    }
+    const [wdH, wdM] = profile.wind_down_time.split(':').map(Number);
+    scheduleEvents.push({ time: formatTime(profile.wind_down_time), label: 'Wind down', color: '#D4C8CD', isCurrent: false, _h: wdH + wdM / 60 });
   }
+
+  // Sort by time and mark the next upcoming event
+  scheduleEvents.sort((a, b) => a._h - b._h);
+  const nextIdx = scheduleEvents.findIndex(e => e._h >= currentHourFrac);
+  if (nextIdx !== -1) scheduleEvents[nextIdx].isCurrent = true;
 
   const shortDate = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: tz });
 
