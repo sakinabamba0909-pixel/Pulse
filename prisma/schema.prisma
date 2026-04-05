@@ -1,0 +1,157 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  name      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  progress        UserProgress[]
+  storyListens    StoryListen[]
+  vocabularyItems UserVocabulary[]
+  responses       UserResponse[]
+}
+
+model Story {
+  id               String   @id @default(uuid())
+  title            String
+  titleEnglish     String
+  weekNumber       Int
+  phaseNumber      Int
+  difficultyLevel  String
+  wordCount        Int
+  targetVocabulary String[]
+
+  paragraphs   Paragraph[]
+  questions    Question[]
+  storyListens StoryListen[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([phaseNumber, weekNumber])
+}
+
+model Paragraph {
+  id      String @id @default(uuid())
+  storyId String
+  story   Story  @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  orderIndex    Int
+  ghegText      String @db.Text
+  englishText   String @db.Text
+  audioUrl      String?
+  vocabularyIds String[]
+
+  @@index([storyId, orderIndex])
+}
+
+model Vocabulary {
+  id              String  @id @default(uuid())
+  ghegWord        String  @unique
+  englishMeaning  String
+  partOfSpeech    String?
+  exampleSentence String?
+  audioUrl        String?
+
+  introducedWeek Int
+  frequency      String
+
+  userVocabulary UserVocabulary[]
+
+  @@index([frequency, introducedWeek])
+}
+
+model UserVocabulary {
+  id           String     @id @default(uuid())
+  userId       String
+  user         User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  vocabularyId String
+  vocabulary   Vocabulary @relation(fields: [vocabularyId], references: [id], onDelete: Cascade)
+
+  easeFactor          Float    @default(2.5)
+  interval            Int      @default(1)
+  repetitions         Int      @default(0)
+  nextReviewDate      DateTime
+  timesCorrect        Int      @default(0)
+  timesIncorrect      Int      @default(0)
+  averageResponseTime Float?
+  lastReviewedAt      DateTime?
+  masteryLevel        String   @default("new")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, vocabularyId])
+  @@index([userId, nextReviewDate])
+}
+
+model Question {
+  id      String @id @default(uuid())
+  storyId String
+  story   Story  @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  orderIndex      Int
+  questionGheg    String
+  questionEnglish String
+  sampleAnswers   String[]
+
+  responses UserResponse[]
+
+  @@index([storyId])
+}
+
+model UserResponse {
+  id         String   @id @default(uuid())
+  userId     String
+  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  questionId String
+  question   Question @relation(fields: [questionId], references: [id], onDelete: Cascade)
+
+  userAnswer      String  @db.Text
+  suggestedAnswer String? @db.Text
+  wasCorrect      Boolean?
+
+  createdAt DateTime @default(now())
+
+  @@index([userId, questionId])
+}
+
+model StoryListen {
+  id      String @id @default(uuid())
+  userId  String
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  storyId String
+  story   Story  @relation(fields: [storyId], references: [id], onDelete: Cascade)
+
+  listenedAt    DateTime @default(now())
+  completedFull Boolean
+  playbackSpeed Float    @default(1.0)
+
+  @@index([userId, storyId])
+}
+
+model UserProgress {
+  id     String @id @default(uuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  currentPhase          Int      @default(1)
+  currentWeek           Int      @default(1)
+  currentStoryId        String?
+  totalListeningMinutes Int      @default(0)
+  streak                Int      @default(0)
+  longestStreak         Int      @default(0)
+  lastStudyDate         DateTime?
+  wordsLearned          Int      @default(0)
+  phrasesMastered       Int      @default(0)
+
+  updatedAt DateTime @updatedAt
+}
