@@ -183,6 +183,114 @@ function BucketGroup({ bucket, tasks, subtasksMap, onSelect, onComplete, default
   );
 }
 
+/* ═══ ORB ═══ */
+function Orb({ size }: { size: number }) {
+  return <div style={{ width: size, height: size, borderRadius: '50%', flexShrink: 0, background: 'radial-gradient(circle at 38% 35%,rgba(234,156,175,0.9) 0%,rgba(213,105,137,0.7) 50%,rgba(194,220,128,0.3) 100%)', boxShadow: '0 0 ' + (size * 0.7) + 'px rgba(213,105,137,0.22)' }} />;
+}
+
+/* ═══ VOICE INPUT ═══ */
+function VoiceInput({ projects, onTaskCreated }: { projects: ProjectData[]; onTaskCreated: (task: any) => void }) {
+  var [mode, setMode] = useState<'idle' | 'listening' | 'thinking' | 'done'>('idle');
+  var [text, setText] = useState('');
+  var [showForm, setShowForm] = useState(false);
+  var [formTitle, setFormTitle] = useState('');
+  var [formPriority, setFormPriority] = useState('normal');
+  var [formProject, setFormProject] = useState('');
+  var [saving, setSaving] = useState(false);
+  var timerRef = useRef<any>(null);
+
+  function startVoice() {
+    setMode('listening'); setText('');
+    var words = ['Add', 'a', 'new', 'task', 'for', 'tomorrow'];
+    var i = 0;
+    function addWord() {
+      if (i < words.length) { setText(words.slice(0, i + 1).join(' ')); i++; timerRef.current = setTimeout(addWord, 130); }
+      else { setTimeout(() => { setMode('thinking'); setTimeout(() => { setMode('done'); }, 1600); }, 400); }
+    }
+    addWord();
+  }
+  useEffect(() => { return () => { if (timerRef.current) clearTimeout(timerRef.current); }; }, []);
+
+  async function submitForm() {
+    if (!formTitle.trim()) return;
+    setSaving(true);
+    var body: any = { title: formTitle.trim(), priority: formPriority, status: 'pending' };
+    if (formProject) body.project_id = formProject;
+    try {
+      var res = await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+      var data = await res.json();
+      if (!data.error) { onTaskCreated(data); setFormTitle(''); setFormPriority('normal'); setFormProject(''); setShowForm(false); }
+    } catch (e) {}
+    setSaving(false);
+  }
+
+  if (showForm) return (
+    <div style={{ marginBottom: 36, animation: 'fadeUp 0.4s ease both' }}>
+      <div style={{ display: 'flex', gap: 10, alignItems: 'center', padding: '16px 0', borderBottom: '1px solid ' + P.divider }}>
+        <input autoFocus value={formTitle} onChange={e => setFormTitle(e.target.value)} onKeyDown={e => { if (e.key === 'Enter') submitForm(); }} placeholder="Task title..." style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 18, fontWeight: 300, color: P.ink, outline: 'none', fontFamily: "'Outfit',sans-serif" }} />
+        <button onClick={() => { setShowForm(false); setFormTitle(''); }} style={{ background: 'none', border: 'none', color: P.inkFaint, fontSize: 20, cursor: 'pointer', lineHeight: 1 }}>&times;</button>
+        <button onClick={submitForm} disabled={saving} style={{ padding: '7px 16px', borderRadius: 20, background: P.orchid, color: 'white', border: 'none', fontSize: 12, fontWeight: 500, cursor: 'pointer', opacity: saving ? 0.5 : 1 }}>{saving ? '...' : 'Add'}</button>
+      </div>
+      <div style={{ display: 'flex', gap: 10, paddingTop: 12, flexWrap: 'wrap' }}>
+        {(['urgent', 'normal', 'low'] as const).map(p => (
+          <button key={p} onClick={() => setFormPriority(p)} style={{ padding: '4px 12px', borderRadius: 20, border: '1px solid ' + (formPriority === p ? P.orchidBorder : P.border), background: formPriority === p ? P.orchidSoft : 'transparent', fontSize: 11, color: formPriority === p ? P.orchid : P.inkMuted, cursor: 'pointer', fontWeight: formPriority === p ? 500 : 300, textTransform: 'capitalize' }}>{p}</button>
+        ))}
+        <div style={{ width: 1, background: P.divider }} />
+        {projects.map(pr => (
+          <button key={pr.id} onClick={() => setFormProject(formProject === pr.id ? '' : pr.id)} style={{ padding: '4px 12px', borderRadius: 20, border: '1px solid ' + (formProject === pr.id ? pr.color + '40' : P.border), background: formProject === pr.id ? pr.color + '15' : 'transparent', fontSize: 11, color: formProject === pr.id ? pr.color : P.inkMuted, cursor: 'pointer', fontWeight: formProject === pr.id ? 400 : 300 }}>{pr.name}</button>
+        ))}
+      </div>
+    </div>
+  );
+
+  return (
+    <div style={{ marginBottom: 36 }}>
+      {mode === 'idle' && (
+        <div style={{ display: 'flex', gap: 10, padding: '14px 0', borderBottom: '1px solid ' + P.divider }}>
+          <button onClick={startVoice} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 20, background: P.orchidSoft, border: '1px solid ' + P.orchidBorder, cursor: 'pointer', color: P.orchid, fontSize: 13, fontWeight: 400 }}>
+            <span style={{ fontSize: 14 }}>{'\uD83C\uDFA4'}</span> Speak a task
+          </button>
+          <button onClick={() => setShowForm(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 20, background: 'rgba(255,255,255,0.6)', border: '1px solid ' + P.border, cursor: 'pointer', color: P.inkSoft, fontSize: 13, fontWeight: 300 }}>
+            <span style={{ fontSize: 14 }}>{'\u270F'}</span> Write it out
+          </button>
+        </div>
+      )}
+      {mode === 'listening' && (
+        <div style={{ padding: '16px 0', borderBottom: '1px solid ' + P.divider }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 14, marginBottom: 8 }}>
+            <div style={{ display: 'flex', gap: 2, height: 24, alignItems: 'center' }}>
+              {Array.from({ length: 16 }).map((_, i) => <div key={i} style={{ width: 2.5, borderRadius: 2, background: P.orchid, height: (5 + Math.floor(Math.random() * 18)) + 'px', opacity: 0.7, animation: 'waveBar ' + (0.4 + i * 0.05) + 's ease infinite' }} />)}
+            </div>
+            <p style={{ fontSize: 11, color: P.orchid, fontWeight: 500, letterSpacing: 0.3 }}>Listening...</p>
+          </div>
+          {text && <p style={{ fontSize: 15, color: P.inkSoft, fontStyle: 'italic', fontWeight: 300 }}>&ldquo;{text}&rdquo;</p>}
+        </div>
+      )}
+      {mode === 'thinking' && (
+        <div style={{ padding: '16px 0', borderBottom: '1px solid ' + P.divider, display: 'flex', alignItems: 'center', gap: 8 }}>
+          {[0, 1, 2].map(i => <div key={i} style={{ width: 7, height: 7, borderRadius: '50%', background: P.orchid, animation: 'pulse 1s ease ' + (i * 0.2) + 's infinite' }} />)}
+          <p style={{ fontSize: 13, color: P.inkMuted, fontWeight: 300 }}>Understanding...</p>
+        </div>
+      )}
+      {mode === 'done' && (
+        <div style={{ padding: '14px 16px', borderRadius: 16, background: 'rgba(255,255,255,0.7)', border: '1px solid ' + P.pinkBorder, backdropFilter: 'blur(12px)', marginBottom: 8, animation: 'fadeUp 0.4s ease both' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 10 }}>
+            <Orb size={16} /><p style={{ fontSize: 9, fontWeight: 700, color: P.orchid, letterSpacing: 0.7, textTransform: 'uppercase' }}>Pulse understood</p>
+          </div>
+          <p style={{ fontSize: 14, fontWeight: 500, color: P.ink, marginBottom: 6 }}>Add a new task for tomorrow</p>
+          <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, padding: '3px 10px', borderRadius: 20, background: 'rgba(255,255,255,0.5)', border: '1px solid ' + P.border, color: P.inkMuted }}>Tomorrow</span>
+          </div>
+          <div style={{ display: 'flex', gap: 8, marginTop: 12 }}>
+            <button onClick={() => setMode('idle')} style={{ padding: '7px 18px', borderRadius: 20, background: P.orchid, color: 'white', border: 'none', fontSize: 12, fontWeight: 500, cursor: 'pointer' }}>Add task {'\u2713'}</button>
+            <button onClick={() => setMode('idle')} style={{ padding: '7px 14px', borderRadius: 20, background: 'transparent', border: '1px solid ' + P.border, fontSize: 12, color: P.inkMuted, cursor: 'pointer' }}>Redo</button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
 /* ═══ MAIN COMPONENT ═══ */
 export default function TasksClient({ initialTasks, initialProjects, initialSubtasks }: {
   initialTasks: TaskData[];
@@ -205,6 +313,11 @@ export default function TasksClient({ initialTasks, initialProjects, initialSubt
   var totalPending = tasks.filter(t => t.status !== 'done').length;
   var urgentCount = tasks.filter(t => t.priority === 'urgent' && t.status !== 'done').length;
   var totalTasks = tasks.length;
+
+  // Task created from voice/write form
+  var onTaskCreated = useCallback((task: any) => {
+    setTasks(prev => [task, ...prev]);
+  }, []);
 
   // Complete task
   var complete = useCallback((id: string) => {
@@ -306,6 +419,11 @@ export default function TasksClient({ initialTasks, initialProjects, initialSubt
                 </button>
               );
             })}
+          </div>
+
+          {/* ── VOICE INPUT ── */}
+          <div style={{ animation: 'fadeUp 0.6s ease 0.08s both' }}>
+            <VoiceInput projects={initialProjects} onTaskCreated={onTaskCreated} />
           </div>
 
           {/* ── FILTER + SORT BAR ── */}
