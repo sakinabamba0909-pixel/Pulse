@@ -151,9 +151,7 @@ function BucketGroup({ bucket, tasks, subtasksMap, onSelect, onComplete, default
 }) {
   var [open, setOpen] = useState(defaultOpen);
   var pending = tasks.filter(t => t.status !== 'done');
-  var done = tasks.filter(t => t.status === 'done');
-  var all = [...pending, ...done];
-  if (all.length === 0) return null;
+  if (pending.length === 0) return null;
 
   var bucketAccent = bucket === 'today' ? P.orchid : bucket === 'tomorrow' ? P.pink : P.inkMuted;
 
@@ -174,8 +172,41 @@ function BucketGroup({ bucket, tasks, subtasksMap, onSelect, onComplete, default
 
       {open && (
         <div style={{ animation: 'fadeUp 0.3s ease both' }}>
-          {all.map((t, i) => (
+          {pending.map((t, i) => (
             <TaskRow key={t.id} task={t} subtaskCount={subtasksMap[t.id] || 0} onSelect={onSelect} onComplete={onComplete} idx={i} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/* ═══ COMPLETED SECTION ═══ */
+function CompletedSection({ tasks, subtasksMap, onSelect, onUncomplete }: {
+  tasks: TaskData[]; subtasksMap: Record<string, number>; onSelect: (t: TaskData) => void; onUncomplete: (id: string) => void;
+}) {
+  var [open, setOpen] = useState(false);
+  if (tasks.length === 0) return null;
+
+  return (
+    <div style={{ marginBottom: 32 }}>
+      <button onClick={() => setOpen(!open)} style={{
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+        width: '100%', background: 'none', border: 'none', cursor: 'pointer',
+        padding: '0 0 12px',
+        borderBottom: open ? 'none' : '1px solid ' + P.divider,
+      }}>
+        <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
+          <p style={{ fontFamily: "'Fraunces',serif", fontSize: 13, fontWeight: 300, color: P.greenDark, letterSpacing: 0.4, textTransform: 'uppercase' }}>Completed</p>
+          <p style={{ fontSize: 11, color: P.inkFaint, fontWeight: 300 }}>{tasks.length} task{tasks.length !== 1 ? 's' : ''}</p>
+        </div>
+        <span style={{ fontSize: 11, color: P.inkFaint, transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.25s', display: 'inline-block' }}>{'\u25BE'}</span>
+      </button>
+
+      {open && (
+        <div style={{ animation: 'fadeUp 0.3s ease both' }}>
+          {tasks.map((t, i) => (
+            <TaskRow key={t.id} task={t} subtaskCount={subtasksMap[t.id] || 0} onSelect={onSelect} onComplete={onUncomplete} idx={i} />
           ))}
         </div>
       )}
@@ -468,13 +499,28 @@ export default function TasksClient({ initialTasks, initialProjects, initialSubt
 
   // Complete task
   var complete = useCallback((id: string) => {
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: t.status === 'done' ? 'pending' : 'done' } : t));
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: t.status === 'done' ? 'pending' : 'done', completed_at: t.status === 'done' ? null : new Date().toISOString() } : t));
     fetch('/api/tasks/' + id + '/complete', { method: 'POST' }).catch(() => {});
   }, []);
 
-  // Filter logic
+  // Separate completed tasks (only those completed within last 7 days)
+  var sevenDaysAgo = new Date();
+  sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+  var completedTasks = tasks.filter(t => {
+    if (t.status !== 'done') return false;
+    if (!t.completed_at) return true; // completed but no timestamp — show it
+    return new Date(t.completed_at) >= sevenDaysAgo;
+  }).sort((a, b) => {
+    // Most recently completed first
+    var aTime = a.completed_at ? new Date(a.completed_at).getTime() : 0;
+    var bTime = b.completed_at ? new Date(b.completed_at).getTime() : 0;
+    return bTime - aTime;
+  });
+
+  // Filter logic (exclude completed tasks from buckets)
   var filtered = tasks.filter(t => {
-    if (filter === 'urgent') return t.priority === 'urgent' && t.status !== 'done';
+    if (t.status === 'done') return false;
+    if (filter === 'urgent') return t.priority === 'urgent';
     if (filter === 'today') return dueBucket(t.due_at) === 'today';
     if (filter === 'week') return ['today', 'tomorrow', 'week'].includes(dueBucket(t.due_at));
     return true;
@@ -627,6 +673,11 @@ export default function TasksClient({ initialTasks, initialProjects, initialSubt
               }
               return <BucketGroup key={bucket} bucket={bucket} tasks={bucketTasks} subtasksMap={subtasksMap} onSelect={setSelectedTask} onComplete={complete} defaultOpen={bucket === 'today' || bucket === 'tomorrow'} />;
             })}
+          </div>
+
+          {/* ── COMPLETED SECTION ── */}
+          <div style={{ animation: 'fadeUp 0.6s ease 0.18s both' }}>
+            <CompletedSection tasks={completedTasks} subtasksMap={subtasksMap} onSelect={setSelectedTask} onUncomplete={complete} />
           </div>
 
         </div>
