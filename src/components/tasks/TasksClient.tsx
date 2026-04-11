@@ -291,6 +291,134 @@ function VoiceInput({ projects, onTaskCreated }: { projects: ProjectData[]; onTa
   );
 }
 
+/* ═══ TASK DETAIL PANEL ═══ */
+function TaskDetailPanel({ task, subtasks, onClose, onUpdate, onDelete }: {
+  task: TaskData; subtasks: SubtaskData[]; onClose: () => void; onUpdate: (id: string, data: any) => void; onDelete: (id: string) => void;
+}) {
+  var [title, setTitle] = useState(task.title);
+  var [priority, setPriority] = useState(task.priority);
+  var [duration, setDuration] = useState(task.duration_minutes || 0);
+  var [completedSubs, setCompletedSubs] = useState<Record<string, boolean>>(() => {
+    var m: Record<string, boolean> = {};
+    subtasks.forEach(s => { if (s.status === 'done') m[s.id] = true; });
+    return m;
+  });
+  var [saving, setSaving] = useState(false);
+  var projectColor = task.project?.color || P.orchid;
+
+  async function save() {
+    setSaving(true);
+    await onUpdate(task.id, { title, priority, duration_minutes: duration || null });
+    setSaving(false);
+  }
+
+  async function markDone() {
+    await fetch('/api/tasks/' + task.id + '/complete', { method: 'POST' });
+    onUpdate(task.id, { status: 'done' });
+    onClose();
+  }
+
+  async function deleteTask() {
+    await fetch('/api/tasks/' + task.id, { method: 'DELETE' });
+    onDelete(task.id);
+    onClose();
+  }
+
+  function toggleSub(id: string) {
+    setCompletedSubs(prev => ({ ...prev, [id]: !prev[id] }));
+    fetch('/api/tasks/' + id + '/complete', { method: 'POST' }).catch(() => {});
+  }
+
+  return (
+    <>
+      <div onClick={onClose} style={{ position: 'fixed', inset: 0, zIndex: 38, background: 'rgba(45,32,38,0.08)', backdropFilter: 'blur(3px)' }} />
+      <div style={{ position: 'fixed', top: 0, right: 0, bottom: 0, width: 360, zIndex: 39, animation: 'slideR 0.28s cubic-bezier(0.4,0,0.2,1) both' }}>
+        <div style={{ height: '100%', background: 'rgba(247,243,240,0.88)', backdropFilter: 'blur(36px)', borderLeft: '1px solid ' + P.border, overflowY: 'auto' }}>
+          <div style={{ padding: '24px 26px' }}>
+            <button onClick={onClose} style={{ background: 'none', border: 'none', color: P.inkMuted, fontSize: 13, cursor: 'pointer', marginBottom: 24, padding: 0, fontFamily: "'Outfit',sans-serif" }}>{'\u2190'} Back</button>
+
+            {/* Color accent + title */}
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14, marginBottom: 6 }}>
+              <div style={{ width: 4, height: 56, borderRadius: 2, background: projectColor, flexShrink: 0, marginTop: 4 }} />
+              <input value={title} onChange={e => setTitle(e.target.value)} onBlur={save} style={{ fontFamily: "'Fraunces',serif", fontSize: 24, fontWeight: 300, color: P.ink, border: 'none', background: 'transparent', outline: 'none', lineHeight: 1.2, flex: 1, letterSpacing: -0.5 }} />
+            </div>
+            <p style={{ fontSize: 12, color: P.inkMuted, marginBottom: 28, paddingLeft: 18, fontWeight: 300 }}>{task.project?.name || 'No project'} &middot; {formatDue(task.due_at) || 'No due date'}</p>
+
+            {/* Pulse context */}
+            <div style={{ padding: '1.5px', borderRadius: 14, background: 'linear-gradient(135deg,rgba(213,105,137,0.3),rgba(194,220,128,0.15))', marginBottom: 24 }}>
+              <div style={{ background: 'rgba(247,243,240,0.85)', borderRadius: 13, padding: '12px 14px' }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 6 }}><Orb size={14} /><p style={{ fontSize: 9, fontWeight: 700, color: P.orchid, letterSpacing: 0.7, textTransform: 'uppercase' }}>Pulse</p></div>
+                <p style={{ fontSize: 12, color: P.inkSoft, lineHeight: 1.6, fontWeight: 300 }}>
+                  {task.priority === 'urgent' ? 'This is flagged urgent \u2014 focus on this first. Try to get it done today.' : 'You have time for this. Your schedule looks manageable.'}
+                </p>
+              </div>
+            </div>
+
+            {/* Priority pills */}
+            <div style={{ marginBottom: 22 }}>
+              <p style={{ fontSize: 9, fontWeight: 700, color: P.inkMuted, letterSpacing: 0.7, textTransform: 'uppercase', marginBottom: 10 }}>Priority</p>
+              <div style={{ display: 'flex', gap: 8 }}>
+                {([['urgent', P.orchid, P.orchidSoft, P.orchidBorder], ['normal', P.pink, P.pinkSoft, P.pinkBorder], ['low', P.inkFaint, 'rgba(212,200,205,0.2)', 'rgba(212,200,205,0.4)']] as const).map(pr => {
+                  var active = priority === pr[0];
+                  return <button key={pr[0]} onClick={() => { setPriority(pr[0]); }} style={{ padding: '6px 16px', borderRadius: 20, background: active ? pr[2] : 'transparent', border: '1px solid ' + (active ? pr[3] : P.border), color: active ? pr[1] : P.inkMuted, fontSize: 12, fontWeight: active ? 500 : 300, cursor: 'pointer', textTransform: 'capitalize', transition: 'all 0.2s' }}>{pr[0]}</button>;
+                })}
+              </div>
+            </div>
+
+            {/* Duration */}
+            <div style={{ marginBottom: 22 }}>
+              <p style={{ fontSize: 9, fontWeight: 700, color: P.inkMuted, letterSpacing: 0.7, textTransform: 'uppercase', marginBottom: 10 }}>Estimated time</p>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                {[15, 30, 45, 60, 90, 120].map(m => {
+                  var active = duration === m;
+                  return <button key={m} onClick={() => setDuration(active ? 0 : m)} style={{ padding: '5px 13px', borderRadius: 20, background: active ? P.orchidSoft : 'transparent', border: '1px solid ' + (active ? P.orchidBorder : P.border), color: active ? P.orchid : P.inkMuted, fontSize: 12, fontWeight: active ? 500 : 300, cursor: 'pointer', transition: 'all 0.2s' }}>{m < 60 ? m + 'm' : (m / 60) + 'h'}</button>;
+                })}
+              </div>
+            </div>
+
+            {/* Subtasks */}
+            {subtasks.length > 0 && (
+              <div style={{ marginBottom: 22 }}>
+                <p style={{ fontSize: 9, fontWeight: 700, color: P.inkMuted, letterSpacing: 0.7, textTransform: 'uppercase', marginBottom: 10 }}>Subtasks</p>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
+                  {subtasks.map(s => {
+                    var d = !!completedSubs[s.id];
+                    return <div key={s.id} onClick={() => toggleSub(s.id)} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 10, background: d ? 'rgba(255,255,255,0.5)' : 'rgba(255,255,255,0.3)', border: '1px solid ' + (d ? P.border : P.divider), cursor: 'pointer', transition: 'all 0.2s' }}>
+                      <div style={{ width: 14, height: 14, borderRadius: '50%', border: '1.5px solid ' + (d ? projectColor : P.inkFaint), background: d ? projectColor : 'transparent', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.2s' }}>
+                        {d && <span style={{ color: 'white', fontSize: 8, fontWeight: 700 }}>{'\u2713'}</span>}
+                      </div>
+                      <p style={{ fontSize: 13, color: d ? P.inkMuted : P.ink, textDecoration: d ? 'line-through' : 'none', fontWeight: 300 }}>{s.title}</p>
+                    </div>;
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* Reschedule */}
+            <div style={{ marginBottom: 24 }}>
+              <p style={{ fontSize: 9, fontWeight: 700, color: P.inkMuted, letterSpacing: 0.7, textTransform: 'uppercase', marginBottom: 10 }}>Reschedule</p>
+              {['Tomorrow same time', 'Next free slot', 'Ask Pulse to find a time'].map((opt, i) => (
+                <button key={i} style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', padding: '10px 12px', borderRadius: 12, background: 'rgba(255,255,255,0.4)', border: '1px solid ' + P.divider, cursor: 'pointer', marginBottom: 6, textAlign: 'left', transition: 'all 0.2s' }}
+                  onMouseEnter={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.7)'; }}
+                  onMouseLeave={e => { (e.currentTarget as HTMLElement).style.background = 'rgba(255,255,255,0.4)'; }}>
+                  <span style={{ fontSize: 13, color: P.inkSoft, fontWeight: 300 }}>{opt}</span>
+                  <span style={{ color: P.inkFaint }}>{'\u203A'}</span>
+                </button>
+              ))}
+            </div>
+
+            {/* Actions */}
+            <div style={{ display: 'flex', gap: 8 }}>
+              <button onClick={markDone} style={{ flex: 1, padding: '11px', borderRadius: 14, background: P.green + '22', border: '1px solid ' + P.greenBorder, color: P.greenDark, fontSize: 13, fontWeight: 500, cursor: 'pointer' }}>Mark done {'\u2713'}</button>
+              <button onClick={deleteTask} style={{ padding: '11px 16px', borderRadius: 14, background: 'rgba(213,105,137,0.08)', border: '1px solid ' + P.orchidBorder, color: P.orchid, fontSize: 13, cursor: 'pointer' }}>Delete</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+}
+
 /* ═══ MAIN COMPONENT ═══ */
 export default function TasksClient({ initialTasks, initialProjects, initialSubtasks }: {
   initialTasks: TaskData[];
@@ -314,9 +442,28 @@ export default function TasksClient({ initialTasks, initialProjects, initialSubt
   var urgentCount = tasks.filter(t => t.priority === 'urgent' && t.status !== 'done').length;
   var totalTasks = tasks.length;
 
+  // Build subtasks by parent map
+  var subtasksByParent: Record<string, SubtaskData[]> = {};
+  initialSubtasks.forEach(s => {
+    if (!subtasksByParent[s.parent_task_id]) subtasksByParent[s.parent_task_id] = [];
+    subtasksByParent[s.parent_task_id].push(s);
+  });
+
   // Task created from voice/write form
   var onTaskCreated = useCallback((task: any) => {
     setTasks(prev => [task, ...prev]);
+  }, []);
+
+  // Update task
+  var onUpdate = useCallback(async (id: string, data: any) => {
+    setTasks(prev => prev.map(t => t.id === id ? { ...t, ...data } : t));
+    if (data.status) return; // complete handled separately
+    await fetch('/api/tasks/' + id, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data) }).catch(() => {});
+  }, []);
+
+  // Delete task
+  var onDeleteTask = useCallback((id: string) => {
+    setTasks(prev => prev.filter(t => t.id !== id));
   }, []);
 
   // Complete task
@@ -422,7 +569,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialSubt
           </div>
 
           {/* ── VOICE INPUT ── */}
-          <div style={{ animation: 'fadeUp 0.6s ease 0.08s both' }}>
+          <div data-voice-write style={{ animation: 'fadeUp 0.6s ease 0.08s both' }}>
             <VoiceInput projects={initialProjects} onTaskCreated={onTaskCreated} />
           </div>
 
@@ -484,6 +631,38 @@ export default function TasksClient({ initialTasks, initialProjects, initialSubt
 
         </div>
       </div>
+
+      {/* Floating add button */}
+      {!selectedTask && (
+        <button onClick={() => {
+          var el = document.querySelector('[data-voice-write]') as HTMLElement;
+          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }} style={{
+          position: 'fixed', bottom: 32, right: 36, zIndex: 25,
+          display: 'flex', alignItems: 'center', gap: 10,
+          padding: '12px 22px', borderRadius: 28,
+          background: 'linear-gradient(135deg,' + P.orchid + ',' + P.pink + ')',
+          color: 'white', border: 'none', fontSize: 14, fontWeight: 500,
+          boxShadow: '0 4px 24px rgba(213,105,137,0.38)',
+          cursor: 'pointer', animation: 'fadeUp 0.4s ease both',
+          fontFamily: "'Outfit',sans-serif",
+        }}>
+          <span style={{ fontSize: 20, fontWeight: 200, lineHeight: 1 }}>+</span>
+          New task
+          <span style={{ fontSize: 14, opacity: 0.7, animation: 'glowPulse 3s ease infinite' }}>{'\u2726'}</span>
+        </button>
+      )}
+
+      {/* Task detail panel */}
+      {selectedTask && (
+        <TaskDetailPanel
+          task={selectedTask}
+          subtasks={subtasksByParent[selectedTask.id] || []}
+          onClose={() => setSelectedTask(null)}
+          onUpdate={onUpdate}
+          onDelete={onDeleteTask}
+        />
+      )}
     </div>
   );
 }
