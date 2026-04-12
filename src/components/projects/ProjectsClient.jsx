@@ -1589,46 +1589,56 @@ export default function ProjectsClient({ projects: rawProjects, completedProject
 
               {/* ── Refine plan input ── */}
               {showSteps && !aiTyping && (
-                <div style={{ marginBottom: 20, animation: 'fadeUp 0.4s ease 0.2s both' }}>
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <div style={{ flex: 1, position: 'relative' }}>
-                      <textarea
-                        value={refineText}
-                        onChange={function (e) { setRefineText(e.target.value); }}
-                        onKeyDown={function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); refinePlan(); } }}
-                        placeholder="Adjust the plan\u2026 e.g. \u201Cspread the tasks more\u201D or \u201Cmove everything to mornings\u201D"
-                        rows={1}
-                        style={{
-                          width: '100%', resize: 'none', border: '1px solid ' + (refineText ? T.accentBorder : T.border),
-                          borderRadius: 14, padding: '12px 16px', paddingRight: 44,
-                          background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(16px)',
-                          fontSize: 13, fontWeight: 300, color: T.ink, lineHeight: 1.5,
-                          fontFamily: "'Outfit', sans-serif", transition: 'border-color 0.2s',
-                          outline: 'none',
-                        }}
-                        onFocus={function (e) { e.target.style.borderColor = T.accentBorder; }}
-                        onBlur={function (e) { if (!refineText) e.target.style.borderColor = T.border; }}
-                      />
+                <div style={{ padding: 1.5, borderRadius: 18, background: refineText.trim() ? 'linear-gradient(135deg, rgba(155,126,200,0.22), rgba(212,132,154,0.12), transparent 80%)' : 'linear-gradient(135deg, rgba(155,126,200,0.08), transparent 60%)', marginBottom: 22, transition: 'all 0.3s', animation: 'fadeUp 0.4s ease 0.15s both' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.50)', backdropFilter: 'blur(20px)', borderRadius: 17, padding: '14px 16px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 7, marginBottom: 10 }}>
+                      <Orb size={14} />
+                      <span style={{ fontSize: 10, fontWeight: 600, letterSpacing: 0.5, color: T.accentText, textTransform: 'uppercase' }}>Refine this plan</span>
+                      <div style={{ flex: 1 }} />
+                      <span style={{ fontSize: 10, color: T.inkFaint, fontWeight: 300 }}>Press Enter to submit</span>
                     </div>
-                    <button
-                      onClick={refinePlan}
-                      disabled={!refineText.trim() || refining}
-                      style={{
-                        padding: '12px 18px', borderRadius: 14, flexShrink: 0,
-                        background: refineText.trim() ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : 'rgba(0,0,0,0.04)',
-                        color: refineText.trim() ? '#FFF' : T.inkFaint,
-                        border: 'none', fontSize: 13, fontWeight: 600, cursor: refineText.trim() ? 'pointer' : 'not-allowed',
-                        boxShadow: refineText.trim() ? '0 3px 14px rgba(155,126,200,0.3)' : 'none',
-                        transition: 'all 0.2s', opacity: refining ? 0.6 : 1,
-                        fontFamily: "'Outfit', sans-serif",
-                      }}
-                    >
-                      {refining ? 'Updating\u2026' : 'Refine \u2728'}
-                    </button>
+                    <div style={{ display: 'flex', gap: 10, alignItems: 'flex-end' }}>
+                      <div style={{ flex: 1, position: 'relative' }}>
+                        <textarea
+                          value={refineText}
+                          onChange={function (e) { setRefineText(e.target.value); }}
+                          onKeyDown={function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); refinePlan(); } }}
+                          placeholder={'\u201CSpread the tasks out more\u201D  \u00B7  \u201CMove to mornings\u201D  \u00B7  \u201CPush back a week\u201D'}
+                          rows={2}
+                          style={{
+                            width: '100%', resize: 'none',
+                            border: 'none', borderRadius: 12,
+                            padding: '10px 14px',
+                            background: refineText ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.35)',
+                            fontSize: 13, fontWeight: 300, color: T.ink, lineHeight: 1.55,
+                            fontFamily: "'Outfit', sans-serif",
+                            transition: 'background 0.2s, box-shadow 0.2s',
+                            outline: 'none',
+                            boxShadow: refineText ? 'inset 0 0 0 1.5px ' + T.accentBorder : 'inset 0 0 0 1px ' + T.border,
+                          }}
+                          onFocus={function (e) { e.target.style.boxShadow = 'inset 0 0 0 1.5px ' + T.accentBorder; e.target.style.background = 'rgba(255,255,255,0.7)'; }}
+                          onBlur={function (e) { if (!refineText) { e.target.style.boxShadow = 'inset 0 0 0 1px ' + T.border; e.target.style.background = 'rgba(255,255,255,0.35)'; } }}
+                        />
+                      </div>
+                      <button
+                        onClick={refinePlan}
+                        disabled={!refineText.trim() || refining}
+                        style={{
+                          padding: '10px 20px', borderRadius: 12, flexShrink: 0, height: 40,
+                          background: refineText.trim() ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : 'rgba(0,0,0,0.03)',
+                          color: refineText.trim() ? '#FFF' : T.inkFaint,
+                          border: refineText.trim() ? 'none' : '1px solid ' + T.border,
+                          fontSize: 12, fontWeight: 600, letterSpacing: 0.2,
+                          cursor: refineText.trim() ? 'pointer' : 'default',
+                          boxShadow: refineText.trim() ? '0 4px 16px rgba(155,126,200,0.30)' : 'none',
+                          transition: 'all 0.25s', opacity: refining ? 0.55 : 1,
+                          fontFamily: "'Outfit', sans-serif",
+                        }}
+                      >
+                        {refining ? '\u2026' : 'Update plan'}
+                      </button>
+                    </div>
                   </div>
-                  <p style={{ fontSize: 10, color: T.inkMuted, marginTop: 6, fontWeight: 300, paddingLeft: 2 }}>
-                    Tell Pulse what to change — timing, pacing, priorities, or anything else. Press Enter to submit.
-                  </p>
                 </div>
               )}
 
