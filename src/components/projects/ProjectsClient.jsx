@@ -398,6 +398,10 @@ export default function ProjectsClient({ projects: rawProjects, completedProject
   var [planEditSlots, setPlanEditSlots] = useState([]);
   var [planEditLoading, setPlanEditLoading] = useState(false);
 
+  // Plan refinement state
+  var [refineText, setRefineText] = useState('');
+  var [refining, setRefining] = useState(false);
+
   // Calendar preview state
   var [calPreviewMode, setCalPreviewMode] = useState('week'); // 'day' | '3day' | 'week' | 'month'
   var [calPreviewDate, setCalPreviewDate] = useState(new Date());
@@ -721,6 +725,102 @@ export default function ProjectsClient({ projects: rawProjects, completedProject
       })
       .catch(function () {
         setAiTyping(false);
+        setAiMessage('Failed to connect. Please check your connection and try again.');
+      });
+  };
+
+  var refinePlan = function () {
+    if (!refineText.trim() || refining) return;
+    setRefining(true);
+    setAiTyping(true);
+    setAiMessage('');
+    setApprovedSteps({});
+
+    fetch('/api/projects/plan/refine', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        name: projectName,
+        description: projectDesc || projectName,
+        context: importedContext || undefined,
+        deadline: projectDeadline || undefined,
+        scheduling_preferences: buildSchedPrefs(),
+        existing_tasks: tasks.filter(function (t) { return t.status !== 'done'; }),
+        calendar_mode: calendarConnected ? 'google' : calendarChoice === 'pulse' ? 'pulse' : null,
+        current_plan: generatedSteps.map(function (s) {
+          return {
+            name: s.name,
+            description: s.description,
+            estimated_hours: s.estimated_hours,
+            tasks: s.tasks.map(function (t) {
+              return {
+                title: t.title,
+                est_minutes: t.est_minutes,
+                scheduled_start: t.scheduled_start,
+                scheduled_end: t.scheduled_end,
+              };
+            }),
+          };
+        }),
+        user_feedback: refineText.trim(),
+      }),
+    })
+      .then(function (res) { return res.json(); })
+      .then(function (data) {
+        setAiTyping(false);
+        setRefining(false);
+        setRefineText('');
+        if (data.error) {
+          setAiMessage('Error: ' + data.error);
+          return;
+        }
+        if (data.steps) {
+          var mapped = data.steps.map(function (s, i) {
+            var totalMins = s.tasks.reduce(function (a, t) { return a + (t.est_minutes || 0); }, 0);
+            var hrs = Math.round(totalMins / 60 * 10) / 10;
+            return {
+              id: 'gen_' + i,
+              name: s.name,
+              description: s.description,
+              estimated_hours: s.estimated_hours || hrs,
+              status: 'suggested',
+              duration: (s.estimated_hours || hrs) + ' hrs',
+              tasks: s.tasks.map(function (t, ti) {
+                var estLabel = t.est_minutes >= 60 ? (Math.round(t.est_minutes / 60 * 10) / 10) + ' hrs' : t.est_minutes + ' min';
+                var schedLabel = '';
+                if (t.scheduled_start) {
+                  var d = new Date(t.scheduled_start);
+                  schedLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ', ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+                }
+                return {
+                  id: 'gen_t_' + i + '_' + ti,
+                  title: t.title,
+                  est: estLabel,
+                  est_minutes: t.est_minutes,
+                  scheduled: schedLabel,
+                  scheduled_start: t.scheduled_start,
+                  scheduled_end: t.scheduled_end,
+                };
+              }),
+            };
+          });
+          setGeneratedSteps(mapped);
+          setAiMessage(data.speech_reply || "I've updated the plan based on your feedback:");
+          if (data.calendar_blocks) setGeneratedCalendar(data.calendar_blocks);
+          var firstDate = null;
+          data.steps.forEach(function (s) {
+            s.tasks.forEach(function (t) {
+              if (t.scheduled_start && !firstDate) firstDate = new Date(t.scheduled_start);
+            });
+          });
+          if (firstDate) setCalPreviewDate(firstDate);
+        } else {
+          setAiMessage('Something went wrong updating the plan. Please try again.');
+        }
+      })
+      .catch(function () {
+        setAiTyping(false);
+        setRefining(false);
         setAiMessage('Failed to connect. Please check your connection and try again.');
       });
   };
@@ -1486,6 +1586,51 @@ export default function ProjectsClient({ projects: rawProjects, completedProject
                   )}
                 </div>
               </div>
+
+              {/* ── Refine plan input ── */}
+              {showSteps && !aiTyping && (
+                <div style={{ marginBottom: 20, animation: 'fadeUp 0.4s ease 0.2s both' }}>
+                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
+                    <div style={{ flex: 1, position: 'relative' }}>
+                      <textarea
+                        value={refineText}
+                        onChange={function (e) { setRefineText(e.target.value); }}
+                        onKeyDown={function (e) { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); refinePlan(); } }}
+                        placeholder="Adjust the plan\u2026 e.g. \u201Cspread the tasks more\u201D or \u201Cmove everything to mornings\u201D"
+                        rows={1}
+                        style={{
+                          width: '100%', resize: 'none', border: '1px solid ' + (refineText ? T.accentBorder : T.border),
+                          borderRadius: 14, padding: '12px 16px', paddingRight: 44,
+                          background: 'rgba(255,255,255,0.55)', backdropFilter: 'blur(16px)',
+                          fontSize: 13, fontWeight: 300, color: T.ink, lineHeight: 1.5,
+                          fontFamily: "'Outfit', sans-serif", transition: 'border-color 0.2s',
+                          outline: 'none',
+                        }}
+                        onFocus={function (e) { e.target.style.borderColor = T.accentBorder; }}
+                        onBlur={function (e) { if (!refineText) e.target.style.borderColor = T.border; }}
+                      />
+                    </div>
+                    <button
+                      onClick={refinePlan}
+                      disabled={!refineText.trim() || refining}
+                      style={{
+                        padding: '12px 18px', borderRadius: 14, flexShrink: 0,
+                        background: refineText.trim() ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : 'rgba(0,0,0,0.04)',
+                        color: refineText.trim() ? '#FFF' : T.inkFaint,
+                        border: 'none', fontSize: 13, fontWeight: 600, cursor: refineText.trim() ? 'pointer' : 'not-allowed',
+                        boxShadow: refineText.trim() ? '0 3px 14px rgba(155,126,200,0.3)' : 'none',
+                        transition: 'all 0.2s', opacity: refining ? 0.6 : 1,
+                        fontFamily: "'Outfit', sans-serif",
+                      }}
+                    >
+                      {refining ? 'Updating\u2026' : 'Refine \u2728'}
+                    </button>
+                  </div>
+                  <p style={{ fontSize: 10, color: T.inkMuted, marginTop: 6, fontWeight: 300, paddingLeft: 2 }}>
+                    Tell Pulse what to change — timing, pacing, priorities, or anything else. Press Enter to submit.
+                  </p>
+                </div>
+              )}
 
               {/* Steps */}
               {showSteps && (
