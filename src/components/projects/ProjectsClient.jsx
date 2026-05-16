@@ -402,10 +402,6 @@ export default function ProjectsClient({ projects: rawProjects, completedProject
   var [refineText, setRefineText] = useState('');
   var [refining, setRefining] = useState(false);
 
-  // Manual plan builder state
-  var [manualMode, setManualMode] = useState(false);
-  var [manualSteps, setManualSteps] = useState([{ name: '', tasks: [{ title: '', est_minutes: 30, scheduled_start: '', scheduled_end: '' }] }]);
-
   // Calendar preview state
   var [calPreviewMode, setCalPreviewMode] = useState('week'); // 'day' | '3day' | 'week' | 'month'
   var [calPreviewDate, setCalPreviewDate] = useState(new Date());
@@ -827,72 +823,6 @@ export default function ProjectsClient({ projects: rawProjects, completedProject
         setRefining(false);
         setAiMessage('Failed to connect. Please check your connection and try again.');
       });
-  };
-
-  // Manual plan helpers
-  var addManualStep = function () {
-    setManualSteps(function (prev) { return prev.concat([{ name: '', tasks: [{ title: '', est_minutes: 30, scheduled_start: '', scheduled_end: '' }] }]); });
-  };
-  var removeManualStep = function (si) {
-    setManualSteps(function (prev) { return prev.filter(function (_, i) { return i !== si; }); });
-  };
-  var updateManualStep = function (si, field, val) {
-    setManualSteps(function (prev) { var n = prev.map(function (s, i) { if (i !== si) return s; var c = Object.assign({}, s); c[field] = val; return c; }); return n; });
-  };
-  var addManualTask = function (si) {
-    setManualSteps(function (prev) { return prev.map(function (s, i) { if (i !== si) return s; return Object.assign({}, s, { tasks: s.tasks.concat([{ title: '', est_minutes: 30, scheduled_start: '', scheduled_end: '' }]) }); }); });
-  };
-  var removeManualTask = function (si, ti) {
-    setManualSteps(function (prev) { return prev.map(function (s, i) { if (i !== si) return s; return Object.assign({}, s, { tasks: s.tasks.filter(function (_, j) { return j !== ti; }) }); }); });
-  };
-  var updateManualTask = function (si, ti, field, val) {
-    setManualSteps(function (prev) { return prev.map(function (s, i) { if (i !== si) return s; return Object.assign({}, s, { tasks: s.tasks.map(function (t, j) { if (j !== ti) return t; var c = Object.assign({}, t); c[field] = val; return c; }) }); }); });
-  };
-  var applyManualPlan = function () {
-    var mapped = manualSteps.filter(function (s) { return s.name.trim(); }).map(function (s, i) {
-      var validTasks = s.tasks.filter(function (t) { return t.title.trim(); });
-      var totalMins = validTasks.reduce(function (a, t) { return a + (t.est_minutes || 0); }, 0);
-      var hrs = Math.round(totalMins / 60 * 10) / 10;
-      return {
-        id: 'gen_' + i,
-        name: s.name,
-        description: '',
-        estimated_hours: hrs,
-        status: 'suggested',
-        duration: hrs + ' hrs',
-        tasks: validTasks.map(function (t, ti) {
-          var estLabel = t.est_minutes >= 60 ? (Math.round(t.est_minutes / 60 * 10) / 10) + ' hrs' : t.est_minutes + ' min';
-          var schedLabel = '';
-          var schedStart = null;
-          var schedEnd = null;
-          if (t.scheduled_start) {
-            schedStart = new Date(t.scheduled_start).toISOString();
-            var d = new Date(t.scheduled_start);
-            schedLabel = d.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' }) + ', ' + d.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
-            schedEnd = t.scheduled_end ? new Date(t.scheduled_end).toISOString() : new Date(d.getTime() + t.est_minutes * 60000).toISOString();
-          }
-          return {
-            id: 'gen_t_' + i + '_' + ti,
-            title: t.title,
-            est: estLabel,
-            est_minutes: t.est_minutes,
-            scheduled: schedLabel,
-            scheduled_start: schedStart,
-            scheduled_end: schedEnd,
-          };
-        }),
-      };
-    });
-    if (mapped.length === 0) return;
-    setGeneratedSteps(mapped);
-    setManualMode(false);
-    setShowSteps(true);
-    setShowCalendar(true);
-    setAiMessage('Your custom plan is ready. Review the steps below and approve when you\u2019re happy.');
-    // Set calendar preview date to first scheduled task
-    var firstDate = null;
-    mapped.forEach(function (s) { s.tasks.forEach(function (t) { if (t.scheduled_start && !firstDate) firstDate = new Date(t.scheduled_start); }); });
-    if (firstDate) setCalPreviewDate(firstDate);
   };
 
   var togglePref = function (id) {
@@ -1712,110 +1642,10 @@ export default function ProjectsClient({ projects: rawProjects, completedProject
                 </div>
               )}
 
-              {/* ── Manual plan builder ── */}
-              {manualMode && (
-                <div style={{ animation: 'fadeUp 0.45s ease both' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.5, textTransform: 'uppercase' }}>Your plan — {manualSteps.length} step{manualSteps.length !== 1 ? 's' : ''}</p>
-                    <button onClick={function () { setManualMode(false); }} style={{ background: 'none', border: 'none', color: T.accentText, fontSize: 12, fontWeight: 500, cursor: 'pointer', padding: 0, fontFamily: "'Outfit', sans-serif" }}>{'\u2190'} Back to AI plan</button>
-                  </div>
-
-                  {manualSteps.map(function (step, si) {
-                    return (
-                      <div key={si} style={{ marginBottom: 14, background: 'rgba(255,255,255,0.52)', backdropFilter: 'blur(16px)', borderRadius: 16, border: '1px solid ' + T.border, overflow: 'hidden', animation: 'fadeUp 0.35s ease ' + (si * 0.06) + 's both' }}>
-                        {/* Step header */}
-                        <div style={{ padding: '14px 16px', display: 'flex', alignItems: 'center', gap: 12 }}>
-                          <div style={{ width: 26, height: 26, borderRadius: 8, background: step.name.trim() ? 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')' : 'rgba(0,0,0,0.04)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.3s' }}>
-                            <span style={{ fontSize: 11, fontWeight: 700, color: step.name.trim() ? '#FFF' : T.inkMuted }}>{si + 1}</span>
-                          </div>
-                          <input
-                            value={step.name}
-                            onChange={function (e) { updateManualStep(si, 'name', e.target.value); }}
-                            placeholder={'Step ' + (si + 1) + ' name\u2026'}
-                            style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 15, fontWeight: 500, color: T.ink, fontFamily: "'Outfit', sans-serif", outline: 'none', letterSpacing: -0.2 }}
-                          />
-                          {manualSteps.length > 1 && (
-                            <button onClick={function () { removeManualStep(si); }} style={{ background: 'none', border: 'none', color: T.inkFaint, fontSize: 16, cursor: 'pointer', padding: '0 4px', lineHeight: 1, transition: 'color 0.2s' }}
-                              onMouseEnter={function (e) { e.currentTarget.style.color = T.urgent; }}
-                              onMouseLeave={function (e) { e.currentTarget.style.color = T.inkFaint; }}
-                            >{'\u00D7'}</button>
-                          )}
-                        </div>
-
-                        {/* Tasks */}
-                        <div style={{ padding: '0 16px 14px' }}>
-                          <div style={{ borderTop: '1px solid ' + T.divider, paddingTop: 10, display: 'flex', flexDirection: 'column', gap: 8 }}>
-                            {step.tasks.map(function (task, ti) {
-                              return (
-                                <div key={ti} style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '8px 12px', borderRadius: 12, background: 'rgba(255,255,255,0.45)', border: '1px solid ' + T.border, transition: 'all 0.2s' }}>
-                                  <div style={{ width: 6, height: 6, borderRadius: '50%', background: projectColor, flexShrink: 0 }} />
-                                  <input
-                                    value={task.title}
-                                    onChange={function (e) { updateManualTask(si, ti, 'title', e.target.value); }}
-                                    placeholder="Task name\u2026"
-                                    style={{ flex: 1, border: 'none', background: 'transparent', fontSize: 13, fontWeight: 400, color: T.ink, fontFamily: "'Outfit', sans-serif", outline: 'none', minWidth: 0 }}
-                                  />
-                                  <select
-                                    value={task.est_minutes}
-                                    onChange={function (e) { updateManualTask(si, ti, 'est_minutes', parseInt(e.target.value)); }}
-                                    style={{ border: '1px solid ' + T.border, borderRadius: 8, padding: '4px 6px', fontSize: 11, color: T.inkSoft, background: 'rgba(255,255,255,0.5)', fontFamily: "'Outfit', sans-serif", cursor: 'pointer', flexShrink: 0 }}
-                                  >
-                                    {[15, 30, 45, 60, 90, 120, 180, 240].map(function (m) {
-                                      return <option key={m} value={m}>{m < 60 ? m + 'm' : (m / 60) + 'h'}</option>;
-                                    })}
-                                  </select>
-                                  <input
-                                    type="datetime-local"
-                                    value={task.scheduled_start || ''}
-                                    onChange={function (e) { updateManualTask(si, ti, 'scheduled_start', e.target.value); }}
-                                    style={{ border: '1px solid ' + T.border, borderRadius: 8, padding: '4px 8px', fontSize: 11, color: T.inkSoft, background: 'rgba(255,255,255,0.5)', fontFamily: "'Outfit', sans-serif", flexShrink: 0, width: 155 }}
-                                  />
-                                  {step.tasks.length > 1 && (
-                                    <button onClick={function () { removeManualTask(si, ti); }} style={{ background: 'none', border: 'none', color: T.inkFaint, fontSize: 14, cursor: 'pointer', padding: '0 2px', lineHeight: 1, transition: 'color 0.2s' }}
-                                      onMouseEnter={function (e) { e.currentTarget.style.color = T.urgent; }}
-                                      onMouseLeave={function (e) { e.currentTarget.style.color = T.inkFaint; }}
-                                    >{'\u00D7'}</button>
-                                  )}
-                                </div>
-                              );
-                            })}
-                            <button onClick={function () { addManualTask(si); }} style={{ display: 'flex', alignItems: 'center', gap: 6, padding: '7px 12px', borderRadius: 10, background: 'transparent', border: '1px dashed ' + T.inkFaint, cursor: 'pointer', color: T.inkMuted, fontSize: 12, fontWeight: 300, fontFamily: "'Outfit', sans-serif", transition: 'all 0.2s' }}
-                              onMouseEnter={function (e) { e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.color = T.accentText; }}
-                              onMouseLeave={function (e) { e.currentTarget.style.borderColor = T.inkFaint; e.currentTarget.style.color = T.inkMuted; }}
-                            >
-                              <span style={{ fontSize: 14, fontWeight: 300, lineHeight: 1 }}>+</span> Add task
-                            </button>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-
-                  {/* Add step + Apply */}
-                  <div style={{ display: 'flex', gap: 10, marginTop: 6, marginBottom: 20 }}>
-                    <button onClick={addManualStep} style={{ padding: '12px 20px', borderRadius: 14, background: 'rgba(255,255,255,0.5)', border: '1px dashed ' + T.inkFaint, color: T.inkMuted, fontSize: 13, fontWeight: 400, cursor: 'pointer', backdropFilter: 'blur(8px)', fontFamily: "'Outfit', sans-serif", transition: 'all 0.2s' }}
-                      onMouseEnter={function (e) { e.currentTarget.style.borderColor = T.accent; e.currentTarget.style.color = T.accentText; }}
-                      onMouseLeave={function (e) { e.currentTarget.style.borderColor = T.inkFaint; e.currentTarget.style.color = T.inkMuted; }}
-                    >
-                      + Add step
-                    </button>
-                    <button onClick={applyManualPlan} style={{ flex: 1, padding: '12px 24px', borderRadius: 14, background: 'linear-gradient(135deg, ' + T.accent + ', ' + T.rose + ')', color: '#FFF', border: 'none', fontSize: 14, fontWeight: 700, cursor: 'pointer', boxShadow: '0 4px 24px rgba(155,126,200,0.35)', fontFamily: "'Outfit', sans-serif", transition: 'all 0.3s' }}>
-                      Use this plan {'\u2192'}
-                    </button>
-                  </div>
-                </div>
-              )}
-
               {/* Steps */}
-              {showSteps && !manualMode && (
+              {showSteps && (
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 10, animation: 'fadeUp 0.5s ease both' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.5, textTransform: 'uppercase' }}>Suggested Plan — {generatedSteps.length} steps, {generatedSteps.reduce(function (a, s) { return a + s.tasks.length; }, 0)} tasks</p>
-                    <button onClick={function () { setManualMode(true); }} style={{ background: 'none', border: '1px solid ' + T.border, borderRadius: 10, padding: '5px 14px', color: T.inkSoft, fontSize: 11, fontWeight: 500, cursor: 'pointer', fontFamily: "'Outfit', sans-serif", transition: 'all 0.2s' }}
-                      onMouseEnter={function (e) { e.currentTarget.style.borderColor = T.accentBorder; e.currentTarget.style.color = T.accentText; e.currentTarget.style.background = T.accentSoft; }}
-                      onMouseLeave={function (e) { e.currentTarget.style.borderColor = T.border; e.currentTarget.style.color = T.inkSoft; e.currentTarget.style.background = 'none'; }}
-                    >Make my own plan</button>
-                  </div>
+                  <p style={{ fontSize: 12, fontWeight: 600, color: T.inkMuted, letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 4 }}>Suggested Plan — {generatedSteps.length} steps, {generatedSteps.reduce(function (a, s) { return a + s.tasks.length; }, 0)} tasks</p>
 
                   {generatedSteps.map(function (step, si) {
                     var expanded = expandedStep === step.id;
