@@ -13,9 +13,9 @@ var P = {
   orchid:      "#D56989", orchidDark:"#8F3552",
   lilac:       "#F3EEF1",
   ink:         "#2D2026",
-  inkSoft:     "#6B5860",
-  inkMuted:    "#A8949C",
-  inkFaint:    "#D4C8CD",
+  inkSoft:     "#5C4A52",
+  inkMuted:    "#887078",
+  inkFaint:    "#B3A5AB",
 };
 
 /* ══════════════════════════════════════════

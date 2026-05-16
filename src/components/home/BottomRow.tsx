@@ -2,7 +2,7 @@
 
 const P = {
   ink:      '#2D2026',
-  inkMuted: '#A8949C',
+  inkMuted: '#887078',
   orchid:   '#D56989',
   green:    '#C2DC80',
   pink:     '#EA9CAF',

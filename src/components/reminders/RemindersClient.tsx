@@ -9,7 +9,7 @@ var P = {
   pink:"#EA9CAF", pinkDark:"#B85A74", pinkSoft:"rgba(234,156,175,0.15)", pinkBorder:"rgba(234,156,175,0.30)",
   orchid:"#D56989", orchidDark:"#8F3552", orchidSoft:"rgba(213,105,137,0.12)", orchidBorder:"rgba(213,105,137,0.25)",
   lilac:"#F3EEF1", lilacDark:"#9B8FA0",
-  ink:"#2D2026", inkSoft:"#6B5860", inkMuted:"#A8949C", inkFaint:"#D4C8CD",
+  ink:"#2D2026", inkSoft:"#5C4A52", inkMuted:"#887078", inkFaint:"#B3A5AB",
   border:"rgba(45,32,38,0.07)", divider:"rgba(45,32,38,0.05)",
 };
 

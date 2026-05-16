@@ -3,8 +3,8 @@
 /* ─── Palette ─── */
 const P = {
   ink:      '#2D2026',
-  inkMuted: '#A8949C',
-  inkFaint: '#D4C8CD',
+  inkMuted: '#887078',
+  inkFaint: '#B3A5AB',
   green:    '#C2DC80',
   pink:     '#EA9CAF',
   orchid:   '#D56989',

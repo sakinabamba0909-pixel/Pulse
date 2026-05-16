@@ -1,7 +1,9 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Enable server actions for form handling
   experimental: {},
+  turbopack: {
+    root: __dirname,
+  },
 };
 
 module.exports = nextConfig;

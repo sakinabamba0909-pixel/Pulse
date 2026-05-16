@@ -4,7 +4,7 @@ import { useState } from 'react';
 
 const P = {
   ink:      '#2D2026',
-  inkMuted: '#A8949C',
+  inkMuted: '#887078',
   border:   'rgba(45,32,38,0.07)',
 };
 

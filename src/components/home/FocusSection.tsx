@@ -4,8 +4,8 @@ import { useState } from 'react';
 
 const P = {
   ink:          '#2D2026',
-  inkMuted:     '#A8949C',
-  inkFaint:     '#D4C8CD',
+  inkMuted:     '#887078',
+  inkFaint:     '#B3A5AB',
   orchid:       '#D56989',
   orchidSoft:   'rgba(213,105,137,0.12)',
   orchidBorder: 'rgba(213,105,137,0.25)',

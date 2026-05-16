@@ -8,9 +8,9 @@ var FONT_URL =
 
 var T = {
   ink: '#2D2A26',
-  inkSoft: '#5C5650',
-  inkMuted: '#9E958B',
-  inkFaint: '#C9C1B8',
+  inkSoft: '#4E4843',
+  inkMuted: '#807770',
+  inkFaint: '#A69E96',
   accent: '#9B7EC8',
   accentSoft: 'rgba(155,126,200,0.10)',
   accentMid: 'rgba(155,126,200,0.18)',

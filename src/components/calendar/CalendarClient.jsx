@@ -7,7 +7,7 @@ var FONT_URL =
   'https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,300&display=swap';
 
 var T = {
-  ink: '#2D2A26', inkSoft: '#5C5650', inkMuted: '#9E958B', inkFaint: '#C9C1B8',
+  ink: '#2D2A26', inkSoft: '#4E4843', inkMuted: '#807770', inkFaint: '#A69E96',
   accent: '#9B7EC8', accentSoft: 'rgba(155,126,200,0.10)', accentMid: 'rgba(155,126,200,0.18)',
   accentBorder: 'rgba(155,126,200,0.25)', accentText: '#7B5EA8', accentGlow: 'rgba(155,126,200,0.15)',
   rose: '#D4849A', roseSoft: 'rgba(212,132,154,0.10)',
