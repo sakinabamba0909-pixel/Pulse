@@ -459,11 +459,11 @@ CREATE TRIGGER trg_news_preferences_updated BEFORE UPDATE ON news_preferences FO
 CREATE OR REPLACE FUNCTION handle_new_user()
 RETURNS TRIGGER AS $$
 BEGIN
-  INSERT INTO user_profiles (id, name)
+  INSERT INTO public.user_profiles (id, name)
   VALUES (NEW.id, COALESCE(NEW.raw_user_meta_data->>'name', ''));
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
 -- Trigger on auth.users insert
 CREATE OR REPLACE TRIGGER on_auth_user_created
