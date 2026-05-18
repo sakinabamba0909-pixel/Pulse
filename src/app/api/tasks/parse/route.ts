@@ -2,7 +2,11 @@ import Anthropic from '@anthropic-ai/sdk'
 import { createServerClient } from '@/lib/supabase/server'
 import { NextResponse } from 'next/server'
 
-const anthropic = new Anthropic()
+let _anthropic: Anthropic | null = null
+function getAnthropic() {
+  if (!_anthropic) _anthropic = new Anthropic()
+  return _anthropic
+}
 
 export async function POST(req: Request) {
   const supabase = await createServerClient()
@@ -84,7 +88,7 @@ Return ONLY valid JSON. No markdown, no explanation.`
 }`
 
   try {
-    const response = await anthropic.messages.create({
+    const response = await getAnthropic().messages.create({
       model: 'claude-sonnet-4-5',
       max_tokens: 1500,
       system,

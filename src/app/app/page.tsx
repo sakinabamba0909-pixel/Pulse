@@ -1,63 +1,25 @@
 import { createServerClient } from '@/lib/supabase/server';
 import { redirect } from 'next/navigation';
+import HeroSection from '@/components/home/HeroSection';
+import TodayStrip from '@/components/home/TodayStrip';
+import FocusSection from '@/components/home/FocusSection';
+import type { FocusTask } from '@/components/home/FocusSection';
+import ProjectsSection from '@/components/home/ProjectsSection';
+import type { ProjectData } from '@/components/home/ProjectsSection';
+import BottomRow from '@/components/home/BottomRow';
 
 export const dynamic = 'force-dynamic';
 
-// ─── Constants ───────────────────────────────────────────────────────────────
-
-const GOAL_META: Record<string, { icon: string; label: string }> = {
-  fitness:  { icon: '💪', label: 'Health'       },
-  language: { icon: '🗣️', label: 'Language'     },
-  career:   { icon: '📈', label: 'Career'        },
-  finance:  { icon: '💰', label: 'Finance'       },
-  social:   { icon: '👥', label: 'Social'        },
-  creative: { icon: '🎨', label: 'Creative'      },
-  organize: { icon: '🏠', label: 'Organization'  },
-  mindful:  { icon: '🧘', label: 'Mindfulness'   },
-};
-
-const OUTLET_NAMES: Record<string, string> = {
-  ap: 'AP News', reuters: 'Reuters', bbc: 'BBC', nyt: 'NY Times',
-  cnn: 'CNN', wsj: 'WSJ', npr: 'NPR', guardian: 'The Guardian',
-};
-
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
-function getGreeting(name: string, tone: string, hour: number): string {
+function getGreeting(tone: string, hour: number): string {
   const t = hour < 12 ? 'morning' : hour < 17 ? 'afternoon' : 'evening';
   if (tone === 'hype') {
-    return t === 'morning'   ? `Rise and shine, ${name}! 🔥`
-         : t === 'afternoon' ? `Keep going, ${name}! ⚡`
-                             : `Evening check-in, ${name}! 🌟`;
+    return t === 'morning'   ? 'Rise & shine'
+         : t === 'afternoon' ? 'Keep going'
+                             : 'Evening check-in';
   }
-  if (tone === 'warm') {
-    return t === 'morning'   ? `Good morning, ${name}. ☀`
-         : t === 'afternoon' ? `Good afternoon, ${name}. 🌤`
-                             : `Good evening, ${name}. 🌙`;
-  }
-  // calm / pro
-  return `Good ${t}, ${name}.`;
-}
-
-function getSubtitle(tone: string, pushiness: string, goalCount: number, peopleCount: number): string {
-  if (tone === 'calm') return 'Your day is ready.';
-  if (tone === 'hype') return "Let's make today count.";
-  if (tone === 'pro')  return pushiness === 'firm'
-    ? `${goalCount} goal${goalCount !== 1 ? 's' : ''} · ${peopleCount} connection${peopleCount !== 1 ? 's' : ''} · on track.`
-    : 'Your daily overview is ready.';
-  // warm
-  return peopleCount > 0
-    ? 'Your goals and people are right here.'
-    : 'Everything you care about, in one place.';
-}
-
-function getSectionLabel(section: 'goals' | 'people' | 'world', tone: string, pushiness: string): string {
-  const labels: Record<string, Record<string, string>> = {
-    goals:  { calm: 'Focus',   warm: 'Goals',   pro: 'Objectives', hype: 'Mission'   },
-    people: { calm: 'People',  warm: 'People',  pro: 'Network',    hype: 'Your Crew' },
-    world:  { calm: 'World',   warm: 'World',   pro: 'Briefing',   hype: 'What\'s Up' },
-  };
-  return labels[section][tone] || labels[section]['warm'];
+  return `Good ${t}`;
 }
 
 function formatTime(time: string | null): string {
@@ -67,29 +29,6 @@ function formatTime(time: string | null): string {
   return `${h % 12 || 12}:${String(m).padStart(2, '0')} ${ampm}`;
 }
 
-function getBriefingIcon(format: string): string {
-  return format === 'alarm' ? '🔔 Spoken alarm'
-       : format === 'written' ? '📖 Written briefing'
-       : format === 'both' ? '🔔 Alarm + 📖 Written'
-       : format;
-}
-
-function getNudgeText(frequency: string, lastContact: string | null, pushiness: string): { text: string; warm: boolean } | null {
-  const thresholds: Record<string, number> = { daily: 2, weekly: 9, biweekly: 16, monthly: 35 };
-  const threshold = thresholds[frequency?.toLowerCase()] ?? 9;
-  const days = lastContact ? Math.floor((Date.now() - new Date(lastContact).getTime()) / 86400000) : null;
-
-  if (days === null) {
-    return pushiness === 'gentle' ? null : { text: 'Say hello', warm: false };
-  }
-  if (days >= threshold) {
-    if (pushiness === 'gentle')   return null;
-    if (pushiness === 'balanced') return { text: `${days}d ago`, warm: false };
-    if (pushiness === 'firm')     return { text: `${days}d — reach out`, warm: true };
-  }
-  return null;
-}
-
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default async function AppPage() {
@@ -97,315 +36,185 @@ export default async function AppPage() {
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) redirect('/login');
 
-  const [{ data: profile }, { data: goals }, { data: relationships }, { data: news }, { data: rawTasks }] = await Promise.all([
+  const [{ data: profile }, { data: goals }, { data: relationships }, { data: rawTasks }, { data: rawProjects }] = await Promise.all([
     supabase.from('user_profiles').select('*').eq('id', user.id).single(),
     supabase.from('goals').select('id,title,category,status').eq('user_id', user.id).eq('status', 'active'),
     supabase.from('relationships').select('id,person_name,category,contact_frequency,last_contact_at').eq('user_id', user.id).order('person_name'),
-    supabase.from('news_preferences').select('*').eq('user_id', user.id).single(),
     supabase.from('tasks')
-      .select('id,title,priority,due_at,is_pinned,is_delegated,duration_minutes,blocked_by_task_id,project:projects(name,color)')
+      .select('id,title,priority,due_at,is_pinned,is_delegated,duration_minutes,blocked_by_task_id,status,project_id,project:projects(name,color)')
       .eq('user_id', user.id)
-      .eq('status', 'pending')
       .is('parent_task_id', null)
       .order('is_pinned', { ascending: false })
       .order('due_at', { ascending: true, nullsFirst: false })
-      .limit(12),
+      .limit(200),
+    supabase.from('projects')
+      .select('id,name,color,status,project_steps(id,name,status,step_number)')
+      .eq('user_id', user.id)
+      .eq('status', 'active')
+      .order('updated_at', { ascending: false })
+      .limit(6),
   ]);
 
   if (!profile?.onboarding_completed) redirect('/app/onboarding');
 
-  // Compute today's focus tasks (pinned first, then today by priority, max 3)
-  const priorityRank = (p: string) => ({ urgent: 0, high: 1, normal: 2, low: 3 }[p] ?? 2)
-  const todayStr = new Date().toISOString().split('T')[0]
-  const focusTasks = (() => {
-    const tasks = (rawTasks ?? []).filter(t => !t.blocked_by_task_id)
-    const pinned = tasks.filter((t: any) => t.is_pinned)
-    if (pinned.length >= 3) return pinned.slice(0, 3)
-    const todayTasks = tasks
-      .filter((t: any) => !t.is_pinned && t.due_at?.startsWith(todayStr))
-      .sort((a: any, b: any) => priorityRank(a.priority) - priorityRank(b.priority))
-    return [...pinned, ...todayTasks].slice(0, 3)
-  })()
-
   const now = new Date();
   const tz = profile.timezone || 'America/New_York';
+  const todayStr = now.toLocaleDateString('en-CA', { timeZone: tz }); // YYYY-MM-DD in user's tz
+  const allTasksRaw = (rawTasks ?? []) as any[];
+  const pendingTasks = allTasksRaw.filter((t: any) => t.status === 'pending' && !t.blocked_by_task_id);
+  // Focus: today's tasks (pinned + due today), fallback to next 3 upcoming if none
+  const todayTasks_ = pendingTasks.filter((t: any) => t.is_pinned || t.due_at?.startsWith(todayStr))
+  const focusTasks = todayTasks_.length > 0
+    ? todayTasks_
+    : pendingTasks.filter((t: any) => t.due_at).slice(0, 3)
+  const focusCount = focusTasks.length
   const hour = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hour12: false }).format(now));
   const dateStr = now.toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric', timeZone: tz });
   const timeStr = now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', timeZone: tz });
 
   const tone      = profile.tone      || 'warm';
-  const pushiness = profile.pushiness || 'balanced';
-  const greeting  = getGreeting(profile.name, tone, hour);
-  const subtitle  = getSubtitle(tone, pushiness, goals?.length ?? 0, relationships?.length ?? 0);
+  const greeting  = getGreeting(tone, hour);
 
-  // ─── Palette ───
-  const C = {
-    bg:          '#F5F4F2',
-    card:        '#FFFFFF',
-    cardBorder:  'rgba(0,0,0,0.07)',
-    text:        '#1A1A1A',
-    muted:       '#8A949E',
-    faint:       'rgba(0,0,0,0.03)',
-    divider:     'rgba(0,0,0,0.06)',
-    accent:      '#2DB87A',
-    accentDim:   'rgba(45,184,122,0.09)',
-    accentBorder:'rgba(45,184,122,0.22)',
-    amber:       '#D97706',
-    amberDim:    'rgba(217,119,6,0.08)',
-    amberBorder: 'rgba(217,119,6,0.2)',
-  };
+  // Urgent task count
+  const urgentCount = pendingTasks.filter((t: any) => t.priority === 'urgent').length;
 
-  const cardStyle: React.CSSProperties = {
-    background: C.card,
-    border: `1px solid ${C.cardBorder}`,
-    borderRadius: 22,
-    padding: '22px 24px',
-  };
+  // Pulse AI messages
+  const pulseMessages: string[] = [];
+  if (urgentCount > 0) pulseMessages.push(`You have ${urgentCount} urgent task${urgentCount !== 1 ? 's' : ''} — focus on those first.`);
+  if (goals && goals.length > 0) pulseMessages.push(`${goals.length} goal${goals.length !== 1 ? 's' : ''} in focus — keep the momentum going.`);
+  if (relationships && relationships.length > 0) {
+    const overdue = relationships.filter(r => {
+      const thresholds: Record<string, number> = { daily: 2, weekly: 9, biweekly: 16, monthly: 35 };
+      const threshold = thresholds[r.contact_frequency?.toLowerCase()] ?? 9;
+      const days = r.last_contact_at ? Math.floor((Date.now() - new Date(r.last_contact_at).getTime()) / 86400000) : null;
+      return days !== null && days >= threshold;
+    });
+    if (overdue.length > 0) pulseMessages.push(`${overdue[0].person_name} might appreciate a quick check-in.`);
+  }
+  if (pulseMessages.length === 0) pulseMessages.push('Your schedule looks manageable today.');
 
-  const labelStyle: React.CSSProperties = {
-    fontSize: 10, fontWeight: 700, color: C.muted,
-    letterSpacing: 1, textTransform: 'uppercase', marginBottom: 18,
+  // Today's schedule for TodayStrip
+  const PRIORITY_COLORS: Record<string, string> = {
+    urgent: '#D4727A', high: '#D4A47A', normal: '#D56989', low: '#D4C8CD',
   };
+  const todayTasks = (rawTasks ?? [])
+    .filter((t: any) => t.due_at?.startsWith(todayStr))
+    .sort((a: any, b: any) => new Date(a.due_at).getTime() - new Date(b.due_at).getTime());
+
+  const currentHourFrac = hour + now.getMinutes() / 60;
+
+  // Build all schedule events with their hour fraction for sorting
+  const scheduleEvents: { time: string; label: string; color: string; isCurrent: boolean; _h: number }[] = todayTasks.map((t: any) => {
+    const d = new Date(t.due_at);
+    const h = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: tz, hour: 'numeric', hour12: false }).format(d));
+    const m = parseInt(new Intl.DateTimeFormat('en-US', { timeZone: tz, minute: '2-digit' }).format(d));
+    const timeLabel = `${h % 12 || 12}:${String(m).padStart(2, '0')} ${h >= 12 ? 'PM' : 'AM'}`;
+    return { time: timeLabel, label: t.title, color: PRIORITY_COLORS[t.priority] ?? '#D56989', isCurrent: false, _h: h + m / 60 };
+  });
+
+  if (profile.wake_time) {
+    const [wH, wM] = profile.wake_time.split(':').map(Number);
+    scheduleEvents.unshift({ time: formatTime(profile.wake_time), label: 'Wake', color: '#C2DC80', isCurrent: false, _h: wH + wM / 60 });
+  }
+  if (profile.wind_down_time) {
+    const [wdH, wdM] = profile.wind_down_time.split(':').map(Number);
+    scheduleEvents.push({ time: formatTime(profile.wind_down_time), label: 'Wind down', color: '#B8A9D4', isCurrent: false, _h: wdH + wdM / 60 });
+  }
+
+  // Sort by time and mark the next upcoming event
+  scheduleEvents.sort((a, b) => a._h - b._h);
+  const nextIdx = scheduleEvents.findIndex(e => e._h >= currentHourFrac);
+  if (nextIdx !== -1) scheduleEvents[nextIdx].isCurrent = true;
+
+  const shortDate = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric', timeZone: tz });
+
+  // Projects data — percentage based on tasks (same as projects page)
+  const allProjectsData: (ProjectData & { id: string })[] = (rawProjects ?? []).map((p: any) => {
+    const pTasks = allTasksRaw.filter((t: any) => t.project_id === p.id);
+    const totalTasks = pTasks.length;
+    const doneTasks = pTasks.filter((t: any) => t.status === 'done').length;
+    const pct = totalTasks > 0 ? Math.round((doneTasks / totalTasks) * 100) : 0;
+    const steps = p.project_steps ?? [];
+    const activeStep = steps
+      .sort((a: any, b: any) => a.step_number - b.step_number)
+      .find((s: any) => s.status === 'active' || s.status === 'pending');
+    return {
+      id: p.id,
+      name: p.name,
+      color: p.color || '#D56989',
+      pct,
+      step: activeStep?.name || (doneTasks === totalTasks && totalTasks > 0 ? 'Complete' : 'No steps yet'),
+    };
+  });
+
+  // Auto-mark projects at 100% as completed
+  const completedIds = allProjectsData.filter(p => p.pct === 100).map(p => p.id);
+  if (completedIds.length > 0) {
+    await supabase.from('projects').update({ status: 'completed' }).in('id', completedIds);
+  }
+
+  // Only show active (non-complete) projects on dashboard
+  const projectsData: ProjectData[] = allProjectsData.filter(p => p.pct < 100);
 
   return (
-    <div style={{ minHeight: '100vh', background: C.bg, color: C.text, fontFamily: "'DM Sans', sans-serif" }}>
+    <div style={{ minHeight: '100vh', background: 'transparent', color: '#2D2026', fontFamily: "'Outfit', sans-serif" }}>
       <style>{`
         @keyframes fadeUp {
-          from { opacity: 0; transform: translateY(16px); }
+          from { opacity: 0; transform: translateY(18px); }
           to   { opacity: 1; transform: translateY(0); }
         }
-        @keyframes pulseGlow {
-          0%, 100% { box-shadow: 0 0 0 0 rgba(45,184,122,0); }
-          50%       { box-shadow: 0 0 16px 4px rgba(45,184,122,0.1); }
-        }
-        * { box-sizing: border-box; }
-        ::-webkit-scrollbar { height: 0; width: 0; }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        ::-webkit-scrollbar { width: 3px; }
+        ::-webkit-scrollbar-thumb { background: rgba(45,32,38,0.12); border-radius: 2px; }
+        button { font-family: 'Outfit', sans-serif; }
+        button:active { transform: scale(0.97); }
       `}</style>
 
-      <div style={{ maxWidth: 740, margin: '0 auto', padding: '0 24px 100px' }}>
+      <div style={{ maxWidth: 820, margin: '0 auto', padding: '0 44px 60px' }}>
+        <div style={{ paddingTop: 48 }}>
 
-        {/* ──────────────────── Hero greeting ──────────────────── */}
-        <div style={{ paddingTop: 64, paddingBottom: 44, animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) both' }}>
-          <p style={{ fontSize: 12, color: C.muted, marginBottom: 8, letterSpacing: 0.2 }}>
-            {dateStr} &nbsp;·&nbsp; {timeStr}
-          </p>
-          <h1 style={{
-            fontFamily: "'Instrument Serif', serif",
-            fontSize: 38, fontWeight: 400, lineHeight: 1.1,
-            letterSpacing: -0.5, color: C.text, margin: '0 0 8px',
-          }}>
-            {greeting}
-          </h1>
-          <p style={{ fontSize: 15, color: C.muted, fontWeight: 400 }}>
-            {subtitle}
-          </p>
+          <HeroSection
+            greeting={greeting}
+            name={profile.name}
+            dateStr={dateStr}
+            timeStr={timeStr}
+            urgentCount={urgentCount}
+            pulseMessages={pulseMessages}
+          />
+
+          {scheduleEvents.length > 0 && (
+            <TodayStrip events={scheduleEvents} dateLabel={shortDate} />
+          )}
+
+          <FocusSection tasks={focusTasks.map((t: any): FocusTask => {
+            const proj = Array.isArray(t.project) ? t.project[0] : t.project;
+            return {
+              id: t.id,
+              title: t.title,
+              priority: t.priority,
+              due_at: t.due_at,
+              projectName: proj?.name,
+              projectColor: proj?.color,
+              isPinned: t.is_pinned,
+            };
+          })} />
+
+          <ProjectsSection projects={projectsData} />
+
+          <BottomRow
+            rhythm={[
+              { icon: '☀', time: formatTime(profile.wake_time), label: 'Wake' },
+              { icon: '◉', time: formatTime(profile.briefing_time), label: 'Briefing' },
+              { icon: '🌙', time: formatTime(profile.wind_down_time), label: 'Wind down' },
+            ]}
+            stats={[
+              { val: String(focusCount), label: 'today', color: '#EA9CAF' },
+              { val: String(projectsData.length), label: 'projects', color: '#C2DC80' },
+              { val: '12', label: 'streak', color: '#D56989' },
+            ]}
+          />
+
         </div>
-
-        {/* ──────────────────── Row 1: Your Day + Goals ──────────────────── */}
-        <div style={{
-          display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, marginBottom: 14,
-          animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) 0.08s both',
-        }}>
-          {/* Your Day card */}
-          <div style={cardStyle}>
-            <p style={labelStyle}>Your Day</p>
-            {[
-              { icon: '☀', label: 'Wake',       value: formatTime(profile.wake_time)      },
-              { icon: '◉', label: 'Briefing',   value: formatTime(profile.briefing_time)  },
-              { icon: '🌙', label: 'Wind down', value: formatTime(profile.wind_down_time) },
-            ].map((row, i, arr) => (
-              <div key={i} style={{
-                display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                padding: '9px 0',
-                borderBottom: i < arr.length - 1 ? `1px solid ${C.divider}` : 'none',
-              }}>
-                <span style={{ fontSize: 12, color: C.muted }}>{row.icon}&nbsp; {row.label}</span>
-                <span style={{ fontSize: 13, fontWeight: 500, color: C.text, fontVariantNumeric: 'tabular-nums' }}>
-                  {row.value}
-                </span>
-              </div>
-            ))}
-            {profile.briefing_format && (
-              <div style={{
-                marginTop: 14, padding: '7px 12px', borderRadius: 10,
-                background: C.accentDim, border: `1px solid ${C.accentBorder}`,
-              }}>
-                <span style={{ fontSize: 11, color: C.accent, fontWeight: 500 }}>
-                  {getBriefingIcon(profile.briefing_format)}
-                </span>
-              </div>
-            )}
-          </div>
-
-          {/* Goals card */}
-          <div style={cardStyle}>
-            <p style={labelStyle}>{getSectionLabel('goals', tone, pushiness)}</p>
-            {goals && goals.length > 0 ? (
-              <>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 18 }}>
-                  {goals.map(g => {
-                    const meta = GOAL_META[g.category] || { icon: '◈', label: g.category };
-                    return (
-                      <div key={g.id} style={{
-                        display: 'flex', alignItems: 'center', gap: 6,
-                        padding: '6px 11px', borderRadius: 20,
-                        background: C.faint, border: `1px solid ${C.cardBorder}`,
-                      }}>
-                        <span style={{ fontSize: 13 }}>{meta.icon}</span>
-                        <span style={{ fontSize: 12, color: C.text }}>{meta.label}</span>
-                      </div>
-                    );
-                  })}
-                </div>
-                <p style={{ fontSize: 12, color: C.muted }}>
-                  {goals.length} area{goals.length !== 1 ? 's' : ''} in focus
-                </p>
-              </>
-            ) : (
-              <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.7 }}>
-                No active goals yet.<br />
-                <span style={{ color: C.accent, fontWeight: 500 }}>Add some in settings →</span>
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* ──────────────────── Today's Focus ──────────────────── */}
-        {focusTasks.length > 0 && (
-          <a href="/app/tasks" style={{ textDecoration: 'none' }}>
-            <div style={{ ...cardStyle, marginBottom: 14, animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) 0.12s both', cursor: 'pointer' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-                <p style={{ ...labelStyle, marginBottom: 0 }}>Today&apos;s Focus</p>
-                <span style={{ fontSize: 11, color: C.accent, fontWeight: 600 }}>View all →</span>
-              </div>
-              {focusTasks.map((t: any, i: number) => {
-                const dotColor = ({ urgent: '#EF4444', high: '#F97316', normal: '#3B82F6', low: '#9CA3AF' } as Record<string, string>)[t.priority] ?? '#9CA3AF'
-                const proj = Array.isArray(t.project) ? t.project[0] : t.project
-                return (
-                  <div key={t.id} style={{
-                    display: 'flex', alignItems: 'center', gap: 10, padding: '9px 0',
-                    borderBottom: i < focusTasks.length - 1 ? `1px solid ${C.divider}` : 'none',
-                  }}>
-                    <span style={{ width: 7, height: 7, borderRadius: '50%', background: dotColor, flexShrink: 0, display: 'inline-block' }} />
-                    <span style={{ fontSize: 13, color: C.text, flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                      {t.title}
-                    </span>
-                    {proj && (
-                      <span style={{ fontSize: 11, padding: '1px 8px', borderRadius: 20, background: `${proj.color}18`, color: proj.color, fontWeight: 600, flexShrink: 0 }}>
-                        {proj.name}
-                      </span>
-                    )}
-                  </div>
-                )
-              })}
-            </div>
-          </a>
-        )}
-
-        {/* ──────────────────── People ──────────────────── */}
-        {relationships && relationships.length > 0 && (
-          <div style={{ ...cardStyle, marginBottom: 14, animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) 0.16s both' }}>
-            <p style={labelStyle}>{getSectionLabel('people', tone, pushiness)}</p>
-            <div style={{ display: 'flex', gap: 10, overflowX: 'auto', paddingBottom: 2, marginLeft: -2, paddingLeft: 2 }}>
-              {relationships.map(r => {
-                const nudge = getNudgeText(r.contact_frequency, r.last_contact_at, pushiness);
-                const initials = r.person_name.split(' ').map((n: string) => n[0]).slice(0, 2).join('').toUpperCase();
-                const firstName = r.person_name.split(' ')[0];
-                return (
-                  <div key={r.id} style={{
-                    flexShrink: 0, textAlign: 'center',
-                    background: C.faint, border: `1px solid ${C.cardBorder}`,
-                    borderRadius: 18, padding: '16px 14px', minWidth: 100,
-                  }}>
-                    {/* Avatar */}
-                    <div style={{
-                      width: 42, height: 42, borderRadius: '50%',
-                      background: C.accentDim, border: `1.5px solid ${C.accentBorder}`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      margin: '0 auto 10px',
-                      fontSize: 13, fontWeight: 600, color: C.accent,
-                    }}>
-                      {initials}
-                    </div>
-                    <p style={{ fontSize: 12, fontWeight: 600, color: C.text, marginBottom: 2 }}>
-                      {firstName}
-                    </p>
-                    <p style={{ fontSize: 10, color: C.muted, marginBottom: nudge ? 8 : 0, textTransform: 'capitalize' }}>
-                      {r.contact_frequency || 'weekly'}
-                    </p>
-                    {nudge && (
-                      <div style={{
-                        padding: '3px 8px', borderRadius: 8,
-                        background: nudge.warm ? C.amberDim : 'rgba(255,255,255,0.04)',
-                        border: `1px solid ${nudge.warm ? C.amberBorder : C.cardBorder}`,
-                      }}>
-                        <span style={{ fontSize: 10, color: nudge.warm ? C.amber : C.muted, fontWeight: 500 }}>
-                          {nudge.text}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {/* ──────────────────── World news ──────────────────── */}
-        {news?.enabled && (
-          <div style={{ ...cardStyle, animation: 'fadeUp 0.65s cubic-bezier(0.4,0,0.2,1) 0.24s both' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 14 }}>
-              <p style={{ ...labelStyle, marginBottom: 0 }}>{getSectionLabel('world', tone, pushiness)}</p>
-              <span style={{
-                fontSize: 10, fontWeight: 500, color: C.muted,
-                padding: '4px 10px', borderRadius: 20,
-                background: C.faint, border: `1px solid ${C.cardBorder}`,
-              }}>
-                {news.tone === 'positive' ? '☀ Positive' : news.tone === 'full' ? '🌐 Full reality' : '⚖ Balanced'}
-              </span>
-            </div>
-            <p style={{ fontSize: 13, color: C.muted, lineHeight: 1.7 }}>
-              {tone === 'calm'
-                ? 'World news included in your briefing.'
-                : tone === 'hype'
-                ? 'World news ready in your morning briefing! 🌍'
-                : tone === 'pro'
-                ? 'Global briefing included with your morning summary.'
-                : 'Your morning briefing will include world news.'}
-              {news.outlets?.length > 0 && (
-                <span style={{ color: C.accent }}>
-                  {' '}From {news.outlets.slice(0, 3).map((o: string) => OUTLET_NAMES[o] || o).join(', ')}
-                  {news.outlets.length > 3 ? ` +${news.outlets.length - 3}` : ''}.
-                </span>
-              )}
-            </p>
-          </div>
-        )}
-
-        {/* ──────────────────── Footer status bar ──────────────────── */}
-        <div style={{
-          marginTop: 48, paddingTop: 20, borderTop: `1px solid ${C.divider}`,
-          display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-          animation: 'fadeUp 0.5s ease 0.4s both',
-        }}>
-          <div style={{ display: 'flex', gap: 20 }}>
-            {[
-              { label: 'Mode',  value: { voice: '🔊 Voice', text: '💬 Text', hybrid: '🔊💬 Hybrid' }[profile.response_mode as string] || '—' },
-              { label: 'Style', value: ({ warm: 'Warm', calm: 'Calm', pro: 'Pro', hype: 'Hyped' } as Record<string, string>)[tone] || '—' },
-              { label: 'Push',  value: ({ gentle: 'Gentle', balanced: 'Balanced', firm: 'Firm' } as Record<string, string>)[pushiness] || '—' },
-            ].map((item, i) => (
-              <div key={i} style={{ display: 'flex', gap: 5, alignItems: 'center' }}>
-                <span style={{ fontSize: 10, color: C.muted }}>{item.label}</span>
-                <span style={{ fontSize: 11, color: C.text, fontWeight: 500 }}>{item.value}</span>
-              </div>
-            ))}
-          </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <div style={{ width: 6, height: 6, borderRadius: '50%', background: C.accent }} />
-            <p style={{ fontSize: 11, color: C.muted }}>Pulse</p>
-          </div>
-        </div>
-
       </div>
     </div>
   );

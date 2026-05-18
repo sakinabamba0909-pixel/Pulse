@@ -3,22 +3,16 @@ import { NextRequest, NextResponse } from 'next/server'
 
 const GOOGLE_CLIENT_ID     = process.env.GOOGLE_CLIENT_ID     || ''
 const GOOGLE_CLIENT_SECRET = process.env.GOOGLE_CLIENT_SECRET || ''
-
-function getOrigin(req: NextRequest): string {
-  const host  = req.headers.get('x-forwarded-host') || req.headers.get('host') || req.nextUrl.host
-  const proto = req.headers.get('x-forwarded-proto') || 'https'
-  return `${proto}://${host}`
-}
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://pulse-ten-sigma.vercel.app'
 
 export async function GET(req: NextRequest) {
-  const origin      = getOrigin(req)
-  const redirectUri = `${origin}/api/calendar/callback`
+  const redirectUri = `${APP_URL}/api/calendar/callback`
 
   const code  = req.nextUrl.searchParams.get('code')
   const error = req.nextUrl.searchParams.get('error')
 
   if (error || !code) {
-    return NextResponse.redirect(`${origin}/app/tasks?calendar_error=access_denied`)
+    return NextResponse.redirect(`${APP_URL}/app/settings?calendar_error=access_denied`)
   }
 
   // Exchange code for tokens
@@ -35,7 +29,7 @@ export async function GET(req: NextRequest) {
   })
 
   if (!tokenRes.ok) {
-    return NextResponse.redirect(`${origin}/app/tasks?calendar_error=token_exchange_failed`)
+    return NextResponse.redirect(`${APP_URL}/app/settings?calendar_error=token_exchange_failed`)
   }
 
   const tokens = await tokenRes.json()
@@ -43,7 +37,7 @@ export async function GET(req: NextRequest) {
   const supabase = await createServerClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) {
-    return NextResponse.redirect(`${origin}/app/tasks?calendar_error=not_authenticated`)
+    return NextResponse.redirect(`${APP_URL}/app/settings?calendar_error=not_authenticated`)
   }
 
   const expiresAt = tokens.expires_in
@@ -60,5 +54,5 @@ export async function GET(req: NextRequest) {
     updated_at:              new Date().toISOString(),
   }, { onConflict: 'user_id,provider' })
 
-  return NextResponse.redirect(`${origin}/app/tasks?calendar_connected=1`)
+  return NextResponse.redirect(`${APP_URL}/app/settings?calendar_connected=1`)
 }

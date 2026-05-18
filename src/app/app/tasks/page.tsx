@@ -9,11 +9,12 @@ export default async function TasksPage() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) redirect('/login')
 
-  const [tasksRes, projectsRes, relationshipsRes] = await Promise.all([
+  const [tasksRes, projectsRes, subtasksRes] = await Promise.all([
     supabase
       .from('tasks')
-      .select('*, project:projects(id, name, color, category), person:relationships(id, person_name)')
+      .select('*, project:projects(id, name, color, category)')
       .eq('user_id', user.id)
+      .is('parent_task_id', null)
       .order('created_at', { ascending: false }),
     supabase
       .from('projects')
@@ -22,17 +23,17 @@ export default async function TasksPage() {
       .eq('status', 'active')
       .order('created_at', { ascending: false }),
     supabase
-      .from('relationships')
-      .select('id, person_name, category')
+      .from('tasks')
+      .select('id, title, status, parent_task_id')
       .eq('user_id', user.id)
-      .order('person_name'),
+      .not('parent_task_id', 'is', null),
   ])
 
   return (
     <TasksClient
       initialTasks={tasksRes.data ?? []}
       initialProjects={projectsRes.data ?? []}
-      initialRelationships={relationshipsRes.data ?? []}
+      initialSubtasks={subtasksRes.data ?? []}
     />
   )
 }

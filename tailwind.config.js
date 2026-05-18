@@ -4,19 +4,25 @@ module.exports = {
   theme: {
     extend: {
       colors: {
-        briefly: {
-          green: '#2DB87A',
-          'green-soft': 'rgba(45,184,122,0.08)',
-          'green-mid': 'rgba(45,184,122,0.15)',
-          dark: '#0B0E11',
-          surface: '#13171C',
-          card: '#171C22',
-          border: '#232A33',
+        pulse: {
+          accent: '#8B7EC8',
+          'accent-soft': 'rgba(139,126,200,0.10)',
+          'accent-mid': 'rgba(139,126,200,0.18)',
+          rose: '#C8889E',
+          peach: '#C8A088',
+          sky: '#7AABC8',
+          sage: '#7EB89B',
+          ink: '#2A2D35',
+          muted: '#8890A0',
+          faint: '#B0B6C4',
+          bg: '#C5CDDA',
+          surface: 'rgba(255,255,255,0.55)',
+          border: 'rgba(255,255,255,0.25)',
         },
       },
       fontFamily: {
-        serif: ['Instrument Serif', 'serif'],
-        sans: ['DM Sans', 'system-ui', 'sans-serif'],
+        serif: ['Fraunces', 'serif'],
+        sans: ['Outfit', 'system-ui', 'sans-serif'],
       },
     },
   },
