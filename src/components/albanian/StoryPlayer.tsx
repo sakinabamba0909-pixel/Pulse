@@ -173,107 +173,11 @@ export default function StoryPlayer({ story }: StoryPlayerProps) {
   };
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 pb-24">
       {/* Story header */}
       <div className="space-y-1">
         <h1 className="text-2xl font-bold text-[var(--text)]">{story.title}</h1>
         <p className="text-[var(--text-muted)] text-sm">{story.titleEnglish}</p>
-      </div>
-
-      {/* Controls bar */}
-      <div className="flex flex-wrap items-center gap-3">
-        {/* Play / Pause */}
-        <motion.button
-          onClick={playFullStory}
-          whileTap={{ scale: 0.93 }}
-          whileHover={{ scale: 1.04 }}
-          disabled={isLoadingFull}
-          className={`
-            inline-flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm
-            transition-colors duration-200 focus:outline-none focus-visible:ring-2
-            focus-visible:ring-[var(--accent)]
-            ${
-              isPlaying
-                ? "bg-[var(--accent)]/20 text-[var(--accent)] border border-[var(--accent)]/40"
-                : "bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
-            }
-          `}
-        >
-          {isLoadingFull ? (
-            <svg className="animate-spin" width={16} height={16} viewBox="0 0 24 24" fill="none">
-              <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10" strokeLinecap="round" />
-            </svg>
-          ) : isPlaying ? (
-            <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor">
-              <rect x="6" y="4" width="4" height="16" rx="1" />
-              <rect x="14" y="4" width="4" height="16" rx="1" />
-            </svg>
-          ) : (
-            <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor">
-              <polygon points="5 3 19 12 5 21 5 3" />
-            </svg>
-          )}
-          {isLoadingFull ? "Loading…" : isPlaying ? "Pause" : "Play Story"}
-        </motion.button>
-
-        {/* Speed buttons */}
-        <div className="flex items-center gap-1 bg-[var(--surface)] rounded-lg border border-[var(--border)] p-0.5">
-          {SPEEDS.map((s) => (
-            <button
-              key={s.value}
-              onClick={() => setSpeed(s.value)}
-              className={`
-                px-2.5 py-1 rounded-md text-xs font-medium transition-colors duration-150
-                ${
-                  speed === s.value
-                    ? "bg-[var(--card)] text-[var(--accent)] border border-[var(--accent)]/30"
-                    : "text-[var(--text-muted)] hover:text-[var(--text-soft)]"
-                }
-              `}
-            >
-              {s.label}
-            </button>
-          ))}
-        </div>
-
-        {/* Loop toggle */}
-        <button
-          onClick={() => setLoop((l) => !l)}
-          className={`
-            inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
-            border transition-colors duration-150
-            ${
-              loop
-                ? "bg-[var(--accent)]/10 text-[var(--accent)] border-[var(--accent)]/30"
-                : "bg-[var(--surface)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text-soft)]"
-            }
-          `}
-        >
-          <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="17 1 21 5 17 9" />
-            <path d="M3 11V9a4 4 0 0 1 4-4h14" />
-            <polyline points="7 23 3 19 7 15" />
-            <path d="M21 13v2a4 4 0 0 1-4 4H3" />
-          </svg>
-          Loop
-        </button>
-
-        {/* Listen counter */}
-        {listenCount > 0 && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] ml-auto"
-          >
-            <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
-              <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
-            </svg>
-            <span>
-              {listenCount} {listenCount === 1 ? "listen" : "listens"}
-            </span>
-          </motion.div>
-        )}
       </div>
 
       {/* Paragraphs */}
@@ -368,6 +272,106 @@ export default function StoryPlayer({ story }: StoryPlayerProps) {
       <p className="text-xs text-[var(--text-muted)] text-center pb-2">
         Tap any paragraph to show the English translation · speaker icon plays that paragraph alone
       </p>
+
+      {/* Sticky bottom controls bar */}
+      <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-[var(--border)] bg-[#0a0a0a]/95 backdrop-blur-md">
+        <div className="max-w-4xl mx-auto px-4 py-3 flex flex-wrap items-center gap-3">
+          {/* Play / Pause */}
+          <motion.button
+            onClick={playFullStory}
+            whileTap={{ scale: 0.93 }}
+            disabled={isLoadingFull}
+            className={`
+              inline-flex items-center gap-2 px-4 py-2 rounded-xl font-medium text-sm
+              transition-colors duration-200 focus:outline-none focus-visible:ring-2
+              focus-visible:ring-[var(--accent)]
+              ${
+                isPlaying
+                  ? "bg-[var(--accent)]/20 text-[var(--accent)] border border-[var(--accent)]/40"
+                  : "bg-[var(--surface)] text-[var(--text)] border border-[var(--border)] hover:border-[var(--accent)]/40 hover:text-[var(--accent)]"
+              }
+            `}
+          >
+            {isLoadingFull ? (
+              <svg className="animate-spin" width={16} height={16} viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" strokeDasharray="31.4" strokeDashoffset="10" strokeLinecap="round" />
+              </svg>
+            ) : isPlaying ? (
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor">
+                <rect x="6" y="4" width="4" height="16" rx="1" />
+                <rect x="14" y="4" width="4" height="16" rx="1" />
+              </svg>
+            ) : (
+              <svg width={16} height={16} viewBox="0 0 24 24" fill="currentColor">
+                <polygon points="5 3 19 12 5 21 5 3" />
+              </svg>
+            )}
+            {isLoadingFull ? "Loading…" : isPlaying ? "Pause" : "Play Story"}
+          </motion.button>
+
+          {/* Speed buttons */}
+          <div className="flex items-center gap-1 bg-[var(--surface)] rounded-lg border border-[var(--border)] p-0.5">
+            {SPEEDS.map((s) => (
+              <button
+                key={s.value}
+                onClick={() => setSpeed(s.value)}
+                className={`
+                  px-2.5 py-1 rounded-md text-xs font-medium transition-colors duration-150
+                  ${
+                    speed === s.value
+                      ? "bg-[var(--card)] text-[var(--accent)] border border-[var(--accent)]/30"
+                      : "text-[var(--text-muted)] hover:text-[var(--text-soft)]"
+                  }
+                `}
+              >
+                {s.label}
+              </button>
+            ))}
+          </div>
+
+          {/* Loop toggle */}
+          <button
+            onClick={() => setLoop((l) => !l)}
+            className={`
+              inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium
+              border transition-colors duration-150
+              ${
+                loop
+                  ? "bg-[var(--accent)]/10 text-[var(--accent)] border-[var(--accent)]/30"
+                  : "bg-[var(--surface)] text-[var(--text-muted)] border-[var(--border)] hover:text-[var(--text-soft)]"
+              }
+            `}
+          >
+            <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="17 1 21 5 17 9" />
+              <path d="M3 11V9a4 4 0 0 1 4-4h14" />
+              <polyline points="7 23 3 19 7 15" />
+              <path d="M21 13v2a4 4 0 0 1-4 4H3" />
+            </svg>
+            Loop
+          </button>
+
+          {/* Listen counter */}
+          {listenCount > 0 && (
+            <div className="flex items-center gap-1.5 text-xs text-[var(--text-muted)] ml-auto">
+              <svg width={13} height={13} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5" />
+                <path d="M15.54 8.46a5 5 0 0 1 0 7.07" />
+              </svg>
+              <span>
+                {listenCount} {listenCount === 1 ? "listen" : "listens"}
+              </span>
+            </div>
+          )}
+
+          {/* Current paragraph indicator when playing */}
+          {isPlaying && currentIndex !== null && (
+            <div className="hidden sm:flex items-center gap-1.5 text-xs text-[var(--accent)] ml-auto">
+              <span>{currentIndex + 1}/{sorted.length}</span>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }
