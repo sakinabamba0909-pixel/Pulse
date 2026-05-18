@@ -2,6 +2,8 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
+import TaskCreateInput from './TaskCreateInput';
+import type { Task, Project, Relationship } from '@/lib/tasks/types';
 
 /* ═══ PALETTE ═══ */
 var P = {
@@ -281,9 +283,6 @@ function VoiceInput({ projects, onTaskCreated }: { projects: ProjectData[]; onTa
           <button onClick={startVoice} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 20, background: P.orchidSoft, border: '1px solid ' + P.orchidBorder, cursor: 'pointer', color: P.orchid, fontSize: 13, fontWeight: 400 }}>
             <span style={{ fontSize: 14 }}>{'\uD83C\uDFA4'}</span> Speak a task
           </button>
-          <button onClick={() => setShowForm(true)} style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '9px 16px', borderRadius: 20, background: 'rgba(255,255,255,0.6)', border: '1px solid ' + P.border, cursor: 'pointer', color: P.inkSoft, fontSize: 13, fontWeight: 300 }}>
-            <span style={{ fontSize: 14 }}>{'\u270F'}</span> Write it out
-          </button>
         </div>
       )}
       {mode === 'listening' && (
@@ -451,7 +450,7 @@ function TaskDetailPanel({ task, subtasks, onClose, onUpdate, onDelete }: {
 }
 
 /* ═══ MAIN COMPONENT ═══ */
-export default function TasksClient({ initialTasks, initialProjects, initialSubtasks }: {
+export default function TasksClient({ initialTasks, initialProjects, initialSubtasks, initialRelationships = [] }: {
   initialTasks: TaskData[];
   initialProjects: ProjectData[];
   initialSubtasks: SubtaskData[];
@@ -462,6 +461,7 @@ export default function TasksClient({ initialTasks, initialProjects, initialSubt
   var [filter, setFilter] = useState('all');
   var [sort, setSort] = useState('due');
   var [selectedTask, setSelectedTask] = useState<TaskData | null>(null);
+  var [showCreateModal, setShowCreateModal] = useState(false);
 
   // Build subtasks count map
   var subtasksMap: Record<string, number> = {};
@@ -684,11 +684,8 @@ export default function TasksClient({ initialTasks, initialProjects, initialSubt
       </div>
 
       {/* Floating add button */}
-      {!selectedTask && (
-        <button onClick={() => {
-          var el = document.querySelector('[data-voice-write]') as HTMLElement;
-          if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        }} style={{
+      {!selectedTask && !showCreateModal && (
+        <button onClick={() => setShowCreateModal(true)} style={{
           position: 'fixed', bottom: 32, right: 36, zIndex: 25,
           display: 'flex', alignItems: 'center', gap: 10,
           padding: '12px 22px', borderRadius: 28,
@@ -702,6 +699,22 @@ export default function TasksClient({ initialTasks, initialProjects, initialSubt
           New task
           <span style={{ fontSize: 14, opacity: 0.7, animation: 'glowPulse 3s ease infinite' }}>{'\u2726'}</span>
         </button>
+      )}
+
+      {/* Task create modal */}
+      {showCreateModal && (
+        <TaskCreateInput
+          projects={initialProjects as unknown as Project[]}
+          allTasks={tasks as unknown as Task[]}
+          relationships={initialRelationships as Relationship[]}
+          onAdd={async (taskData) => {
+            var res = await fetch('/api/tasks', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(taskData) });
+            var created = await res.json();
+            if (created && !created.error) { setTasks(prev => [created, ...prev]); }
+            return created;
+          }}
+          onClose={() => { setShowCreateModal(false); router.refresh(); }}
+        />
       )}
 
       {/* Task detail panel */}
