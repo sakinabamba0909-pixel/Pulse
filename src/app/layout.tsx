@@ -2,14 +2,18 @@ import type { Metadata } from 'next';
 import './globals.css';
 
 export const metadata: Metadata = {
-  title: 'Pulse — Your Lifestyle OS',
-  description: 'Voice-first AI assistant for tasks, goals, relationships, and everything in between.',
+  title: 'Mëso Shqip — Kosovo Albanian Immersion',
+  description: 'Learn Kosovo Gheg Albanian through comprehensible input and immersive storytelling.',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <div data-theme="dark" className="min-h-screen bg-[#0a0a0a]">
+          {children}
+        </div>
+      </body>
     </html>
   );
 }

@@ -30,7 +30,7 @@ export default function StoryCard({ story, listenCount }: StoryCardProps) {
   const phase = phaseColors[story.phaseNumber] ?? phaseColors[1];
 
   return (
-    <Link href={`/albanian/story/${story.id}`} className="block">
+    <Link href={`/story/${story.id}`} className="block">
       <motion.div
         whileHover={{ y: -3, scale: 1.01 }}
         whileTap={{ scale: 0.98 }}

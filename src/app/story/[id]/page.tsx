@@ -77,7 +77,7 @@ export default function StoryPage() {
         <div className="text-center">
           <p className="text-lg mb-4">Story not found</p>
           <button
-            onClick={() => router.push('/albanian')}
+            onClick={() => router.push('/')}
             className="text-[#6EE7A0] hover:underline"
           >
             Back to stories
@@ -107,7 +107,7 @@ export default function StoryPage() {
         <div className="max-w-4xl mx-auto px-4 py-4">
           <div className="flex items-center gap-4 mb-3">
             <button
-              onClick={() => router.push('/albanian')}
+              onClick={() => router.push('/')}
               className="text-[#8B95A3] hover:text-[#E8ECF1] transition-colors"
             >
               <svg width="20" height="20" viewBox="0 0 20 20" fill="none">

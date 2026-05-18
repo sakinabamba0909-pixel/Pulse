@@ -57,7 +57,7 @@ export default function ReviewPage() {
       <header className="border-b border-[#232A33] bg-[#0a0a0a]/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-3xl mx-auto px-4 py-4 flex items-center gap-4">
           <button
-            onClick={() => router.push('/albanian')}
+            onClick={() => router.push('/')}
             className="text-[#8B95A3] hover:text-[#E8ECF1] transition-colors"
           >
             <svg width="20" height="20" viewBox="0 0 20 20" fill="none">
