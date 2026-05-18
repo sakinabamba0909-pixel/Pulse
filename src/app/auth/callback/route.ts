@@ -1,9 +1,6 @@
-// ============================================================
-// Auth Callback — handles OAuth redirects from Supabase
-// ============================================================
-
-import { createServerClient } from '@/lib/supabase/server';
+import { createServerClient } from '@supabase/ssr';
 import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
 
 export async function GET(request: Request) {
   const { searchParams, origin } = new URL(request.url);
@@ -11,11 +8,26 @@ export async function GET(request: Request) {
   const next = searchParams.get('next') ?? '/app';
 
   if (code) {
-    const supabase = await createServerClient();
+    const cookieStore = await cookies();
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
+
+    const supabase = createServerClient(supabaseUrl, supabaseAnonKey, {
+      cookies: {
+        getAll() {
+          return cookieStore.getAll();
+        },
+        setAll(cookiesToSet: { name: string; value: string; options?: any }[]) {
+          cookiesToSet.forEach(({ name, value, options }) => {
+            cookieStore.set(name, value, options);
+          });
+        },
+      },
+    });
+
     const { error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
-      // Check if user has completed onboarding
       const { data: { user } } = await supabase.auth.getUser();
       if (user) {
         const { data: profile } = await supabase
@@ -24,7 +36,6 @@ export async function GET(request: Request) {
           .eq('id', user.id)
           .single();
 
-        // Send to onboarding if not completed
         if (!profile?.onboarding_completed) {
           return NextResponse.redirect(`${origin}/app/onboarding`);
         }
@@ -34,6 +45,5 @@ export async function GET(request: Request) {
     }
   }
 
-  // Auth error — redirect to login with error
   return NextResponse.redirect(`${origin}/login?error=auth_callback_error`);
 }
