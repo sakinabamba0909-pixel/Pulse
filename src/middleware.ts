@@ -7,7 +7,7 @@ import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 
 // Routes that don't require authentication
-const PUBLIC_ROUTES = ['/login', '/signup', '/auth/callback', '/auth/confirm'];
+const PUBLIC_ROUTES = ['/login', '/signup', '/auth/callback', '/auth/confirm', '/api/auth/signup'];
 
 export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

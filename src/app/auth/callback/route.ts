@@ -25,6 +25,8 @@ export async function GET(request: NextRequest) {
     });
 
     const { error } = await supabase.auth.exchangeCodeForSession(code);
+    console.log('[auth/callback] exchangeCodeForSession result:', error ? `ERROR: ${error.message}` : 'SUCCESS');
+    console.log('[auth/callback] cookies on request:', request.cookies.getAll().map(c => c.name).join(', '));
 
     if (!error) {
       let redirectTo = `${origin}${next}`;
