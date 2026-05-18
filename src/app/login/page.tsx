@@ -239,26 +239,19 @@ export default function PulseSplash() {
     e.preventDefault();
     setLoading(true); setError(''); setMessage('');
     var storedName = localStorage.getItem('pulse_first_name') || firstName.trim();
-    try {
-      var res = await fetch('/api/auth/signup', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, name: storedName }),
-      });
-      var result = await res.json();
-      if (!res.ok) {
-        setError(result.error || 'Failed to create account');
-        setLoading(false);
-        return;
-      }
-      var { error: signInError } = await supabase.auth.signInWithPassword({ email, password });
-      if (signInError) {
-        setError(signInError.message);
-      } else {
-        router.push('/app/onboarding'); router.refresh();
-      }
-    } catch (err) {
-      setError('Something went wrong. Please try again.');
+    var { data, error: signUpError } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: { name: storedName },
+      },
+    });
+    if (signUpError) {
+      setError(signUpError.message);
+    } else if (data.session) {
+      router.push('/app/onboarding'); router.refresh();
+    } else if (data.user && !data.session) {
+      setMessage('Check your email for a confirmation link, then sign in.');
     }
     setLoading(false);
   };
